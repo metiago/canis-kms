@@ -46,7 +46,7 @@ public class AppTest {
     String originalContent = "This is a test content for encryption.";
     writeToFile(originalContent);
     // legacy app fetch bmg keys
-    Map<String, Object> bmg = MapParser.parseMap(canis.get("bmg"));
+    Map<String, Object> bmg = canis.get("bmg");
     // legacy app encrypt before save it to disk
     File inputFile = new File(INPUT_FILE_PATH);
     File encryptedFile = new File(ENCRYPTED_FILE_PATH);
