@@ -111,8 +111,8 @@ public class ClientHandler implements Runnable {
 
   }
 
-  private List<Entry> list() throws IOException, NoSuchAlgorithmException {
-    return new KeyValueStore().list();
+  private List<Entry> list() {
+    return List.of(new Entry());
   }
 
   private void add(String args) throws NoSuchAlgorithmException, IOException {
@@ -132,10 +132,12 @@ public class ClientHandler implements Runnable {
   }
 
   private Entry get(String key) throws NoSuchAlgorithmException, IOException {
+    logger.info("Getting by key: {}", key);
     return Optional.ofNullable(new KeyValueStore().get(key)).orElse(new Entry());
   }
 
   private void delete(String key) throws NoSuchAlgorithmException, IOException {
+    logger.info("Deleting by key: {}", key);
     new KeyValueStore().delete(key);
   }
 }
