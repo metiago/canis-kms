@@ -1,6 +1,7 @@
 package io.canis.utils;
 
-import io.canis.models.Entry;
+
+import io.canis.store.Entry;
 import java.util.List;
 import java.util.Map;
 

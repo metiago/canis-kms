@@ -1,7 +1,5 @@
 package io.canis.store;
 
-import io.canis.Server;
-import io.canis.models.Entry;
 import io.canis.utils.SymmetricKeyGenerator;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,20 +11,17 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class KeyValueStore {
+
   private static final Logger logger = LoggerFactory.getLogger(KeyValueStore.class);
   private Map<String, Entry> store;
   private final String filePath = "db.dat";

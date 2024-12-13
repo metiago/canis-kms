@@ -1,6 +1,6 @@
 package io.canis.client;
 
-import io.canis.models.Entry;
+import io.canis.client.models.Entry;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -10,8 +10,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * SocketClient is responsible for low-level communication with the server. It sends commands to the
@@ -22,13 +20,13 @@ import java.util.logging.Logger;
 
 final class SocketClient {
 
-  private static final Logger logger = Logger.getLogger(SocketClient.class.getName());
   private final String address;
   private final int port;
   private final String username;
   private final String password;
 
-  public SocketClient(String address, int port, String username, String password) throws IOException {
+  public SocketClient(String address, int port, String username, String password)
+      throws IOException {
     this.address = address;
     this.port = port;
     this.username = username;
@@ -51,10 +49,7 @@ final class SocketClient {
       byte[] bytes = new byte[length];
       dataInputStream.readFully(bytes);
 
-      logger.log(Level.INFO, new String(bytes, StandardCharsets.UTF_8));
-
     } catch (IOException e) {
-      logger.log(Level.SEVERE, "Error during authentication: " + e.getMessage());
       throw e;
     }
   }

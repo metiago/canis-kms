@@ -34,7 +34,7 @@ class CanisClientTest {
     var t1 = new Thread(() -> {
       try {
         var str = StringParser.parseString(canis.set("Bapi"));
-        var map = MapParser.parseMap(canis.get("Bapi"));
+        var map = canis.get("Bapi");
         assertEquals("OK", str);
         assertEquals("Bapi", map.get("name"));
       } catch (AssertionError e) {
@@ -49,7 +49,7 @@ class CanisClientTest {
     var t2 = new Thread(() -> {
       try {
         var str = StringParser.parseString(canis.set("Ziggy"));
-        var map = MapParser.parseMap(canis.get("Ziggy"));
+        var map = canis.get("Ziggy");
         assertEquals("OK", str);
         assertEquals("Ziggy", map.get("name"));
       } catch (AssertionError e) {
@@ -94,8 +94,7 @@ class CanisClientTest {
   @Test
   void testGetCommand() throws IOException {
     canis.set("Mikey");
-    String data = canis.get("Mikey");
-    Map<String, Object> result = MapParser.parseMap(data);
+    Map<String, Object> result = canis.get("Mikey");
     assertEquals("Mikey", result.get("name"));
     assertNotNull(result.get("publicKey"));
   }

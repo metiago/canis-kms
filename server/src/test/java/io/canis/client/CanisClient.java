@@ -7,7 +7,6 @@ public class CanisClient implements Canis {
   private final SocketClient socketClient;
 
   public CanisClient() throws IOException {
-    // TODO get data from env vars
     this.socketClient = new SocketClient("0.0.0.0", 3307, "admin", "admin123");
   }
 

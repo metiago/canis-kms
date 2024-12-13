@@ -1,4 +1,4 @@
-package io.canis.models;
+package io.canis.store;
 
 import java.io.Serializable;
 import java.util.HashMap;

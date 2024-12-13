@@ -1,8 +1,10 @@
 package io.canis;
 
 import static io.canis.handlers.Commands.LOGIN;
+import static io.canis.utils.EnvironmentValidator.getEnvironment;
 
 import io.canis.handlers.ClientHandler;
+import io.canis.models.Environment;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -10,7 +12,6 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -24,23 +25,25 @@ public class Server {
 
   private final ExecutorService executorService;
 
-  private static final int port = 3307;
+  private final int port;
+  private final String username;
+  private final String password;
 
-  private static final Map<String, String> userDatabase = new HashMap<>();
   private static final Map<String, String> sessionStore = new ConcurrentHashMap<>();
 
-  static {
-    userDatabase.put("admin", "admin123");
-    userDatabase.put("user1", "password1");
-  }
-
   public Server() {
+
+    Environment env = getEnvironment();
+    this.port = env.getPort();
+    this.username = env.getUsername();
+    this.password = env.getPassword();
+
     this.executorService = Executors.newFixedThreadPool(6);
   }
 
   public void start() {
-    validateEnvironment();
-    try (ServerSocket serverSocket = new ServerSocket(getPort())) {
+
+    try (ServerSocket serverSocket = new ServerSocket(this.port)) {
       logger.info("Server is listening on port {}", port);
       while (true) {
         Socket socket = serverSocket.accept();
@@ -58,38 +61,8 @@ public class Server {
     }
   }
 
-  private void validateEnvironment() {
-    var secretKeyPath = System.getenv("CANIS_SECRET_KEY");
-    if (secretKeyPath == null) {
-      logger.error("Environment variable CANIS_SECRET_KEY is not set.");
-      System.exit(1);
-    }
-  }
-
-  private int getPort() {
-    int port = 0;
-    try {
-      String portEnv = System.getenv("CANIS_PORT");
-      if (portEnv == null) {
-        logger.error("Environment variable CANIS_PORT is not set.");
-        System.exit(1);
-      }
-      port = Integer.parseInt(portEnv);
-      if (port < 1 || port > 65535) {
-        System.err.println("Invalid port number: " + port + ". Port must be between 1 and 65535.");
-        System.exit(1);
-      }
-
-    } catch (NumberFormatException e) {
-      logger.error(e.getMessage(), e);
-      System.exit(1);
-    }
-    return port;
-  }
-
-  private boolean isCredentialValid(String username, String password) {
-    String storedPassword = userDatabase.get(username);
-    return storedPassword != null && storedPassword.equals(password);
+  private boolean isCredentialValid(String u, String p) {
+    return this.username.equals(u) && this.password.equals(p);
   }
 
   private void authenticate(Socket socket) throws IOException {

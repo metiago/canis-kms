@@ -9,9 +9,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import io.canis.models.Entry;
+
+import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
-import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 public class KeyValueStoreTest {
 
   private KeyValueStore keyValueStore;
-  private File mockFile;
 
   @BeforeEach
   public void setUp() throws NoSuchAlgorithmException, IOException {

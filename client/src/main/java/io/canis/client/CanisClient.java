@@ -1,13 +1,19 @@
 package io.canis.client;
 
+import static io.canis.client.utils.EnvironmentValidator.validateEnvironment;
+
+import io.canis.client.models.Environment;
+import io.canis.client.parsers.MapParser;
 import java.io.IOException;
+import java.util.Map;
 
 public class CanisClient implements Canis {
 
   private final SocketClient socketClient;
 
   public CanisClient() throws IOException {
-    this.socketClient = new SocketClient("0.0.0.0", 3307, "admin", "admin123");
+    Environment env = validateEnvironment();
+    this.socketClient = new SocketClient("0.0.0.0", env.getPort(), env.getUsername(), env.getPassword());
   }
 
   @Override
@@ -23,9 +29,10 @@ public class CanisClient implements Canis {
   }
 
   @Override
-  public String get(String key) throws IOException {
+  public Map<String, Object> get(String key) throws IOException {
     String command = String.format("|get %s", key);
-    return this.socketClient.getString(command);
+    var socketResp = this.socketClient.getString(command);
+    return MapParser.parseMap(socketResp);
   }
 
   @Override
