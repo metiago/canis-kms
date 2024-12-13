@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.canis.Server;
 import io.canis.client.CanisClient;
-import io.canis.client.parsers.MapParser;
 import io.canis.utils.FileDecryptor;
 import io.canis.utils.FileEncryptor;
 import java.io.BufferedWriter;
@@ -28,7 +27,8 @@ public class AppTest {
 
   private static final String INPUT_FILE_PATH = System.getProperty("user.dir") + "\\content.txt";
   private static final String ENCRYPTED_FILE_PATH = System.getProperty("user.dir") + "\\file.enc";
-  private static final String DECRYPTED_FILE_PATH = System.getProperty("user.dir") + "\\dec_file.txt";
+  private static final String DECRYPTED_FILE_PATH =
+      System.getProperty("user.dir") + "\\dec_file.txt";
 
   private static CanisClient canis;
 
@@ -50,14 +50,17 @@ public class AppTest {
     // legacy app encrypt before save it to disk
     File inputFile = new File(INPUT_FILE_PATH);
     File encryptedFile = new File(ENCRYPTED_FILE_PATH);
-    FileEncryptor.encryptFile(inputFile, encryptedFile, loadPublicKey((String) bmg.get("publicKey")));
+    FileEncryptor.encryptFile(inputFile, encryptedFile,
+        loadPublicKey((String) bmg.get("publicKey")));
 
     // bmg app decrypt the file using its private key to be able to process it
     File decryptedFile = new File(DECRYPTED_FILE_PATH);
-    FileDecryptor.decryptFile(encryptedFile, decryptedFile, loadPrivateKey((String) bmg.get("privateKey")));
+    FileDecryptor.decryptFile(encryptedFile, decryptedFile,
+        loadPrivateKey((String) bmg.get("privateKey")));
 
     String decryptedContent = new String(Files.readAllBytes(decryptedFile.toPath()));
-    assertEquals(originalContent, decryptedContent,"The decrypted content should match the original content.");
+    assertEquals(originalContent, decryptedContent,
+        "The decrypted content should match the original content.");
   }
 
   public PublicKey loadPublicKey(String base64PublicKey) throws Exception {
@@ -66,7 +69,6 @@ public class AppTest {
         .replace("-----END PUBLIC KEY-----", "")
         .replaceAll("\\s+", "");
     byte[] decoded = Base64.getDecoder().decode(publicKeyPEM);
-
 
     X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decoded);
     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
