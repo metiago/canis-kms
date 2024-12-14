@@ -1,6 +1,6 @@
-package io.canis.client.utils;
+package io.canis.jpaw.utils;
 
-import io.canis.client.models.Environment;
+import io.canis.jpaw.pojo.Environment;
 
 public class EnvironmentValidator {
 

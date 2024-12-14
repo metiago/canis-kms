@@ -8,7 +8,6 @@ import static io.canis.handlers.Commands.INVALID_COMMAND;
 import static io.canis.handlers.Commands.LIST;
 import static io.canis.handlers.Commands.OK_COMMAND;
 
-
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
 import io.canis.utils.AsymmetricGenerator;

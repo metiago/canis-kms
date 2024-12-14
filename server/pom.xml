@@ -15,11 +15,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.canis</groupId>
-      <artifactId>client</artifactId>
-      <version>1.0.7</version>
-    </dependency>
-    <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>1.2.3</version>

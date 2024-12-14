@@ -1,4 +1,4 @@
-package io.canis.client.parsers;
+package io.canis.jpaw.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,7 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MapParser {
+public class Parser {
+
+  public static String parseString(String s) {
+    return s.replace("|s>", "");
+  }
 
   public static List<Map<String, Object>> parseArray(String message) {
 
@@ -15,7 +19,7 @@ public class MapParser {
     List<String> arrays = Arrays.stream(message.split("\\|a>")).filter(s -> !s.isEmpty()).toList();
 
     for (String arrayValue : arrays) {
-      resp.add(MapParser.parseMap(arrayValue));
+      resp.add(parseMap(arrayValue));
     }
 
     return resp;
@@ -59,4 +63,8 @@ public class MapParser {
     }
   }
 
+  public static Integer parseInt(String input) {
+    String s = input.replace("|i>", "");
+    return Integer.parseInt(s);
+  }
 }

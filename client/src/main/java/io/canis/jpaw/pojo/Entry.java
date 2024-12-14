@@ -1,4 +1,4 @@
-package io.canis.client.models;
+package io.canis.jpaw.pojo;
 
 import java.io.Serializable;
 import java.util.HashMap;
