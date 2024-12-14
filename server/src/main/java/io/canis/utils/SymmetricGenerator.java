@@ -15,15 +15,15 @@ import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SymmetricKeyGenerator {
+public class SymmetricGenerator {
 
-  private static final Logger logger = LoggerFactory.getLogger(SymmetricKeyGenerator.class);
+  private static final Logger logger = LoggerFactory.getLogger(SymmetricGenerator.class);
 
   private SecretKey secretKey;
 
   private final String secretKeyPath;
 
-  public SymmetricKeyGenerator() throws NoSuchAlgorithmException, IOException {
+  public SymmetricGenerator() throws NoSuchAlgorithmException, IOException {
     this.secretKeyPath = System.getenv("CANIS_SECRET_KEY");
     this.generatePrivateKey();
   }

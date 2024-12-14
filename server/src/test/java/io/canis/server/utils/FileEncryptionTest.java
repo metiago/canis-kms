@@ -2,9 +2,8 @@ package io.canis.server.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.canis.utils.FileDecryptor;
-import io.canis.utils.FileEncryptor;
-import io.canis.utils.AsymmetricPairGenerator;
+import io.canis.utils.Cryptographer;
+import io.canis.utils.AsymmetricGenerator;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -29,7 +28,7 @@ public class FileEncryptionTest {
 
   @BeforeEach
   public void setUp() throws NoSuchAlgorithmException {
-    KeyPair keyPair = AsymmetricPairGenerator.generateKeyPair();
+    KeyPair keyPair = AsymmetricGenerator.generateKeyPair();
     publicKey = keyPair.getPublic();
     privateKey = keyPair.getPrivate();
     cleanUpFiles();
@@ -43,10 +42,10 @@ public class FileEncryptionTest {
 
     File inputFile = new File(INPUT_FILE_PATH);
     File encryptedFile = new File(ENCRYPTED_FILE_PATH);
-    FileEncryptor.encryptFile(inputFile, encryptedFile, publicKey);
+    Cryptographer.encryptFile(inputFile, encryptedFile, publicKey);
 
     File decryptedFile = new File(DECRYPTED_FILE_PATH);
-    FileDecryptor.decryptFile(encryptedFile, decryptedFile, privateKey);
+    Cryptographer.decryptFile(encryptedFile, decryptedFile, privateKey);
 
     String decryptedContent = new String(Files.readAllBytes(decryptedFile.toPath()));
     assertEquals(originalContent, decryptedContent, "The decrypted content should match the original content.");

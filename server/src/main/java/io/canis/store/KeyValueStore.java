@@ -1,6 +1,6 @@
 package io.canis.store;
 
-import io.canis.utils.SymmetricKeyGenerator;
+import io.canis.utils.SymmetricGenerator;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -27,7 +27,7 @@ public class KeyValueStore {
   private final String filePath = "db.dat";
   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-  public KeyValueStore() throws NoSuchAlgorithmException, IOException {
+  public KeyValueStore() {
     this.store = new ConcurrentHashMap<>();
     loadFromFile();
   }
@@ -37,8 +37,10 @@ public class KeyValueStore {
     try {
       File file = new File(filePath);
       if (file.exists()) {
+
         try (InputStream fis = new FileInputStream(file);
             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
           byte[] buffer = new byte[1024];
 
           int bytesRead;
@@ -46,15 +48,16 @@ public class KeyValueStore {
             baos.write(buffer, 0, bytesRead);
           }
           byte[] encryptedData = baos.toByteArray();
-          byte[] decryptedData = new SymmetricKeyGenerator().decrypt(encryptedData);
-          try (ObjectInputStream ois = new ObjectInputStream(
-              new ByteArrayInputStream(decryptedData))) {
+          byte[] decryptedData = new SymmetricGenerator().decrypt(encryptedData);
+          try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(decryptedData))) {
             store = (Map<String, Entry>) ois.readObject();
           }
+
         } catch (IOException | ClassNotFoundException e) {
           logger.error(e.getMessage(), e);
         }
       }
+
     } catch (Exception e) {
       logger.error(e.getMessage(), e);
     } finally {
@@ -65,11 +68,13 @@ public class KeyValueStore {
   public void saveToFile() {
     lock.writeLock().lock();
     try {
+
       byte[] serializedData = serializeMapToBytes(store);
-      byte[] encryptedData = new SymmetricKeyGenerator().encrypt(serializedData);
+      byte[] encryptedData = new SymmetricGenerator().encrypt(serializedData);
       try (OutputStream fos = new FileOutputStream(filePath)) {
         fos.write(encryptedData);
       }
+
     } catch (Exception e) {
       logger.error(e.getMessage(), e);
     } finally {

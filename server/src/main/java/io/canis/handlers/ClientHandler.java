@@ -11,7 +11,7 @@ import static io.canis.handlers.Commands.OK_COMMAND;
 
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
-import io.canis.utils.AsymmetricPairGenerator;
+import io.canis.utils.AsymmetricGenerator;
 import io.canis.utils.Converter;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -82,14 +82,14 @@ public class ClientHandler implements Runnable {
       String args = input.substring(4).trim();
       Entry entry = get(args);
 
-      var bytes = Converter.mapToString(entry.toMap()).getBytes(StandardCharsets.UTF_8);
+      var bytes = Converter.toMap(entry.toMap()).getBytes(StandardCharsets.UTF_8);
       out.writeInt(bytes.length);
       out.write(bytes);
 
     } else if (input.equals(LIST)) {
 
       List<Entry> entries = list();
-      var bytes = Converter.arrayOfMapsToString(entries).getBytes(StandardCharsets.UTF_8);
+      var bytes = Converter.toArrayOfMaps(entries).getBytes(StandardCharsets.UTF_8);
       out.writeInt(bytes.length);
       out.write(bytes);
 
@@ -117,12 +117,12 @@ public class ClientHandler implements Runnable {
   }
 
   private void add(String args) throws NoSuchAlgorithmException, IOException {
-    logger.info("Adding new secret: {}", args);
-    KeyPair keyPair = AsymmetricPairGenerator.generateKeyPair();
+    logger.info("Adding new key with args: {}", args);
+    KeyPair keyPair = AsymmetricGenerator.generateKeyPair();
     PublicKey publicKey = keyPair.getPublic();
     PrivateKey privateKey = keyPair.getPrivate();
-    var publicKeyBase64 = AsymmetricPairGenerator.publicKeyToString(publicKey);
-    var privateKeyBase64 = AsymmetricPairGenerator.privateKeyToString(privateKey);
+    var publicKeyBase64 = AsymmetricGenerator.publicKeyToString(publicKey);
+    var privateKeyBase64 = AsymmetricGenerator.privateKeyToString(privateKey);
 
     var store = new KeyValueStore();
     var metadata = new Entry();

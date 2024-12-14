@@ -5,9 +5,12 @@ import io.canis.store.Entry;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Converter utility to convert internal objects to string - canis protocol
+ */
 public class Converter {
 
-  public static String mapToString(Map<String, Object> map) {
+  public static String toMap(Map<String, Object> map) {
 
     StringBuilder builder = new StringBuilder();
 
@@ -25,7 +28,7 @@ public class Converter {
     return builder.toString();
   }
 
-  public static String arrayOfMapsToString(List<Entry> entries) {
+  public static String toArrayOfMaps(List<Entry> entries) {
     StringBuilder builder = new StringBuilder();
 
     builder.append("|a>");

@@ -5,8 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.canis.Server;
 import io.canis.client.CanisClient;
-import io.canis.utils.FileDecryptor;
-import io.canis.utils.FileEncryptor;
+import io.canis.utils.Cryptographer;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -50,12 +49,12 @@ public class AppTest {
     // legacy app encrypt before save it to disk
     File inputFile = new File(INPUT_FILE_PATH);
     File encryptedFile = new File(ENCRYPTED_FILE_PATH);
-    FileEncryptor.encryptFile(inputFile, encryptedFile,
+    Cryptographer.encryptFile(inputFile, encryptedFile,
         loadPublicKey((String) bmg.get("publicKey")));
 
     // bmg app decrypt the file using its private key to be able to process it
     File decryptedFile = new File(DECRYPTED_FILE_PATH);
-    FileDecryptor.decryptFile(encryptedFile, decryptedFile,
+    Cryptographer.decryptFile(encryptedFile, decryptedFile,
         loadPrivateKey((String) bmg.get("privateKey")));
 
     String decryptedContent = new String(Files.readAllBytes(decryptedFile.toPath()));

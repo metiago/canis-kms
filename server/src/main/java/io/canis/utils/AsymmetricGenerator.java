@@ -12,7 +12,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
-public class AsymmetricPairGenerator {
+public class AsymmetricGenerator {
 
     public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
         java.security.KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");

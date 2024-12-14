@@ -54,38 +54,35 @@ individual maps—enabling flexible and structured data communication between ap
         - Retrieving application data based on the registered name.
         - Updating or deleting application data as needed.
 
-**Use Cases:**
-
-- This server can be utilized in various applications where dynamic registration and management of
-  application data are required, such as:
-    - Microservices architectures where services need to register themselves and share metadata.
-    - IoT applications where devices can register their status and configuration.
-    - Any client-server application requiring a lightweight and flexible communication protocol.
-
 **Technologies Used:**
 
 - Programming Language: Java
 - Networking: TCP/IP Sockets
-- Data Storage: File I/O for `.dat` file persistence
+- Data Storage: File I/O for `.dat` encrypted file persistence
 
 ### Prerequisites
 Java 8+
 
-### Testing
+### Testing & Running
+
+Before running the server or tests, export these environment variables
 
 ```bash
+# server port
+export CANIS_PORT=3307;
+# server username
+export CANIS_USERNAME=admin
+# server password
+export CANIS_PASSWORD=123;
+# secret file name
+export CANIS_SECRET_KEY=/my/secret/location/secret.txt;
+
 # run tests
 mvn test
-# package
+
+# build executable jar
 mvn package
-```
 
-### Running
-```bash
-# mandatory environment vars
-CANIS_PORT=1234;
-CANIS_SECRET_KEY=<my_key_file_name>.txt
-
-# run
+# start server
 java server/target/canis-jar-with-dependencies.jar
 ```
