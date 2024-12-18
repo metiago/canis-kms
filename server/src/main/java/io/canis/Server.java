@@ -61,10 +61,6 @@ public class Server {
     }
   }
 
-  private boolean isCredentialValid(String u, String p) {
-    return this.username.equals(u) && this.password.equals(p);
-  }
-
   private void authenticate(Socket socket) throws IOException {
 
     try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -108,6 +104,10 @@ public class Server {
         out.write(resp);
       }
     }
+  }
+
+  private boolean isCredentialValid(String u, String p) {
+    return this.username.equals(u) && this.password.equals(p);
   }
 
   public static void main(String[] args) {

@@ -62,60 +62,55 @@ public class ClientHandler implements Runnable {
       throws IOException, NoSuchAlgorithmException {
 
     if (input.equals(HEALTH)) {
-
-      var resp = String.format("%s%s", "|s>", OK_COMMAND).getBytes(StandardCharsets.UTF_8);
-      out.writeInt(resp.length);
-      out.write(resp);
+      logger.info("Performing health check for IP {}", this.socket.getRemoteSocketAddress());
+      sendResponse(out, OK_COMMAND);
 
     } else if (input.startsWith(ADD)) {
-
+      logger.info("Adding key for IP {}", this.socket.getRemoteSocketAddress());
       String args = input.substring(4).trim();
       add(args);
-
-      var resp = String.format("%s%s", "|s>", OK_COMMAND).getBytes(StandardCharsets.UTF_8);
-      out.writeInt(resp.length);
-      out.write(resp);
+      sendResponse(out, OK_COMMAND);
 
     } else if (input.startsWith(GET)) {
-
+      logger.info("Getting key for IP {}", this.socket.getRemoteSocketAddress());
       String args = input.substring(4).trim();
       Entry entry = get(args);
-
       var bytes = Converter.toMap(entry.toMap()).getBytes(StandardCharsets.UTF_8);
       out.writeInt(bytes.length);
       out.write(bytes);
 
     } else if (input.equals(LIST)) {
-
+      logger.info("Listing keys for IP {}", this.socket.getRemoteSocketAddress());
       List<Entry> entries = list();
       var bytes = Converter.toArrayOfMaps(entries).getBytes(StandardCharsets.UTF_8);
       out.writeInt(bytes.length);
       out.write(bytes);
 
     } else if (input.startsWith(DELETE)) {
-
+      logger.info("Deleting key for IP {}", this.socket.getRemoteSocketAddress());
       String args = input.substring(4).trim();
-
       delete(args);
-
-      var resp = String.format("%s%s", "|s>", OK_COMMAND).getBytes(StandardCharsets.UTF_8);
-      out.writeInt(resp.length);
-      out.write(resp);
+      sendResponse(out, OK_COMMAND);
 
     } else {
-
+      logger.warn("Invalid command received from IP {}: {}", this.socket.getRemoteSocketAddress(), input);
       var resp = INVALID_COMMAND.getBytes(StandardCharsets.UTF_8);
       out.writeInt(resp.length);
       out.write(resp);
     }
+  }
 
+  private void sendResponse(DataOutputStream out, String command) throws IOException {
+    var resp = String.format("%s%s", "|s>", command).getBytes(StandardCharsets.UTF_8);
+    out.writeInt(resp.length);
+    out.write(resp);
   }
 
   private List<Entry> list() {
     return List.of(new Entry());
   }
 
-  private void add(String args) throws NoSuchAlgorithmException, IOException {
+  private void add(String args) throws NoSuchAlgorithmException {
     logger.info("Adding new key with args: {}", args);
     KeyPair keyPair = AsymmetricGenerator.generateKeyPair();
     PublicKey publicKey = keyPair.getPublic();
@@ -131,12 +126,12 @@ public class ClientHandler implements Runnable {
     store.set(args, metadata);
   }
 
-  private Entry get(String key) throws NoSuchAlgorithmException, IOException {
+  private Entry get(String key) {
     logger.info("Getting by key: {}", key);
     return Optional.ofNullable(new KeyValueStore().get(key)).orElse(new Entry());
   }
 
-  private void delete(String key) throws NoSuchAlgorithmException, IOException {
+  private void delete(String key) {
     logger.info("Deleting by key: {}", key);
     new KeyValueStore().delete(key);
   }
