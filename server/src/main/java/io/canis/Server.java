@@ -72,6 +72,7 @@ public class Server {
 
       String input = in.readLine();
       if (!input.startsWith(LOGIN)) {
+        logger.info("Authentication failed: {}", input);
         var resp = "Authentication failed".getBytes(StandardCharsets.UTF_8);
         out.writeInt(resp.length);
         out.write(resp);
@@ -82,6 +83,8 @@ public class Server {
       String[] parts = args.split(":");
 
       if (parts.length < 2) {
+        logger.info("Invalid input format when authenticating: {}",
+            socket.getRemoteSocketAddress());
         var resp = "Invalid input format".getBytes(StandardCharsets.UTF_8);
         out.writeInt(resp.length);
         out.write(resp);
@@ -91,12 +94,15 @@ public class Server {
       String username = parts[0];
       String password = parts[1];
 
+      logger.info("Authenticating username: {}", username);
       if (isCredentialValid(username, password)) {
+        logger.info("Authentication successful for username: {}", username);
         sessionStore.put(socket.getInetAddress().getHostAddress(), username);
         var resp = "Authentication successful".getBytes(StandardCharsets.UTF_8);
         out.writeInt(resp.length);
         out.write(resp);
       } else {
+        logger.info("Authentication failed for username: {}", username);
         var resp = "Authentication failed".getBytes(StandardCharsets.UTF_8);
         out.writeInt(resp.length);
         out.write(resp);
