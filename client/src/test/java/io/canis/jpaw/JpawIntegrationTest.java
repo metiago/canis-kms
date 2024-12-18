@@ -12,9 +12,10 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-
+@Disabled("Start socket server before running it")
 class JpawIntegrationTest {
 
   private static Jpaw canis;
