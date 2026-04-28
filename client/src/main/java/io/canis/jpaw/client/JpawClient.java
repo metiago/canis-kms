@@ -7,7 +7,7 @@ import io.canis.jpaw.utils.Parser;
 import java.io.IOException;
 import java.util.Map;
 
-public class JpawClient implements Jpaw {
+public class JpawClient implements Jpaw, AutoCloseable {
 
   private final SocketClient socketClient;
 
@@ -42,5 +42,9 @@ public class JpawClient implements Jpaw {
     return true;
   }
 
-}
+  @Override
+  public void close() throws IOException {
+    this.socketClient.close();
+  }
 
+}

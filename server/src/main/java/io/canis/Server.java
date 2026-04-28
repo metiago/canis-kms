@@ -12,8 +12,6 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -28,8 +26,6 @@ public class Server {
   private final int port;
   private final String username;
   private final String password;
-
-  private static final Map<String, String> sessionStore = new ConcurrentHashMap<>();
 
   public Server() {
 
@@ -47,11 +43,7 @@ public class Server {
       logger.info("Server is listening on port {}", port);
       while (true) {
         Socket socket = serverSocket.accept();
-        if (sessionStore.containsKey(socket.getInetAddress().getHostAddress())) {
-          executorService.submit(new ClientHandler(socket));
-        } else {
-          authenticate(socket);
-        }
+        executorService.submit(() -> handleConnection(socket));
       }
 
     } catch (IOException e) {
@@ -61,53 +53,72 @@ public class Server {
     }
   }
 
-  private void authenticate(Socket socket) throws IOException {
+  private void handleConnection(Socket socket) {
+    try {
+      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-    try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
-
-      String input = in.readLine();
-      if (!input.startsWith(LOGIN)) {
-        logger.info("Authentication failed: {}", input);
-        var resp = "Authentication failed".getBytes(StandardCharsets.UTF_8);
-        out.writeInt(resp.length);
-        out.write(resp);
-        return;
-      }
-
-      String args = input.substring(6).trim();
-      String[] parts = args.split(":");
-
-      if (parts.length < 2) {
-        logger.info("Invalid input format when authenticating: {}",
-            socket.getRemoteSocketAddress());
-        var resp = "Invalid input format".getBytes(StandardCharsets.UTF_8);
-        out.writeInt(resp.length);
-        out.write(resp);
+      if (authenticate(socket, in, out)) {
+        new ClientHandler(socket, in, out).run();
+      } else {
         socket.close();
       }
-
-      String username = parts[0];
-      String password = parts[1];
-
-      logger.info("Authenticating username: {}", username);
-      if (isCredentialValid(username, password)) {
-        logger.info("Authentication successful for username: {}", username);
-        sessionStore.put(socket.getInetAddress().getHostAddress(), username);
-        var resp = "Authentication successful".getBytes(StandardCharsets.UTF_8);
-        out.writeInt(resp.length);
-        out.write(resp);
-      } else {
-        logger.info("Authentication failed for username: {}", username);
-        var resp = "Authentication failed".getBytes(StandardCharsets.UTF_8);
-        out.writeInt(resp.length);
-        out.write(resp);
-      }
+    } catch (IOException e) {
+      logger.error(e.getMessage(), e);
+      closeQuietly(socket);
     }
+  }
+
+  private boolean authenticate(Socket socket, BufferedReader in, DataOutputStream out)
+      throws IOException {
+
+    String input = in.readLine();
+    if (input == null || !input.startsWith(LOGIN)) {
+      logger.info("Authentication failed: {}", input);
+      sendResponse(out, "Authentication failed");
+      return false;
+    }
+
+    String args = input.substring(LOGIN.length()).trim();
+    String[] parts = args.split(":", 2);
+
+    if (parts.length < 2) {
+      logger.info("Invalid input format when authenticating: {}", socket.getRemoteSocketAddress());
+      sendResponse(out, "Invalid input format");
+      return false;
+    }
+
+    String username = parts[0];
+    String password = parts[1];
+
+    logger.info("Authenticating username: {}", username);
+    if (isCredentialValid(username, password)) {
+      logger.info("Authentication successful for username: {}", username);
+      sendResponse(out, "Authentication successful");
+      return true;
+    }
+
+    logger.info("Authentication failed for username: {}", username);
+    sendResponse(out, "Authentication failed");
+    return false;
+  }
+
+  private void sendResponse(DataOutputStream out, String response) throws IOException {
+    var resp = response.getBytes(StandardCharsets.UTF_8);
+    out.writeInt(resp.length);
+    out.write(resp);
   }
 
   private boolean isCredentialValid(String u, String p) {
     return this.username.equals(u) && this.password.equals(p);
+  }
+
+  private void closeQuietly(Socket socket) {
+    try {
+      socket.close();
+    } catch (IOException e) {
+      logger.warn(e.getMessage(), e);
+    }
   }
 
   public static void main(String[] args) {

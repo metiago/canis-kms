@@ -15,7 +15,6 @@ import io.canis.utils.Converter;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -32,16 +31,18 @@ public class ClientHandler implements Runnable {
   private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
 
   private final Socket socket;
+  private final BufferedReader in;
+  private final DataOutputStream out;
 
-  public ClientHandler(Socket socket) {
+  public ClientHandler(Socket socket, BufferedReader in, DataOutputStream out) {
     this.socket = socket;
+    this.in = in;
+    this.out = out;
   }
 
   public void run() {
 
-    try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
-
+    try {
       String input;
       while ((input = in.readLine()) != null) {
         executeCommand(input, out);
