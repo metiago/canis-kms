@@ -49,7 +49,6 @@ public class Entry implements Serializable {
     Map<String, Object> map = new HashMap<>();
     map.put("name", this.name);
     map.put("publicKey", this.publicKey);
-    map.put("privateKey", this.privateKey);
     return map;
   }
 
