@@ -5,6 +5,7 @@ import static io.canis.jpaw.utils.EnvironmentValidator.validateEnvironment;
 import io.canis.jpaw.pojo.Environment;
 import io.canis.jpaw.utils.Parser;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Map;
 
 public class JpawClient implements Jpaw, AutoCloseable {
@@ -33,6 +34,19 @@ public class JpawClient implements Jpaw, AutoCloseable {
     String command = String.format("|get %s", key);
     var socketResp = this.socketClient.sendCommand(command);
     return Parser.parseMap(socketResp);
+  }
+
+  @Override
+  public byte[] decrypt(String key, byte[] encryptedData) throws IOException {
+    String encryptedBase64 = Base64.getEncoder().encodeToString(encryptedData);
+    String command = String.format("|decrypt %s %s", key, encryptedBase64);
+    String response = Parser.parseString(this.socketClient.sendCommand(command));
+
+    if (response.startsWith("ERROR:")) {
+      throw new IOException(response);
+    }
+
+    return Base64.getDecoder().decode(response);
   }
 
   @Override

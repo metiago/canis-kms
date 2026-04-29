@@ -1,6 +1,7 @@
 package io.canis.handlers;
 
 import static io.canis.handlers.Commands.ADD;
+import static io.canis.handlers.Commands.DECRYPT;
 import static io.canis.handlers.Commands.DELETE;
 import static io.canis.handlers.Commands.GET;
 import static io.canis.handlers.Commands.HEALTH;
@@ -12,6 +13,7 @@ import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
 import io.canis.utils.AsymmetricGenerator;
 import io.canis.utils.Converter;
+import io.canis.utils.Cryptographer;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -21,6 +23,7 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -33,11 +36,17 @@ public class ClientHandler implements Runnable {
   private final Socket socket;
   private final BufferedReader in;
   private final DataOutputStream out;
+  private final KeyValueStore store;
 
   public ClientHandler(Socket socket, BufferedReader in, DataOutputStream out) {
+    this(socket, in, out, new KeyValueStore());
+  }
+
+  ClientHandler(Socket socket, BufferedReader in, DataOutputStream out, KeyValueStore store) {
     this.socket = socket;
     this.in = in;
     this.out = out;
+    this.store = store;
   }
 
   public void run() {
@@ -80,6 +89,10 @@ public class ClientHandler implements Runnable {
       out.writeInt(bytes.length);
       out.write(bytes);
 
+    } else if (input.startsWith(DECRYPT)) {
+      logger.info("Decrypting payload for IP {}", this.socket.getRemoteSocketAddress());
+      decrypt(input.substring(DECRYPT.length()).trim(), out);
+
     } else if (input.equals(LIST)) {
       logger.info("Listing keys for IP {}", this.socket.getRemoteSocketAddress());
       List<Entry> entries = list();
@@ -119,7 +132,6 @@ public class ClientHandler implements Runnable {
     var publicKeyBase64 = AsymmetricGenerator.publicKeyToString(publicKey);
     var privateKeyBase64 = AsymmetricGenerator.privateKeyToString(privateKey);
 
-    var store = new KeyValueStore();
     var metadata = new Entry();
     metadata.setName(args);
     metadata.setPublicKey(publicKeyBase64);
@@ -129,11 +141,36 @@ public class ClientHandler implements Runnable {
 
   private Entry get(String key) {
     logger.info("Getting by key: {}", key);
-    return Optional.ofNullable(new KeyValueStore().get(key)).orElse(new Entry());
+    return Optional.ofNullable(store.get(key)).orElse(new Entry());
   }
 
   private void delete(String key) {
     logger.info("Deleting by key: {}", key);
-    new KeyValueStore().delete(key);
+    store.delete(key);
+  }
+
+  private void decrypt(String args, DataOutputStream out) throws IOException {
+    String[] parts = args.split("\\s+", 2);
+    if (parts.length < 2) {
+      sendResponse(out, "ERROR: Invalid input format");
+      return;
+    }
+
+    String key = parts[0];
+    Entry entry = store.get(key);
+    if (entry == null || entry.getPrivateKey() == null) {
+      sendResponse(out, "ERROR: Key not found");
+      return;
+    }
+
+    try {
+      byte[] encryptedData = Base64.getDecoder().decode(parts[1]);
+      PrivateKey privateKey = AsymmetricGenerator.stringToPrivateKey(entry.getPrivateKey());
+      byte[] decryptedData = Cryptographer.decrypt(encryptedData, privateKey);
+      sendResponse(out, Base64.getEncoder().encodeToString(decryptedData));
+    } catch (Exception e) {
+      logger.error("Failed to decrypt payload for key {}", key, e);
+      sendResponse(out, "ERROR: Decryption failed");
+    }
   }
 }

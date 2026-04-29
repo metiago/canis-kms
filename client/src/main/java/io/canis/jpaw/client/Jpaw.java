@@ -38,6 +38,17 @@ public interface Jpaw {
   Map<String, Object> get(String key) throws IOException;
 
   /**
+   * Decrypts encrypted data using the private key stored for the specified key.
+   * The private key remains on the server.
+   *
+   * @param key the registered key whose private key should be used.
+   * @param encryptedData encrypted bytes to decrypt.
+   * @return decrypted bytes returned by the server.
+   * @throws IOException if an I/O error occurs while decrypting the data.
+   */
+  byte[] decrypt(String key, byte[] encryptedData) throws IOException;
+
+  /**
    * Deletes the value associated with the specified key.
    *
    * @param key the key to be deleted.

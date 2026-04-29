@@ -10,7 +10,7 @@
   - Decide whether CANIS is a key distributor or a KMS.
   - Prefer server-side decrypt/sign operations so private keys never leave the server.
 
-- Add server-side decrypt support for the KMS model.
+- [x] Add server-side decrypt support for the KMS model.
   - Private keys must remain inside CANIS.
   - A service should send encrypted data or an encrypted file key to CANIS and receive only the decrypted result it is authorized to receive.
   - Start with decrypting small RSA-encrypted payloads, then migrate to envelope encryption for real files.
