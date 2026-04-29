@@ -75,7 +75,7 @@
   - Use `SizeAndTimeBasedRollingPolicy` if `%i` is required.
   - Confirm logs rotate during tests without startup errors.
 
-- Replace `System.exit` in validators with exceptions.
+- [x] Replace `System.exit` in validators with exceptions.
   - Let callers and tests handle configuration failures cleanly.
   - Add unit tests for missing and invalid environment variables.
 

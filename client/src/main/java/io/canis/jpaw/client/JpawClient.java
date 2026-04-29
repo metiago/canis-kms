@@ -1,6 +1,6 @@
 package io.canis.jpaw.client;
 
-import static io.canis.jpaw.utils.EnvironmentValidator.validateEnvironment;
+import static io.canis.jpaw.utils.EnvironmentLoader.loadEnvironment;
 
 import io.canis.jpaw.pojo.Environment;
 import io.canis.jpaw.utils.Parser;
@@ -13,7 +13,7 @@ public class JpawClient implements Jpaw, AutoCloseable {
   private final SocketClient socketClient;
 
   public JpawClient() throws IOException {
-    Environment env = validateEnvironment();
+    Environment env = loadEnvironment();
     this.socketClient = new SocketClient("0.0.0.0", env.getPort(), env.getUsername(), env.getPassword());
   }
 

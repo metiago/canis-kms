@@ -1,10 +1,11 @@
 package io.canis;
 
 import static io.canis.handlers.Commands.LOGIN;
-import static io.canis.utils.EnvironmentValidator.getEnvironment;
+import static io.canis.utils.EnvironmentLoader.loadEnvironment;
 
 import io.canis.handlers.ClientHandler;
 import io.canis.models.Environment;
+import io.canis.models.LoginCredentials;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -30,10 +31,10 @@ public class Server {
 
   public Server() {
 
-    Environment env = getEnvironment();
-    this.port = env.getPort();
-    this.username = env.getUsername();
-    this.password = env.getPassword();
+    Environment env = loadEnvironment();
+    this.port = env.port();
+    this.username = env.username();
+    this.password = env.password();
 
     this.executorService = Executors.newFixedThreadPool(6);
   }
@@ -134,9 +135,6 @@ public class Server {
 
   private static boolean isLoginCommand(String input) {
     return input != null && (input.equals(LOGIN) || input.startsWith(LOGIN + " "));
-  }
-
-  record LoginCredentials(String username, String password) {
   }
 
   private void closeQuietly(Socket socket) {

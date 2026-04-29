@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.canis.models.LoginCredentials;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +12,7 @@ public class ServerTest {
 
   @Test
   void testParseLoginCredentials() {
-    Optional<Server.LoginCredentials> credentials =
+    Optional<LoginCredentials> credentials =
         Server.parseLoginCredentials("|login serviceA:secret");
 
     assertTrue(credentials.isPresent());
@@ -21,7 +22,7 @@ public class ServerTest {
 
   @Test
   void testParseLoginCredentialsAllowsColonInPassword() {
-    Optional<Server.LoginCredentials> credentials =
+    Optional<LoginCredentials> credentials =
         Server.parseLoginCredentials("|login serviceA:secret:with:colons");
 
     assertTrue(credentials.isPresent());
