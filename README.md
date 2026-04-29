@@ -74,6 +74,10 @@ Before running the server or tests, export these environment variables
 ```bash
 # server port
 export CANIS_PORT=3307;
+# client server host
+export CANIS_SERVER_HOST=localhost;
+# client server port
+export CANIS_SERVER_PORT=3307;
 # legacy single service username
 export CANIS_USERNAME=admin
 # legacy single service password

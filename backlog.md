@@ -58,11 +58,11 @@
   - Protocol changes should be versioned to preserve client/server compatibility.
   - Server command parsing should stay aligned with `JpawClient` command construction.
 
-- Add socket timeouts and bounded request sizes.
+- [x] Add socket timeouts and bounded request sizes.
   - Prevent clients from holding threads indefinitely.
   - Reject oversized command or response payloads.
 
-- Use a configurable server host in the client.
+- [x] Use a configurable server host in the client.
   - Replace hard-coded `0.0.0.0` with `CANIS_SERVER_HOST`.
   - Default to `localhost` for local development.
 

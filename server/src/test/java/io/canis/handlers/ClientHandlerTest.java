@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
 import io.canis.utils.AsymmetricGenerator;
+import io.canis.utils.BoundedLineReader;
 import io.canis.utils.Cryptographer;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -45,6 +46,26 @@ public class ClientHandlerTest {
     handler.run();
 
     assertEquals("|s>CANISP/1", readResponse(response.toByteArray()));
+  }
+
+  @Test
+  void testOversizedCommandIsRejected() throws Exception {
+    KeyValueStore store = mock(KeyValueStore.class);
+
+    Socket socket = mock(Socket.class);
+    when(socket.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 3307));
+
+    String oversizedCommand = "x".repeat(BoundedLineReader.MAX_LINE_CHARS + 1);
+    ByteArrayOutputStream response = new ByteArrayOutputStream();
+    ClientHandler handler = new ClientHandler(
+        socket,
+        new BufferedReader(new StringReader(oversizedCommand)),
+        new DataOutputStream(response),
+        store);
+
+    handler.run();
+
+    assertEquals("|s>ERROR: Request too large", readResponse(response.toByteArray()));
   }
 
   @Test

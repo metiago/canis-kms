@@ -3,6 +3,7 @@ package io.canis.jpaw.client;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
@@ -11,6 +12,10 @@ import java.nio.charset.StandardCharsets;
  * socket connection, data transmission, and deserialization of received data.
  */
 final class SocketClient implements AutoCloseable {
+
+  private static final int SOCKET_TIMEOUT_MS = 30_000;
+  private static final int MAX_COMMAND_CHARS = 1_048_576;
+  private static final int MAX_RESPONSE_BYTES = 1_048_576;
 
   private final String username;
   private final String password;
@@ -22,7 +27,9 @@ final class SocketClient implements AutoCloseable {
       throws IOException {
     this.username = username;
     this.password = password;
-    this.socket = new Socket(address, port);
+    this.socket = new Socket();
+    this.socket.connect(new InetSocketAddress(address, port), SOCKET_TIMEOUT_MS);
+    this.socket.setSoTimeout(SOCKET_TIMEOUT_MS);
     this.out = new PrintWriter(socket.getOutputStream(), true);
     this.dataInputStream = new DataInputStream(socket.getInputStream());
     this.auth();
@@ -31,7 +38,11 @@ final class SocketClient implements AutoCloseable {
   private void auth() throws IOException {
     try {
 
-      out.println(String.format("|login %s:%s", this.username, this.password));
+      String command = String.format("|login %s:%s", this.username, this.password);
+      if (command.length() > MAX_COMMAND_CHARS) {
+        throw new IOException("Command exceeds maximum length.");
+      }
+      out.println(command);
 
       String response = readResponse();
       if (!"Authentication successful".equals(response)) {
@@ -51,6 +62,9 @@ final class SocketClient implements AutoCloseable {
    * @throws IOException if an error occurs during communication
    */
   public synchronized String sendCommand(String command) throws IOException {
+    if (command.length() > MAX_COMMAND_CHARS) {
+      throw new IOException("Command exceeds maximum length.");
+    }
 
     out.println(command);
     if (out.checkError()) {
@@ -62,7 +76,7 @@ final class SocketClient implements AutoCloseable {
 
   private String readResponse() throws IOException {
     int length = dataInputStream.readInt();
-    if (length <= 0) {
+    if (length <= 0 || length > MAX_RESPONSE_BYTES) {
       throw new IOException("Invalid response from server.");
     }
 

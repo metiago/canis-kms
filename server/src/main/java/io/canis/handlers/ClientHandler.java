@@ -15,6 +15,8 @@ import static io.canis.handlers.Commands.VERSION;
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
 import io.canis.utils.AsymmetricGenerator;
+import io.canis.utils.BoundedLineReader;
+import io.canis.utils.BoundedLineReader.LineTooLongException;
 import io.canis.utils.Converter;
 import io.canis.utils.Cryptographer;
 import java.io.BufferedReader;
@@ -67,7 +69,7 @@ public class ClientHandler implements Runnable {
 
     try {
       String input;
-      while ((input = in.readLine()) != null) {
+      while ((input = readCommand()) != null) {
         executeCommand(input, out);
       }
 
@@ -79,6 +81,16 @@ public class ClientHandler implements Runnable {
       } catch (IOException e) {
         logger.warn(e.getMessage(), e);
       }
+    }
+  }
+
+  private String readCommand() throws IOException {
+    try {
+      return BoundedLineReader.readLine(in);
+    } catch (LineTooLongException e) {
+      logger.warn("Request exceeded maximum size for IP {}", this.socket.getRemoteSocketAddress());
+      sendResponse(out, "ERROR: Request too large");
+      return null;
     }
   }
 

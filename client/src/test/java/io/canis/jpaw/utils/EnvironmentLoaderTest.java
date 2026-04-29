@@ -16,7 +16,18 @@ public class EnvironmentLoaderTest {
 
     assertEquals("admin", environment.getUsername());
     assertEquals("123", environment.getPassword());
+    assertEquals("localhost", environment.getHost());
     assertEquals(3307, environment.getPort());
+  }
+
+  @Test
+  void testLoadEnvironmentUsesConfiguredServerHost() {
+    Map<String, String> rawEnvironment = validEnvironment();
+    rawEnvironment.put("CANIS_SERVER_HOST", "canis.internal");
+
+    Environment environment = EnvironmentLoader.loadEnvironment(rawEnvironment);
+
+    assertEquals("canis.internal", environment.getHost());
   }
 
   @Test

@@ -32,6 +32,16 @@ should introduce a new protocol version and keep `JpawClient` aligned with serve
 5. Each command is a single newline-terminated text command.
 6. Each response is a 4-byte signed integer length followed by the UTF-8 response payload.
 
+## Limits
+
+CANISP/1 applies defensive socket limits on both sides:
+
+- Server sockets use a 30 second read timeout.
+- Client sockets use a 30 second connect/read timeout.
+- Server command lines are limited to 1,048,576 characters.
+- Client commands are limited to 1,048,576 characters.
+- Client response payloads are limited to 1,048,576 bytes before allocation.
+
 ## Payload Types
 
 CANISP response payloads use typed prefixes:

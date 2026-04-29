@@ -7,6 +7,8 @@ import io.canis.handlers.ClientHandler;
 import io.canis.models.Environment;
 import io.canis.models.LoginCredentials;
 import io.canis.store.KeyValueStore;
+import io.canis.utils.BoundedLineReader;
+import io.canis.utils.BoundedLineReader.LineTooLongException;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -24,6 +26,7 @@ import org.slf4j.LoggerFactory;
 public class Server {
 
   private static final Logger logger = LoggerFactory.getLogger(Server.class);
+  private static final int SOCKET_TIMEOUT_MS = 30_000;
 
   private final ExecutorService executorService;
 
@@ -59,6 +62,7 @@ public class Server {
 
   private void handleConnection(Socket socket) {
     try {
+      socket.setSoTimeout(SOCKET_TIMEOUT_MS);
       BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
@@ -77,7 +81,15 @@ public class Server {
   private Optional<String> authenticate(Socket socket, BufferedReader in, DataOutputStream out)
       throws IOException {
 
-    String input = in.readLine();
+    String input;
+    try {
+      input = BoundedLineReader.readLine(in);
+    } catch (LineTooLongException e) {
+      logger.warn("Authentication request exceeded maximum size: {}", socket.getRemoteSocketAddress());
+      sendResponse(out, "Request too large");
+      return Optional.empty();
+    }
+
     if (input == null || !isLoginCommand(input)) {
       logger.info("Authentication failed: {}", input);
       sendResponse(out, "Authentication failed");
