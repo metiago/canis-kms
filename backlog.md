@@ -30,7 +30,7 @@
   - Encrypt the data encryption key with RSA-OAEP.
   - Store nonce, encrypted key, ciphertext, and authentication tag in a versioned envelope.
 
-- Define service identity and authorization for private-key operations.
+- [x] Define service identity and authorization for private-key operations.
   - A service should only be able to decrypt with its own private key unless an explicit policy allows otherwise.
   - Authentication credentials should map to a service identity, not only a shared server username.
   - Add authorization checks before decrypt, sign, unwrap, or future private-key operations.

@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,16 +28,14 @@ public class Server {
   private final ExecutorService executorService;
 
   private final int port;
-  private final String username;
-  private final String password;
+  private final Map<String, String> serviceCredentials;
   private final KeyValueStore store;
 
   public Server() {
 
     Environment env = loadEnvironment();
     this.port = env.port();
-    this.username = env.username();
-    this.password = env.password();
+    this.serviceCredentials = env.serviceCredentials();
     this.store = new KeyValueStore();
 
     this.executorService = Executors.newFixedThreadPool(6);
@@ -63,8 +62,9 @@ public class Server {
       BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-      if (authenticate(socket, in, out)) {
-        new ClientHandler(socket, in, out, store).run();
+      Optional<String> serviceIdentity = authenticate(socket, in, out);
+      if (serviceIdentity.isPresent()) {
+        new ClientHandler(socket, in, out, store, serviceIdentity.get()).run();
       } else {
         socket.close();
       }
@@ -74,21 +74,21 @@ public class Server {
     }
   }
 
-  private boolean authenticate(Socket socket, BufferedReader in, DataOutputStream out)
+  private Optional<String> authenticate(Socket socket, BufferedReader in, DataOutputStream out)
       throws IOException {
 
     String input = in.readLine();
     if (input == null || !isLoginCommand(input)) {
       logger.info("Authentication failed: {}", input);
       sendResponse(out, "Authentication failed");
-      return false;
+      return Optional.empty();
     }
 
     Optional<LoginCredentials> credentials = parseLoginCredentials(input);
     if (credentials.isEmpty()) {
       logger.info("Invalid input format when authenticating: {}", socket.getRemoteSocketAddress());
       sendResponse(out, "Invalid input format");
-      return false;
+      return Optional.empty();
     }
 
     String username = credentials.get().username();
@@ -98,12 +98,12 @@ public class Server {
     if (isCredentialValid(username, password)) {
       logger.info("Authentication successful for username: {}", username);
       sendResponse(out, "Authentication successful");
-      return true;
+      return Optional.of(username);
     }
 
     logger.info("Authentication failed for username: {}", username);
     sendResponse(out, "Authentication failed");
-    return false;
+    return Optional.empty();
   }
 
   private void sendResponse(DataOutputStream out, String response) throws IOException {
@@ -113,7 +113,7 @@ public class Server {
   }
 
   private boolean isCredentialValid(String u, String p) {
-    return this.username.equals(u) && this.password.equals(p);
+    return p.equals(this.serviceCredentials.get(u));
   }
 
   static Optional<LoginCredentials> parseLoginCredentials(String input) {

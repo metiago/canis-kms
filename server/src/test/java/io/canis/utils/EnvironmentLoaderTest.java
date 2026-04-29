@@ -17,6 +17,29 @@ public class EnvironmentLoaderTest {
     assertEquals("admin", environment.username());
     assertEquals("123", environment.password());
     assertEquals(3307, environment.port());
+    assertEquals("123", environment.serviceCredentials().get("admin"));
+  }
+
+  @Test
+  void testLoadEnvironmentWithServiceCredentials() {
+    Map<String, String> rawEnvironment = validEnvironment();
+    rawEnvironment.put("CANIS_SERVICE_CREDENTIALS",
+        "serviceA:secret-a, serviceB:secret:b:with:colons");
+
+    Environment environment = EnvironmentLoader.loadEnvironment(rawEnvironment);
+
+    assertEquals("secret-a", environment.serviceCredentials().get("serviceA"));
+    assertEquals("secret:b:with:colons", environment.serviceCredentials().get("serviceB"));
+    assertEquals("123", environment.serviceCredentials().get("admin"));
+  }
+
+  @Test
+  void testLoadEnvironmentRejectsInvalidServiceCredentials() {
+    Map<String, String> environment = validEnvironment();
+    environment.put("CANIS_SERVICE_CREDENTIALS", "serviceA");
+
+    assertThrows(IllegalStateException.class,
+        () -> EnvironmentLoader.loadEnvironment(environment));
   }
 
   @Test

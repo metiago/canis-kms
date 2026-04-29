@@ -1,9 +1,11 @@
 package io.canis.handlers;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +51,8 @@ public class ClientHandlerTest {
         socket,
         new BufferedReader(new StringReader(command)),
         new DataOutputStream(response),
-        store);
+        store,
+        "serviceA");
 
     handler.run();
 
@@ -58,6 +61,28 @@ public class ClientHandlerTest {
 
     assertArrayEquals(plaintext, Base64.getDecoder().decode(decryptedBase64));
     assertFalse(message.contains(privateKey));
+  }
+
+  @Test
+  void testDecryptCommandRejectsUnauthorizedService() throws Exception {
+    KeyValueStore store = mock(KeyValueStore.class);
+
+    Socket socket = mock(Socket.class);
+    when(socket.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 3307));
+
+    String command = "|decrypt serviceB " + Base64.getEncoder().encodeToString(new byte[] {1, 2, 3});
+    ByteArrayOutputStream response = new ByteArrayOutputStream();
+    ClientHandler handler = new ClientHandler(
+        socket,
+        new BufferedReader(new StringReader(command)),
+        new DataOutputStream(response),
+        store,
+        "serviceA");
+
+    handler.run();
+
+    assertEquals("|s>ERROR: Unauthorized", readResponse(response.toByteArray()));
+    verify(store, never()).get("serviceB");
   }
 
   @Test

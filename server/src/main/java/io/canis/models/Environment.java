@@ -1,4 +1,7 @@
 package io.canis.models;
 
-public record Environment(String password, String username, int port) {
+import java.util.Map;
+
+public record Environment(String password, String username, int port,
+    Map<String, String> serviceCredentials) {
 }

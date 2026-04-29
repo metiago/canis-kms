@@ -37,16 +37,27 @@ public class ClientHandler implements Runnable {
   private final BufferedReader in;
   private final DataOutputStream out;
   private final KeyValueStore store;
+  private final String serviceIdentity;
 
   public ClientHandler(Socket socket, BufferedReader in, DataOutputStream out) {
     this(socket, in, out, new KeyValueStore());
   }
 
   public ClientHandler(Socket socket, BufferedReader in, DataOutputStream out, KeyValueStore store) {
+    this(socket, in, out, store, null);
+  }
+
+  public ClientHandler(
+      Socket socket,
+      BufferedReader in,
+      DataOutputStream out,
+      KeyValueStore store,
+      String serviceIdentity) {
     this.socket = socket;
     this.in = in;
     this.out = out;
     this.store = store;
+    this.serviceIdentity = serviceIdentity;
   }
 
   public void run() {
@@ -157,6 +168,12 @@ public class ClientHandler implements Runnable {
     }
 
     String key = parts[0];
+    if (!isAuthorizedForPrivateKeyOperation(key)) {
+      logger.warn("Service {} is not authorized to decrypt with key {}", serviceIdentity, key);
+      sendResponse(out, "ERROR: Unauthorized");
+      return;
+    }
+
     Entry entry = store.get(key);
     if (entry == null || entry.getPrivateKey() == null) {
       sendResponse(out, "ERROR: Key not found");
@@ -172,5 +189,9 @@ public class ClientHandler implements Runnable {
       logger.error("Failed to decrypt payload for key {}", key, e);
       sendResponse(out, "ERROR: Decryption failed");
     }
+  }
+
+  private boolean isAuthorizedForPrivateKeyOperation(String key) {
+    return serviceIdentity != null && serviceIdentity.equals(key);
   }
 }
