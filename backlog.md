@@ -19,7 +19,7 @@
   - `|login` without `username:password` should return an error and stop processing the request.
   - Add tests for missing credentials, empty username, empty password, and passwords containing separators.
 
-- Replace insecure cipher defaults.
+- [x] Replace insecure cipher defaults.
   - Use AES-GCM with a random nonce for persisted store encryption.
   - Use RSA-OAEP if asymmetric encryption remains necessary.
   - Avoid `Cipher.getInstance("AES")` and `Cipher.getInstance("RSA")` without explicit modes and padding.
