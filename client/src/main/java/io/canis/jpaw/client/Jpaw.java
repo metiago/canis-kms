@@ -1,6 +1,7 @@
 package io.canis.jpaw.client;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,6 +37,14 @@ public interface Jpaw {
    * @throws IOException if an I/O error occurs while retrieving the value.
    */
   Map<String, Object> get(String key) throws IOException;
+
+  /**
+   * Lists all registered entries returned by the server.
+   *
+   * @return all visible entries.
+   * @throws IOException if an I/O error occurs while listing entries.
+   */
+  List<Map<String, Object>> list() throws IOException;
 
   /**
    * Decrypts encrypted data using the private key stored for the specified key.

@@ -21,6 +21,20 @@ class ParserTest {
   }
 
   @Test
+  void testParsingArrayOfMaps() {
+    var message = "|a>|ms>name:serviceA|ms>publicKey:public-key-a"
+        + "|a>|ms>name:serviceB|ms>publicKey:public-key-b";
+
+    var result = Parser.parseArray(message);
+
+    assertEquals(2, result.size());
+    assertEquals("serviceA", result.get(0).get("name"));
+    assertEquals("public-key-a", result.get(0).get("publicKey"));
+    assertEquals("serviceB", result.get(1).get("name"));
+    assertEquals("public-key-b", result.get(1).get("publicKey"));
+  }
+
+  @Test
   void testParsingMapError() {
     var k = "|as>|m>name:john|mi>age:25|ms>city:poa|ms>state:rs";
     var result = Parser.parseMap(k);

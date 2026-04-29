@@ -6,6 +6,7 @@ import static io.canis.utils.EnvironmentLoader.loadEnvironment;
 import io.canis.handlers.ClientHandler;
 import io.canis.models.Environment;
 import io.canis.models.LoginCredentials;
+import io.canis.store.KeyValueStore;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class Server {
   private final int port;
   private final String username;
   private final String password;
+  private final KeyValueStore store;
 
   public Server() {
 
@@ -35,6 +37,7 @@ public class Server {
     this.port = env.port();
     this.username = env.username();
     this.password = env.password();
+    this.store = new KeyValueStore();
 
     this.executorService = Executors.newFixedThreadPool(6);
   }
@@ -61,7 +64,7 @@ public class Server {
       DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
       if (authenticate(socket, in, out)) {
-        new ClientHandler(socket, in, out).run();
+        new ClientHandler(socket, in, out, store).run();
       } else {
         socket.close();
       }

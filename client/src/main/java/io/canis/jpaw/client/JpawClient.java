@@ -6,6 +6,7 @@ import io.canis.jpaw.pojo.Environment;
 import io.canis.jpaw.utils.Parser;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 public class JpawClient implements Jpaw, AutoCloseable {
@@ -34,6 +35,13 @@ public class JpawClient implements Jpaw, AutoCloseable {
     String command = String.format("|get %s", key);
     var socketResp = this.socketClient.sendCommand(command);
     return Parser.parseMap(socketResp);
+  }
+
+  @Override
+  public List<Map<String, Object>> list() throws IOException {
+    String command = "|list";
+    var socketResp = this.socketClient.sendCommand(command);
+    return Parser.parseArray(socketResp);
   }
 
   @Override

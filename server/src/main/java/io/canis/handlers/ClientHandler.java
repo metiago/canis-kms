@@ -42,7 +42,7 @@ public class ClientHandler implements Runnable {
     this(socket, in, out, new KeyValueStore());
   }
 
-  ClientHandler(Socket socket, BufferedReader in, DataOutputStream out, KeyValueStore store) {
+  public ClientHandler(Socket socket, BufferedReader in, DataOutputStream out, KeyValueStore store) {
     this.socket = socket;
     this.in = in;
     this.out = out;
@@ -120,8 +120,8 @@ public class ClientHandler implements Runnable {
     out.write(resp);
   }
 
-  private List<Entry> list() {
-    return List.of(new Entry());
+  private List<Entry> list() throws IOException {
+    return store.list();
   }
 
   private void add(String args) throws NoSuchAlgorithmException {

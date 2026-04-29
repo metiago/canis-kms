@@ -47,12 +47,12 @@
   - Make the public-key retrieval path explicit, for example `|get-public serviceName`.
   - Keep `get` semantics narrow so it does not imply private key retrieval.
 
-- Make `KeyValueStore` a shared server dependency.
+- [x] Make `KeyValueStore` a shared server dependency.
   - Avoid creating a new store instance per command.
   - Use one shared lock for all reads and writes.
   - Prevent concurrent requests from overwriting changes with stale file state.
 
-- Implement `list` using persisted store values.
+- [x] Implement `list` using persisted store values.
   - Replace the placeholder `List.of(new Entry())`.
   - Add client API support for parsing and returning all entries.
 
