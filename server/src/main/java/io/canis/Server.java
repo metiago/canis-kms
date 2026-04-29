@@ -7,6 +7,7 @@ import io.canis.handlers.ClientHandler;
 import io.canis.models.Environment;
 import io.canis.models.LoginCredentials;
 import io.canis.store.KeyValueStore;
+import io.canis.utils.AuditLogger;
 import io.canis.utils.BoundedLineReader;
 import io.canis.utils.BoundedLineReader.LineTooLongException;
 import java.io.BufferedReader;
@@ -15,11 +16,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,37 +30,74 @@ public class Server {
 
   private static final Logger logger = LoggerFactory.getLogger(Server.class);
   private static final int SOCKET_TIMEOUT_MS = 30_000;
+  private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
 
   private final ExecutorService executorService;
 
   private final int port;
   private final Map<String, String> serviceCredentials;
   private final KeyValueStore store;
+  private volatile boolean running;
+  private volatile ServerSocket serverSocket;
 
   public Server() {
+    this(loadEnvironment(), new KeyValueStore());
+  }
 
-    Environment env = loadEnvironment();
+  Server(Environment env, KeyValueStore store) {
     this.port = env.port();
     this.serviceCredentials = env.serviceCredentials();
-    this.store = new KeyValueStore();
-
+    this.store = store;
     this.executorService = Executors.newFixedThreadPool(6);
   }
 
   public void start() {
 
-    try (ServerSocket serverSocket = new ServerSocket(this.port)) {
+    running = true;
+    try (ServerSocket boundServerSocket = new ServerSocket(this.port)) {
+      this.serverSocket = boundServerSocket;
       logger.info("Server is listening on port {}", port);
-      while (true) {
-        Socket socket = serverSocket.accept();
-        executorService.submit(() -> handleConnection(socket));
+      while (running) {
+        try {
+          Socket socket = boundServerSocket.accept();
+          executorService.submit(() -> handleConnection(socket));
+        } catch (SocketException e) {
+          if (running) {
+            logger.error(e.getMessage(), e);
+          }
+          break;
+        }
       }
 
     } catch (IOException e) {
-      logger.error(e.getMessage(), e);
+      if (running) {
+        logger.error(e.getMessage(), e);
+      }
     } finally {
-      executorService.shutdown();
+      running = false;
+      serverSocket = null;
+      shutdownExecutor();
     }
+  }
+
+  public void stop() {
+    running = false;
+    ServerSocket currentServerSocket = serverSocket;
+    if (currentServerSocket != null) {
+      try {
+        currentServerSocket.close();
+      } catch (IOException e) {
+        logger.warn(e.getMessage(), e);
+      }
+    }
+  }
+
+  public int getPort() {
+    ServerSocket currentServerSocket = serverSocket;
+    if (currentServerSocket == null) {
+      return port;
+    }
+    return currentServerSocket.getLocalPort();
   }
 
   private void handleConnection(Socket socket) {
@@ -86,12 +126,14 @@ public class Server {
       input = BoundedLineReader.readLine(in);
     } catch (LineTooLongException e) {
       logger.warn("Authentication request exceeded maximum size: {}", socket.getRemoteSocketAddress());
+      AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "request_too_large");
       sendResponse(out, "Request too large");
       return Optional.empty();
     }
 
     if (input == null || !isLoginCommand(input)) {
-      logger.info("Authentication failed: {}", input);
+      logger.info("Authentication failed: missing or invalid login command");
+      AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "missing_login");
       sendResponse(out, "Authentication failed");
       return Optional.empty();
     }
@@ -99,6 +141,7 @@ public class Server {
     Optional<LoginCredentials> credentials = parseLoginCredentials(input);
     if (credentials.isEmpty()) {
       logger.info("Invalid input format when authenticating: {}", socket.getRemoteSocketAddress());
+      AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "invalid_login_format");
       sendResponse(out, "Invalid input format");
       return Optional.empty();
     }
@@ -109,11 +152,13 @@ public class Server {
     logger.info("Authenticating username: {}", username);
     if (isCredentialValid(username, password)) {
       logger.info("Authentication successful for username: {}", username);
+      AuditLogger.authenticationSucceeded(username, socket.getRemoteSocketAddress());
       sendResponse(out, "Authentication successful");
       return Optional.of(username);
     }
 
     logger.info("Authentication failed for username: {}", username);
+    AuditLogger.authenticationFailed(username, socket.getRemoteSocketAddress(), "invalid_credentials");
     sendResponse(out, "Authentication failed");
     return Optional.empty();
   }
@@ -157,6 +202,18 @@ public class Server {
       socket.close();
     } catch (IOException e) {
       logger.warn(e.getMessage(), e);
+    }
+  }
+
+  private void shutdownExecutor() {
+    executorService.shutdown();
+    try {
+      if (!executorService.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        executorService.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      executorService.shutdownNow();
     }
   }
 

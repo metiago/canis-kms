@@ -41,12 +41,12 @@
 //  public void testPowerBuilderGenerateFile() throws Exception {
 //    // bmg app registering itself in KMS
 //    canis.set("bmg");
-//    // legacy app write sensitive file
+//    // application writes a sensitive file
 //    String originalContent = "This is a test content for encryption.";
 //    writeToFile(originalContent);
-//    // legacy app fetch bmg keys
+//    // application fetches bmg keys
 //    Map<String, Object> bmg = canis.get("bmg");
-//    // legacy app encrypt before save it to disk
+//    // application encrypts before saving it to disk
 //    File inputFile = new File(INPUT_FILE_PATH);
 //    File encryptedFile = new File(ENCRYPTED_FILE_PATH);
 //    Cryptographer.encryptFile(inputFile, encryptedFile,

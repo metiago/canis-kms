@@ -1,10 +1,12 @@
 package io.canis.server.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.canis.utils.AsymmetricGenerator;
 import io.canis.utils.Cryptographer;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,15 +60,14 @@ public class FileEncryptionTest {
   }
 
   @Test
-  public void testDecryptFileReadsLegacyDirectRsaPayload() throws Exception {
+  public void testDecryptFileRejectsNonEnvelopePayload() throws Exception {
 
-    byte[] plaintext = "legacy payload".getBytes(StandardCharsets.UTF_8);
-    byte[] legacyCiphertext = Cryptographer.encrypt(plaintext, publicKey);
-    Files.write(encryptedFile, legacyCiphertext);
+    byte[] plaintext = "raw RSA payload".getBytes(StandardCharsets.UTF_8);
+    byte[] directRsaCiphertext = Cryptographer.encrypt(plaintext, publicKey);
+    Files.write(encryptedFile, directRsaCiphertext);
 
-    Cryptographer.decryptFile(encryptedFile.toFile(), decryptedFile.toFile(), privateKey);
-
-    assertEquals("legacy payload", Files.readString(decryptedFile, StandardCharsets.UTF_8));
+    assertThrows(IOException.class,
+        () -> Cryptographer.decryptFile(encryptedFile.toFile(), decryptedFile.toFile(), privateKey));
   }
 
   private void assertStartsWith(byte[] data, byte[] prefix) {

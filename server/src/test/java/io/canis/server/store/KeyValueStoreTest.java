@@ -1,5 +1,6 @@
 package io.canis.server.store;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -12,14 +13,25 @@ import static org.mockito.Mockito.verify;
 
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
+import io.canis.utils.SymmetricGenerator;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class KeyValueStoreTest {
+
+  private static final byte[] STORE_MAGIC = "CANISDB1".getBytes(StandardCharsets.US_ASCII);
+
+  @TempDir
+  Path tempDir;
 
   private KeyValueStore keyValueStore;
 
@@ -118,6 +130,27 @@ public class KeyValueStoreTest {
     assertNotNull(keyValueStore.get("ziggy"));
     assertNotNull(keyValueStore.get("tiago"));
     assertNotNull(keyValueStore.get("bapi"));
+  }
+
+  @Test
+  public void testPersistenceUsesVersionedStoreFormat() throws Exception {
+    Path databasePath = tempDir.resolve("db.dat");
+    Path secretKeyPath = tempDir.resolve("secret.key");
+
+    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+    store.set("serviceA", new Entry("serviceA", "public-key", "private-key"));
+
+    KeyValueStore reloadedStore = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+    Entry result = reloadedStore.get("serviceA");
+
+    assertNotNull(result);
+    assertEquals("serviceA", result.getName());
+    assertEquals("public-key", result.getPublicKey());
+    assertEquals("private-key", result.getPrivateKey());
+
+    byte[] encryptedStore = Files.readAllBytes(databasePath);
+    byte[] decryptedStore = new SymmetricGenerator(secretKeyPath.toString()).decrypt(encryptedStore);
+    assertArrayEquals(STORE_MAGIC, Arrays.copyOf(decryptedStore, STORE_MAGIC.length));
   }
 }
 

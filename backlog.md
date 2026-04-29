@@ -68,7 +68,7 @@
 
 ## P2 - Reliability and Operations
 
-- Fix Logback rolling configuration.
+- [x] Fix Logback rolling configuration.
   - Use `SizeAndTimeBasedRollingPolicy` if `%i` is required.
   - Confirm logs rotate during tests without startup errors.
 
@@ -76,15 +76,15 @@
   - Let callers and tests handle configuration failures cleanly.
   - Add unit tests for missing and invalid environment variables.
 
-- Add graceful server shutdown.
+- [x] Add graceful server shutdown.
   - Make socket tests deterministic.
   - Close the `ServerSocket` and executor service cleanly.
 
-- Improve persistence format.
+- [x] Improve persistence format.
   - Avoid Java object serialization for persisted data.
   - Use a versioned JSON or binary format with explicit schema evolution.
 
-- Add audit logging.
+- [x] Add audit logging.
   - Log authentication events, key creation, key access, deletion, and failed commands.
   - Avoid logging secrets, private keys, or raw credentials.
 

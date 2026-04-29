@@ -15,6 +15,7 @@ import static io.canis.handlers.Commands.VERSION;
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
 import io.canis.utils.AsymmetricGenerator;
+import io.canis.utils.AuditLogger;
 import io.canis.utils.BoundedLineReader;
 import io.canis.utils.BoundedLineReader.LineTooLongException;
 import io.canis.utils.Converter;
@@ -89,6 +90,7 @@ public class ClientHandler implements Runnable {
       return BoundedLineReader.readLine(in);
     } catch (LineTooLongException e) {
       logger.warn("Request exceeded maximum size for IP {}", this.socket.getRemoteSocketAddress());
+      AuditLogger.commandRejected(serviceIdentity, this.socket.getRemoteSocketAddress(), "request_too_large");
       sendResponse(out, "ERROR: Request too large");
       return null;
     }
@@ -109,17 +111,20 @@ public class ClientHandler implements Runnable {
       logger.info("Adding key for IP {}", this.socket.getRemoteSocketAddress());
       String args = input.substring(4).trim();
       add(args);
+      AuditLogger.keyCreated(serviceIdentity, args, this.socket.getRemoteSocketAddress());
       sendResponse(out, OK_COMMAND);
 
     } else if (input.startsWith(GET_PUBLIC)) {
       logger.info("Getting public key for IP {}", this.socket.getRemoteSocketAddress());
       String args = input.substring(GET_PUBLIC.length()).trim();
+      AuditLogger.keyAccessed(serviceIdentity, args, this.socket.getRemoteSocketAddress());
       sendResponse(out, getPublicKey(args));
 
     } else if (input.startsWith(GET)) {
       logger.info("Getting key for IP {}", this.socket.getRemoteSocketAddress());
       String args = input.substring(4).trim();
       Entry entry = get(args);
+      AuditLogger.keyAccessed(serviceIdentity, args, this.socket.getRemoteSocketAddress());
       var bytes = Converter.toMap(entry.toMap()).getBytes(StandardCharsets.UTF_8);
       out.writeInt(bytes.length);
       out.write(bytes);
@@ -131,6 +136,7 @@ public class ClientHandler implements Runnable {
     } else if (input.equals(LIST)) {
       logger.info("Listing keys for IP {}", this.socket.getRemoteSocketAddress());
       List<Entry> entries = list();
+      AuditLogger.keyListed(serviceIdentity, this.socket.getRemoteSocketAddress());
       var bytes = Converter.toArrayOfMaps(entries).getBytes(StandardCharsets.UTF_8);
       out.writeInt(bytes.length);
       out.write(bytes);
@@ -139,10 +145,12 @@ public class ClientHandler implements Runnable {
       logger.info("Deleting key for IP {}", this.socket.getRemoteSocketAddress());
       String args = input.substring(4).trim();
       delete(args);
+      AuditLogger.keyDeleted(serviceIdentity, args, this.socket.getRemoteSocketAddress());
       sendResponse(out, OK_COMMAND);
 
     } else {
-      logger.warn("Invalid command received from IP {}: {}", this.socket.getRemoteSocketAddress(), input);
+      logger.warn("Invalid command received from IP {}", this.socket.getRemoteSocketAddress());
+      AuditLogger.commandRejected(serviceIdentity, this.socket.getRemoteSocketAddress(), "unknown_command");
       var resp = INVALID_COMMAND.getBytes(StandardCharsets.UTF_8);
       out.writeInt(resp.length);
       out.write(resp);
@@ -196,6 +204,8 @@ public class ClientHandler implements Runnable {
   private void decrypt(String args, DataOutputStream out) throws IOException {
     String[] parts = args.split("\\s+", 2);
     if (parts.length < 2) {
+      AuditLogger.decryptFailed(
+          serviceIdentity, "unknown", this.socket.getRemoteSocketAddress(), "invalid_input_format");
       sendResponse(out, "ERROR: Invalid input format");
       return;
     }
@@ -205,6 +215,7 @@ public class ClientHandler implements Runnable {
 
     Entry entry = store.get(key);
     if (entry == null || entry.getPrivateKey() == null) {
+      AuditLogger.decryptFailed(serviceIdentity, key, this.socket.getRemoteSocketAddress(), "key_not_found");
       sendResponse(out, "ERROR: Key not found");
       return;
     }
@@ -213,9 +224,11 @@ public class ClientHandler implements Runnable {
       byte[] encryptedData = Base64.getDecoder().decode(parts[1]);
       PrivateKey privateKey = AsymmetricGenerator.stringToPrivateKey(entry.getPrivateKey());
       byte[] decryptedData = Cryptographer.decrypt(encryptedData, privateKey);
+      AuditLogger.decryptSucceeded(serviceIdentity, key, this.socket.getRemoteSocketAddress());
       sendResponse(out, Base64.getEncoder().encodeToString(decryptedData));
     } catch (Exception e) {
       logger.error("Failed to decrypt payload for key {}", key, e);
+      AuditLogger.decryptFailed(serviceIdentity, key, this.socket.getRemoteSocketAddress(), "decryption_failed");
       sendResponse(out, "ERROR: Decryption failed");
     }
   }

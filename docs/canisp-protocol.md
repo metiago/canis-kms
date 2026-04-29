@@ -191,3 +191,16 @@ ciphertext, and authentication tag.
 To decrypt a shared file, the client reads the envelope and sends only the wrapped file key to
 CANIS through `|decrypt`. CANIS unwraps the file key with the server-side private key and returns
 the unwrapped file key. The private key stays on the server.
+
+## Persistence
+
+CANIS persists key metadata in an encrypted `CANISDB1` binary store. The store is encrypted with
+AES-GCM using the secret key configured by `CANIS_SECRET_KEY`.
+CANIS encrypted data must use the current `CANISGCM1`, `CANISHYB1`, and `CANISDB1` envelopes.
+
+## Audit Events
+
+CANIS emits structured audit log events through the `io.canis.audit` logger for authentication,
+key creation, key access, key deletion, decrypt success/failure, and rejected commands. Audit logs
+include identities, key names, remote addresses, and failure reasons. They do not include raw
+credentials, private keys, encrypted payloads, or decrypted payloads.

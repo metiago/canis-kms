@@ -16,15 +16,11 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SymmetricGenerator {
 
-  private static final Logger logger = LoggerFactory.getLogger(SymmetricGenerator.class);
   private static final String KEY_ALGORITHM = "AES";
   private static final String AES_GCM_TRANSFORMATION = "AES/GCM/NoPadding";
-  private static final String LEGACY_AES_TRANSFORMATION = "AES/ECB/PKCS5Padding";
   private static final byte[] GCM_MAGIC = "CANISGCM1".getBytes(StandardCharsets.US_ASCII);
   private static final int GCM_IV_LENGTH_BYTES = 12;
   private static final int GCM_TAG_LENGTH_BITS = 128;
@@ -80,7 +76,7 @@ public class SymmetricGenerator {
 
   public byte[] decrypt(byte[] data) throws Exception {
     if (!isGcmEnvelope(data)) {
-      return decryptLegacyData(data);
+      throw new IOException("Invalid CANIS encrypted data format.");
     }
 
     byte[] iv = Arrays.copyOfRange(data, GCM_MAGIC.length, GCM_MAGIC.length + GCM_IV_LENGTH_BYTES);
@@ -102,13 +98,6 @@ public class SymmetricGenerator {
       }
     }
     return true;
-  }
-
-  private byte[] decryptLegacyData(byte[] data) throws Exception {
-    logger.warn("Decrypting legacy AES data without an authenticated envelope");
-    Cipher cipher = Cipher.getInstance(LEGACY_AES_TRANSFORMATION);
-    cipher.init(Cipher.DECRYPT_MODE, secretKey);
-    return cipher.doFinal(data);
   }
 
   private void saveKeyToFile(String keyString) throws IOException {

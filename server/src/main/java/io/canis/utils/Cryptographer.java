@@ -53,15 +53,11 @@ public class Cryptographer {
 
     public static void decryptFile(File inputFile, File outputFile, PrivateKey privateKey) throws Exception {
         byte[] inputBytes = Files.readAllBytes(inputFile.toPath());
-        byte[] outputBytes;
-
-        if (isHybridEnvelope(inputBytes)) {
-            outputBytes = decryptHybridEnvelope(inputBytes, privateKey);
-        } else {
-            outputBytes = decrypt(inputBytes, privateKey);
+        if (!isHybridEnvelope(inputBytes)) {
+            throw new IOException("Invalid CANIS file envelope.");
         }
 
-        Files.write(outputFile.toPath(), outputBytes);
+        Files.write(outputFile.toPath(), decryptHybridEnvelope(inputBytes, privateKey));
     }
 
     public static void encryptFile(File inputFile, File outputFile, PublicKey publicKey) throws Exception {

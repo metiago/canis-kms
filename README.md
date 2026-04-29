@@ -78,9 +78,9 @@ export CANIS_PORT=3307;
 export CANIS_SERVER_HOST=localhost;
 # client server port
 export CANIS_SERVER_PORT=3307;
-# legacy single service username
+# service username
 export CANIS_USERNAME=admin
-# legacy single service password
+# service password
 export CANIS_PASSWORD=123;
 # optional comma-separated credentials for additional authenticated clients
 export CANIS_SERVICE_CREDENTIALS=serviceA:secret-a,serviceB:secret-b;
