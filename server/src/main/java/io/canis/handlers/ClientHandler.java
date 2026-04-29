@@ -1,6 +1,7 @@
 package io.canis.handlers;
 
 import static io.canis.handlers.Commands.ADD;
+import static io.canis.handlers.Commands.CANISP_VERSION;
 import static io.canis.handlers.Commands.DECRYPT;
 import static io.canis.handlers.Commands.DELETE;
 import static io.canis.handlers.Commands.GET;
@@ -9,6 +10,7 @@ import static io.canis.handlers.Commands.HEALTH;
 import static io.canis.handlers.Commands.INVALID_COMMAND;
 import static io.canis.handlers.Commands.LIST;
 import static io.canis.handlers.Commands.OK_COMMAND;
+import static io.canis.handlers.Commands.VERSION;
 
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
@@ -83,7 +85,11 @@ public class ClientHandler implements Runnable {
   private void executeCommand(String input, DataOutputStream out)
       throws IOException, NoSuchAlgorithmException {
 
-    if (input.equals(HEALTH)) {
+    if (input.equals(VERSION)) {
+      logger.info("Returning CANISP version for IP {}", this.socket.getRemoteSocketAddress());
+      sendResponse(out, CANISP_VERSION);
+
+    } else if (input.equals(HEALTH)) {
       logger.info("Performing health check for IP {}", this.socket.getRemoteSocketAddress());
       sendResponse(out, OK_COMMAND);
 

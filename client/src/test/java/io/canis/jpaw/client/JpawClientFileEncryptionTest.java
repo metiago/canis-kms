@@ -42,6 +42,15 @@ class JpawClientFileEncryptionTest {
   SocketClient socketClient;
 
   @Test
+  void testProtocolVersionUsesVersionCommand() throws Exception {
+    JpawClient client = new JpawClient(socketClient);
+    when(socketClient.sendCommand(eq("|version"))).thenReturn("|s>CANISP/1");
+
+    assertEquals("CANISP/1", client.protocolVersion());
+    verify(socketClient).sendCommand("|version");
+  }
+
+  @Test
   void testEncryptAndDecryptFileThroughServerSideKeyUnwrap() throws Exception {
     KeyPair keyPair = generateKeyPair();
     String publicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());

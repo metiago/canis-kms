@@ -33,6 +33,12 @@ public class JpawClient implements Jpaw, AutoCloseable {
   }
 
   @Override
+  public String protocolVersion() throws IOException {
+    String command = "|version";
+    return Parser.parseString(this.socketClient.sendCommand(command));
+  }
+
+  @Override
   public String set(String key) throws IOException {
     String command = String.format("|set %s", key);
     return this.socketClient.sendCommand(command);

@@ -48,6 +48,13 @@ class JpawTest {
   }
 
   @Test
+  void testProtocolVersionCommand() throws IOException {
+    when(jPaw.protocolVersion()).thenReturn("CANISP/1");
+    String result = jPaw.protocolVersion();
+    assertEquals("CANISP/1", result);
+  }
+
+  @Test
   void testAddCommand() throws IOException {
     var expected = "OK";
     when(jPaw.set(anyString())).thenReturn("OK");

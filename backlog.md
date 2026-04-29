@@ -52,7 +52,7 @@
   - Replace the placeholder `List.of(new Entry())`.
   - Add client API support for parsing and returning all entries.
 
-- Document and version the CANISP protocol.
+- [x] Document and version the CANISP protocol.
   - CANISP is the internal wire protocol used by the official Java client.
   - External applications should use the published `client` Maven artifact instead of writing raw socket messages.
   - Protocol changes should be versioned to preserve client/server compatibility.

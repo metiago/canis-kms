@@ -21,6 +21,14 @@ public interface Jpaw {
   String health() throws IOException;
 
   /**
+   * Retrieves the CANISP protocol version supported by the connected server.
+   *
+   * @return the protocol version, for example {@code CANISP/1}.
+   * @throws IOException if an I/O error occurs while retrieving the version.
+   */
+  String protocolVersion() throws IOException;
+
+  /**
    * Sets a value associated with the specified key.
    *
    * @param key the key to associate with the value.
