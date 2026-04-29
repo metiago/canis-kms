@@ -15,7 +15,7 @@
   - A service should send encrypted data or an encrypted file key to CANIS and receive only the decrypted result it is authorized to receive.
   - Start with decrypting small RSA-encrypted payloads, then migrate to envelope encryption for real files.
 
-- Fix malformed login handling.
+- [x] Fix malformed login handling.
   - `|login` without `username:password` should return an error and stop processing the request.
   - Add tests for missing credentials, empty username, empty password, and passwords containing separators.
 

@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -73,23 +74,21 @@ public class Server {
       throws IOException {
 
     String input = in.readLine();
-    if (input == null || !input.startsWith(LOGIN)) {
+    if (input == null || !isLoginCommand(input)) {
       logger.info("Authentication failed: {}", input);
       sendResponse(out, "Authentication failed");
       return false;
     }
 
-    String args = input.substring(LOGIN.length()).trim();
-    String[] parts = args.split(":", 2);
-
-    if (parts.length < 2) {
+    Optional<LoginCredentials> credentials = parseLoginCredentials(input);
+    if (credentials.isEmpty()) {
       logger.info("Invalid input format when authenticating: {}", socket.getRemoteSocketAddress());
       sendResponse(out, "Invalid input format");
       return false;
     }
 
-    String username = parts[0];
-    String password = parts[1];
+    String username = credentials.get().username();
+    String password = credentials.get().password();
 
     logger.info("Authenticating username: {}", username);
     if (isCredentialValid(username, password)) {
@@ -111,6 +110,33 @@ public class Server {
 
   private boolean isCredentialValid(String u, String p) {
     return this.username.equals(u) && this.password.equals(p);
+  }
+
+  static Optional<LoginCredentials> parseLoginCredentials(String input) {
+    if (!isLoginCommand(input)) {
+      return Optional.empty();
+    }
+
+    String args = input.substring(LOGIN.length()).trim();
+    int separator = args.indexOf(':');
+    if (separator < 0) {
+      return Optional.empty();
+    }
+
+    String username = args.substring(0, separator).trim();
+    String password = args.substring(separator + 1).trim();
+    if (username.isEmpty() || password.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new LoginCredentials(username, password));
+  }
+
+  private static boolean isLoginCommand(String input) {
+    return input != null && (input.equals(LOGIN) || input.startsWith(LOGIN + " "));
+  }
+
+  record LoginCredentials(String username, String password) {
   }
 
   private void closeQuietly(Socket socket) {
