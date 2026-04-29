@@ -52,8 +52,8 @@ class JpawClientFileEncryptionTest {
     String originalContent = "shared file content\n".repeat(200);
     Files.writeString(inputFile, originalContent, StandardCharsets.UTF_8);
 
-    when(socketClient.sendCommand(eq("|get serviceA")))
-        .thenReturn("|ms>name:serviceA|ms>publicKey:" + publicKey);
+    when(socketClient.sendCommand(eq("|get-public serviceA")))
+        .thenReturn("|s>" + publicKey);
     when(socketClient.sendCommand(startsWith("|decrypt serviceA ")))
         .thenAnswer(invocation -> {
           String command = invocation.getArgument(0);
@@ -67,7 +67,7 @@ class JpawClientFileEncryptionTest {
     client.decryptFile("serviceA", encryptedFile.toFile(), decryptedFile.toFile());
 
     assertEquals(originalContent, Files.readString(decryptedFile, StandardCharsets.UTF_8));
-    verify(socketClient).sendCommand("|get serviceA");
+    verify(socketClient).sendCommand("|get-public serviceA");
     verify(socketClient).sendCommand(startsWith("|decrypt serviceA "));
   }
 

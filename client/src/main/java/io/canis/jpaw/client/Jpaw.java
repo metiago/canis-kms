@@ -40,6 +40,15 @@ public interface Jpaw {
   Map<String, Object> get(String key) throws IOException;
 
   /**
+   * Retrieves the public key for a registered key.
+   *
+   * @param key the registered key whose public key should be returned.
+   * @return the public key encoded as Base64.
+   * @throws IOException if an I/O error occurs or the key does not exist.
+   */
+  String getPublicKey(String key) throws IOException;
+
+  /**
    * Lists all registered entries returned by the server.
    *
    * @return all visible entries.

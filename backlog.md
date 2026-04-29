@@ -39,13 +39,7 @@
 
 ## P1 - Storage and Protocol
 
-- Add multi-recipient envelope encryption support.
-  - Encrypt file content once with a generated symmetric data encryption key.
-  - Wrap that data encryption key separately with each recipient service public key.
-  - Store recipient key id, wrapped key, nonce, ciphertext, tag, and envelope version.
-  - Allow each recipient service to ask CANIS to unwrap only its own wrapped key.
-
-- Add public-key lookup command.
+- [x] Add public-key lookup command.
   - Make the public-key retrieval path explicit, for example `|get-public serviceName`.
   - Keep `get` semantics narrow so it does not imply private key retrieval.
 

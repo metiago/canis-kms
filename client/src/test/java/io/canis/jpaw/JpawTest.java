@@ -63,6 +63,13 @@ class JpawTest {
   }
 
   @Test
+  void testGetPublicKeyCommand() throws IOException {
+    when(jPaw.getPublicKey(anyString())).thenReturn("public-key");
+    String result = jPaw.getPublicKey("Mikey");
+    assertEquals("public-key", result);
+  }
+
+  @Test
   void testDeleteCommand() throws IOException {
     when(jPaw.delete(anyString())).thenReturn(true);
     boolean result = jPaw.delete("Alice");

@@ -6,6 +6,7 @@ public class Commands {
   public static final String HEALTH = "|health";
   public static final String ADD = "|set ";
   public static final String LIST = "|list";
+  public static final String GET_PUBLIC = "|get-public ";
   public static final String GET = "|get";
   public static final String DELETE = "|del ";
   public static final String DECRYPT = "|decrypt ";

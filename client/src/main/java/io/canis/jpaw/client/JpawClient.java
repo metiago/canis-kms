@@ -46,6 +46,18 @@ public class JpawClient implements Jpaw, AutoCloseable {
   }
 
   @Override
+  public String getPublicKey(String key) throws IOException {
+    String command = String.format("|get-public %s", key);
+    String response = Parser.parseString(this.socketClient.sendCommand(command));
+
+    if (response.startsWith("ERROR:")) {
+      throw new IOException(response);
+    }
+
+    return response;
+  }
+
+  @Override
   public List<Map<String, Object>> list() throws IOException {
     String command = "|list";
     var socketResp = this.socketClient.sendCommand(command);
@@ -67,14 +79,8 @@ public class JpawClient implements Jpaw, AutoCloseable {
 
   @Override
   public void encryptFile(String key, File inputFile, File outputFile) throws IOException {
-    Map<String, Object> entry = get(key);
-    Object publicKeyValue = entry.get("publicKey");
-    if (!(publicKeyValue instanceof String publicKeyString) || publicKeyString.isBlank()) {
-      throw new IOException("Public key not found for key: " + key);
-    }
-
     try {
-      PublicKey publicKey = EnvelopeCryptographer.publicKeyFromString(publicKeyString);
+      PublicKey publicKey = EnvelopeCryptographer.publicKeyFromString(getPublicKey(key));
       EnvelopeCryptographer.encryptFile(inputFile, outputFile, publicKey);
     } catch (GeneralSecurityException e) {
       throw new IOException("Failed to encrypt file.", e);

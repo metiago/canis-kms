@@ -92,6 +92,31 @@ public class ClientHandlerTest {
     verify(store).list();
   }
 
+  @Test
+  void testGetPublicCommandReturnsOnlyPublicKey() throws Exception {
+    KeyValueStore store = mock(KeyValueStore.class);
+    when(store.get("serviceA")).thenReturn(
+        new Entry("serviceA", "public-key-a", "private-key-a"));
+
+    Socket socket = mock(Socket.class);
+    when(socket.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 3307));
+
+    ByteArrayOutputStream response = new ByteArrayOutputStream();
+    ClientHandler handler = new ClientHandler(
+        socket,
+        new BufferedReader(new StringReader("|get-public serviceA")),
+        new DataOutputStream(response),
+        store);
+
+    handler.run();
+
+    String message = readResponse(response.toByteArray());
+
+    assertTrue(message.startsWith("|s>"));
+    assertTrue(message.contains("public-key-a"));
+    assertFalse(message.contains("private-key-a"));
+  }
+
   private String readResponse(byte[] bytes) throws Exception {
     try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes))) {
       int length = in.readInt();

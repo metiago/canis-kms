@@ -4,6 +4,7 @@ import static io.canis.handlers.Commands.ADD;
 import static io.canis.handlers.Commands.DECRYPT;
 import static io.canis.handlers.Commands.DELETE;
 import static io.canis.handlers.Commands.GET;
+import static io.canis.handlers.Commands.GET_PUBLIC;
 import static io.canis.handlers.Commands.HEALTH;
 import static io.canis.handlers.Commands.INVALID_COMMAND;
 import static io.canis.handlers.Commands.LIST;
@@ -92,6 +93,11 @@ public class ClientHandler implements Runnable {
       add(args);
       sendResponse(out, OK_COMMAND);
 
+    } else if (input.startsWith(GET_PUBLIC)) {
+      logger.info("Getting public key for IP {}", this.socket.getRemoteSocketAddress());
+      String args = input.substring(GET_PUBLIC.length()).trim();
+      sendResponse(out, getPublicKey(args));
+
     } else if (input.startsWith(GET)) {
       logger.info("Getting key for IP {}", this.socket.getRemoteSocketAddress());
       String args = input.substring(4).trim();
@@ -153,6 +159,15 @@ public class ClientHandler implements Runnable {
   private Entry get(String key) {
     logger.info("Getting by key: {}", key);
     return Optional.ofNullable(store.get(key)).orElse(new Entry());
+  }
+
+  private String getPublicKey(String key) {
+    logger.info("Getting public key by key: {}", key);
+    Entry entry = store.get(key);
+    if (entry == null || entry.getPublicKey() == null) {
+      return "ERROR: Key not found";
+    }
+    return entry.getPublicKey();
   }
 
   private void delete(String key) {
