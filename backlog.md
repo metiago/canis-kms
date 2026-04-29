@@ -93,8 +93,8 @@
 
 ## P3 - Developer Experience and Tests
 
-- Align README prerequisites with Maven configuration.
-  - The README says Java 8+, but the project compiles for Java 17.
+- [x] Align README prerequisites with Maven configuration.
+  - The README should match the Maven compiler target of Java 17.
 
 - Add end-to-end client/server tests.
   - Start the server on an ephemeral port.

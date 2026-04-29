@@ -61,7 +61,8 @@ individual maps—enabling flexible and structured data communication between ap
 - Data Storage: File I/O for `.dat` encrypted file persistence
 
 ### Prerequisites
-Java 8+
+- Java 17+
+- Maven
 
 ### Testing & Running
 
