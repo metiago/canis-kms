@@ -29,11 +29,13 @@
   - Encrypt file content with AES-GCM.
   - Encrypt the data encryption key with RSA-OAEP.
   - Store nonce, encrypted key, ciphertext, and authentication tag in a versioned envelope.
+  - Add official client support for encrypting and decrypting file envelopes without exposing private keys.
 
-- [x] Define service identity and authorization for private-key operations.
-  - A service should only be able to decrypt with its own private key unless an explicit policy allows otherwise.
-  - Authentication credentials should map to a service identity, not only a shared server username.
-  - Add authorization checks before decrypt, sign, unwrap, or future private-key operations.
+- [x] Define authenticated shared access for private-key operations.
+  - CANIS behaves like a database-style KMS service accessed through the official client library.
+  - Any authenticated client can request decrypt operations with stored keys so services can read shared encrypted files.
+  - Private keys remain server-side; authentication happens at the connection boundary.
+  - Future policy support can add optional per-key restrictions without changing the default shared-access model.
 
 ## P1 - Storage and Protocol
 
@@ -56,10 +58,11 @@
   - Replace the placeholder `List.of(new Entry())`.
   - Add client API support for parsing and returning all entries.
 
-- Replace the custom string protocol or add escaping.
-  - Current parsing breaks when values contain `:`, `|m`, or `|a>`.
-  - Prefer length-prefixed JSON messages for commands and responses.
-  - Version the protocol before adding more commands.
+- Document and version the CANISP protocol.
+  - CANISP is the internal wire protocol used by the official Java client.
+  - External applications should use the published `client` Maven artifact instead of writing raw socket messages.
+  - Protocol changes should be versioned to preserve client/server compatibility.
+  - Server command parsing should stay aligned with `JpawClient` command construction.
 
 - Add socket timeouts and bounded request sizes.
   - Prevent clients from holding threads indefinitely.

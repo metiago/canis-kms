@@ -1,5 +1,6 @@
 package io.canis.jpaw.client;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,27 @@ public interface Jpaw {
    * @throws IOException if an I/O error occurs while decrypting the data.
    */
   byte[] decrypt(String key, byte[] encryptedData) throws IOException;
+
+  /**
+   * Encrypts a file using a generated AES file key wrapped with the public key stored in CANIS.
+   *
+   * @param key the registered key whose public key should wrap the file key.
+   * @param inputFile plaintext file to encrypt.
+   * @param outputFile encrypted envelope output file.
+   * @throws IOException if an I/O or encryption error occurs.
+   */
+  void encryptFile(String key, File inputFile, File outputFile) throws IOException;
+
+  /**
+   * Decrypts a CANIS envelope file by asking CANIS to unwrap the encrypted file key.
+   * The private key remains on the server.
+   *
+   * @param key the registered key whose private key should unwrap the file key.
+   * @param inputFile encrypted envelope input file.
+   * @param outputFile plaintext output file.
+   * @throws IOException if an I/O or decryption error occurs.
+   */
+  void decryptFile(String key, File inputFile, File outputFile) throws IOException;
 
   /**
    * Deletes the value associated with the specified key.

@@ -6,8 +6,10 @@ intermediary for applications that handle sensitive data.
 
 Applications generating text files containing sensitive information leverage CANIS for encryption
 and decryption. Before saving such files to disk, these applications encrypt them using a public key
-stored in CANIS. Later, when processing the encrypted files, applications ask CANIS to decrypt data
-with their authorized private key, keeping private keys on the server.
+stored in CANIS. Later, when processing shared encrypted files, authenticated applications ask CANIS
+to decrypt data with the stored private key, keeping private keys on the server.
+The official client exposes file envelope helpers so applications can encrypt shared files and
+decrypt them by asking CANIS to unwrap the file key.
 
 In addition to its key management functionality, CANIS provides a key-value store where the key is
 an arbitrary identifier, and the value is an object containing attributes such as name, public key,
@@ -75,7 +77,7 @@ export CANIS_PORT=3307;
 export CANIS_USERNAME=admin
 # legacy single service password
 export CANIS_PASSWORD=123;
-# optional comma-separated service credentials
+# optional comma-separated credentials for additional authenticated clients
 export CANIS_SERVICE_CREDENTIALS=serviceA:secret-a,serviceB:secret-b;
 # secret file name
 export CANIS_SECRET_KEY=/my/secret/location/secret.txt;

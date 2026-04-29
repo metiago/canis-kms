@@ -168,11 +168,7 @@ public class ClientHandler implements Runnable {
     }
 
     String key = parts[0];
-    if (!isAuthorizedForPrivateKeyOperation(key)) {
-      logger.warn("Service {} is not authorized to decrypt with key {}", serviceIdentity, key);
-      sendResponse(out, "ERROR: Unauthorized");
-      return;
-    }
+    logger.info("Service {} requested decrypt with key {}", serviceIdentity, key);
 
     Entry entry = store.get(key);
     if (entry == null || entry.getPrivateKey() == null) {
@@ -189,9 +185,5 @@ public class ClientHandler implements Runnable {
       logger.error("Failed to decrypt payload for key {}", key, e);
       sendResponse(out, "ERROR: Decryption failed");
     }
-  }
-
-  private boolean isAuthorizedForPrivateKeyOperation(String key) {
-    return serviceIdentity != null && serviceIdentity.equals(key);
   }
 }

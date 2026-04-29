@@ -3,8 +3,12 @@ package io.canis.jpaw.client;
 import static io.canis.jpaw.utils.EnvironmentLoader.loadEnvironment;
 
 import io.canis.jpaw.pojo.Environment;
+import io.canis.jpaw.utils.EnvelopeCryptographer;
 import io.canis.jpaw.utils.Parser;
+import java.io.File;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.PublicKey;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +20,10 @@ public class JpawClient implements Jpaw, AutoCloseable {
   public JpawClient() throws IOException {
     Environment env = loadEnvironment();
     this.socketClient = new SocketClient("0.0.0.0", env.getPort(), env.getUsername(), env.getPassword());
+  }
+
+  JpawClient(SocketClient socketClient) {
+    this.socketClient = socketClient;
   }
 
   @Override
@@ -55,6 +63,32 @@ public class JpawClient implements Jpaw, AutoCloseable {
     }
 
     return Base64.getDecoder().decode(response);
+  }
+
+  @Override
+  public void encryptFile(String key, File inputFile, File outputFile) throws IOException {
+    Map<String, Object> entry = get(key);
+    Object publicKeyValue = entry.get("publicKey");
+    if (!(publicKeyValue instanceof String publicKeyString) || publicKeyString.isBlank()) {
+      throw new IOException("Public key not found for key: " + key);
+    }
+
+    try {
+      PublicKey publicKey = EnvelopeCryptographer.publicKeyFromString(publicKeyString);
+      EnvelopeCryptographer.encryptFile(inputFile, outputFile, publicKey);
+    } catch (GeneralSecurityException e) {
+      throw new IOException("Failed to encrypt file.", e);
+    }
+  }
+
+  @Override
+  public void decryptFile(String key, File inputFile, File outputFile) throws IOException {
+    try {
+      EnvelopeCryptographer.decryptFile(inputFile, outputFile,
+          encryptedDataKey -> decrypt(key, encryptedDataKey));
+    } catch (GeneralSecurityException e) {
+      throw new IOException("Failed to decrypt file.", e);
+    }
   }
 
   @Override
