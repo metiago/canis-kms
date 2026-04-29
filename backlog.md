@@ -24,7 +24,7 @@
   - Use RSA-OAEP if asymmetric encryption remains necessary.
   - Avoid `Cipher.getInstance("AES")` and `Cipher.getInstance("RSA")` without explicit modes and padding.
 
-- Replace direct RSA file encryption with hybrid encryption.
+- [x] Replace direct RSA file encryption with hybrid encryption.
   - Generate a random data encryption key per file.
   - Encrypt file content with AES-GCM.
   - Encrypt the data encryption key with RSA-OAEP.

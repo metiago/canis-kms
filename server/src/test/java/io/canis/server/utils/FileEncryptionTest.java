@@ -1,78 +1,79 @@
 package io.canis.server.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.canis.utils.Cryptographer;
 import io.canis.utils.AsymmetricGenerator;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import io.canis.utils.Cryptographer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class FileEncryptionTest {
 
-  private static final String INPUT_FILE_PATH = System.getProperty("user.dir") + "\\content.txt";
-  private static final String ENCRYPTED_FILE_PATH = System.getProperty("user.dir") + "\\file.enc";
-  private static final String DECRYPTED_FILE_PATH = System.getProperty("user.dir") + "\\dec_file.txt";
+  private static final byte[] HYBRID_ENVELOPE_MAGIC =
+      "CANISHYB1".getBytes(StandardCharsets.US_ASCII);
+
+  @TempDir
+  Path tempDir;
 
   private PublicKey publicKey;
   private PrivateKey privateKey;
+  private Path inputFile;
+  private Path encryptedFile;
+  private Path decryptedFile;
 
   @BeforeEach
   public void setUp() throws NoSuchAlgorithmException {
     KeyPair keyPair = AsymmetricGenerator.generateKeyPair();
     publicKey = keyPair.getPublic();
     privateKey = keyPair.getPrivate();
-    cleanUpFiles();
+    inputFile = tempDir.resolve("content.txt");
+    encryptedFile = tempDir.resolve("file.enc");
+    decryptedFile = tempDir.resolve("dec_file.txt");
   }
 
   @Test
-  public void testEncryptDecryptFile() throws Exception {
+  public void testEncryptDecryptFileUsesHybridEnvelope() throws Exception {
 
-    String originalContent = "This is a test content for encryption.";
-    writeToFile(INPUT_FILE_PATH, originalContent);
+    String originalContent = "This is a test content for encryption.\n".repeat(200);
+    Files.writeString(inputFile, originalContent, StandardCharsets.UTF_8);
 
-    File inputFile = new File(INPUT_FILE_PATH);
-    File encryptedFile = new File(ENCRYPTED_FILE_PATH);
-    Cryptographer.encryptFile(inputFile, encryptedFile, publicKey);
+    Cryptographer.encryptFile(inputFile.toFile(), encryptedFile.toFile(), publicKey);
 
-    File decryptedFile = new File(DECRYPTED_FILE_PATH);
-    Cryptographer.decryptFile(encryptedFile, decryptedFile, privateKey);
+    byte[] encryptedBytes = Files.readAllBytes(encryptedFile);
+    assertStartsWith(encryptedBytes, HYBRID_ENVELOPE_MAGIC);
 
-    String decryptedContent = new String(Files.readAllBytes(decryptedFile.toPath()));
+    Cryptographer.decryptFile(encryptedFile.toFile(), decryptedFile.toFile(), privateKey);
+
+    String decryptedContent = Files.readString(decryptedFile, StandardCharsets.UTF_8);
     assertEquals(originalContent, decryptedContent, "The decrypted content should match the original content.");
   }
 
-  private void writeToFile(String filePath, String content) throws IOException {
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-      writer.write(content);
+  @Test
+  public void testDecryptFileReadsLegacyDirectRsaPayload() throws Exception {
+
+    byte[] plaintext = "legacy payload".getBytes(StandardCharsets.UTF_8);
+    byte[] legacyCiphertext = Cryptographer.encrypt(plaintext, publicKey);
+    Files.write(encryptedFile, legacyCiphertext);
+
+    Cryptographer.decryptFile(encryptedFile.toFile(), decryptedFile.toFile(), privateKey);
+
+    assertEquals("legacy payload", Files.readString(decryptedFile, StandardCharsets.UTF_8));
+  }
+
+  private void assertStartsWith(byte[] data, byte[] prefix) {
+    assertTrue(data.length >= prefix.length);
+    for (int i = 0; i < prefix.length; i++) {
+      assertEquals(prefix[i], data[i]);
     }
-  }
-
-  private void cleanUpFiles() {
-    deleteFile(INPUT_FILE_PATH);
-    deleteFile(ENCRYPTED_FILE_PATH);
-    deleteFile(DECRYPTED_FILE_PATH);
-  }
-
-  private void deleteFile(String filePath) {
-    File file = new File(filePath);
-    if (file.exists()) {
-      file.delete();
-    }
-  }
-
-  @AfterEach
-  public void tearDown() {
-    cleanUpFiles();
   }
 }
 
