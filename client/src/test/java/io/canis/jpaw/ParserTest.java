@@ -3,6 +3,7 @@ package io.canis.jpaw;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.canis.jpaw.utils.Parser;
 import org.junit.jupiter.api.Test;
@@ -53,10 +54,54 @@ class ParserTest {
   }
 
   @Test
+  void testStringParsingOnlyRemovesLeadingPrefix() {
+    var message = "|s>Hello |s> World";
+    var result = Parser.parseString(message);
+    assertEquals("Hello |s> World", result);
+  }
+
+  @Test
   void testIntegerParsing() {
     var message = "|i>100";
     var result = Parser.parseInt(message);
     assertEquals(100, result, "Parsed integer does not match expected value");
+  }
+
+  @Test
+  void testParsingMapValueContainingColon() {
+    var message = "|ms>name:service:with:colon|mi>age:25";
+
+    var result = Parser.parseMap(message);
+
+    assertEquals("service:with:colon", result.get("name"));
+    assertEquals(25, result.get("age"));
+  }
+
+  @Test
+  void testParsingMapIgnoresEmptyFieldsAndUnknownTypes() {
+    var message = "|ms>|mx>unknown:value|mi>age:25|ms>name:serviceA";
+
+    var result = Parser.parseMap(message);
+
+    assertNull(result.get(""));
+    assertNull(result.get("unknown"));
+    assertEquals(25, result.get("age"));
+    assertEquals("serviceA", result.get("name"));
+  }
+
+  @Test
+  void testParsingMapIgnoresInvalidInteger() {
+    var message = "|mi>age:not-a-number|ms>name:serviceA";
+
+    var result = Parser.parseMap(message);
+
+    assertNull(result.get("age"));
+    assertEquals("serviceA", result.get("name"));
+  }
+
+  @Test
+  void testParsingInvalidIntegerThrows() {
+    assertThrows(NumberFormatException.class, () -> Parser.parseInt("|i>not-a-number"));
   }
 }
 

@@ -17,6 +17,8 @@ and private key. These key-value pairs are persisted in .dat files for secure an
 The CANISP protocol supports various data types—including arrays of maps, strings, integers, and
 individual maps—enabling flexible and structured data communication between applications.
 The current protocol is documented in [docs/canisp-protocol.md](docs/canisp-protocol.md).
+Threat model and deployment assumptions are documented in
+[docs/threat-model.md](docs/threat-model.md).
 
 #### Key Features:
 

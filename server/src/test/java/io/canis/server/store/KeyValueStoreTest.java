@@ -152,5 +152,70 @@ public class KeyValueStoreTest {
     byte[] decryptedStore = new SymmetricGenerator(secretKeyPath.toString()).decrypt(encryptedStore);
     assertArrayEquals(STORE_MAGIC, Arrays.copyOf(decryptedStore, STORE_MAGIC.length));
   }
+
+  @Test
+  public void testMissingSecretKeyFileForExistingStoreLeavesStoreEmpty() throws Exception {
+    Path databasePath = tempDir.resolve("missing-secret-db.dat");
+    Path secretKeyPath = tempDir.resolve("missing-secret.key");
+
+    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+    store.set("serviceA", new Entry("serviceA", "public-key", "private-key"));
+    Files.delete(secretKeyPath);
+
+    KeyValueStore reloadedStore = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+
+    assertNull(reloadedStore.get("serviceA"));
+  }
+
+  @Test
+  public void testInvalidSecretKeyFileContentLeavesStoreEmpty() throws Exception {
+    Path databasePath = tempDir.resolve("invalid-secret-db.dat");
+    Path secretKeyPath = tempDir.resolve("invalid-secret.key");
+    Files.writeString(secretKeyPath, "not-base64", StandardCharsets.UTF_8);
+    Files.write(databasePath, "encrypted".getBytes(StandardCharsets.UTF_8));
+
+    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+
+    assertTrue(store.list().isEmpty());
+  }
+
+  @Test
+  public void testCorruptEncryptedDatabaseFileLeavesStoreEmpty() throws Exception {
+    Path databasePath = tempDir.resolve("corrupt-db.dat");
+    Path secretKeyPath = tempDir.resolve("corrupt-secret.key");
+    new SymmetricGenerator(secretKeyPath.toString());
+    Files.write(databasePath, "not-a-canis-envelope".getBytes(StandardCharsets.UTF_8));
+
+    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+
+    assertTrue(store.list().isEmpty());
+  }
+
+  @Test
+  public void testWrongEncryptionKeyLeavesStoreEmpty() throws Exception {
+    Path databasePath = tempDir.resolve("wrong-key-db.dat");
+    Path secretKeyPath = tempDir.resolve("secret.key");
+    Path wrongSecretKeyPath = tempDir.resolve("wrong-secret.key");
+
+    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+    store.set("serviceA", new Entry("serviceA", "public-key", "private-key"));
+
+    KeyValueStore reloadedStore = new KeyValueStore(databasePath.toString(), wrongSecretKeyPath.toString());
+
+    assertNull(reloadedStore.get("serviceA"));
+  }
+
+  @Test
+  public void testInvalidDecryptedStoreFormatLeavesStoreEmpty() throws Exception {
+    Path databasePath = tempDir.resolve("invalid-format-db.dat");
+    Path secretKeyPath = tempDir.resolve("invalid-format-secret.key");
+    byte[] encryptedInvalidStore =
+        new SymmetricGenerator(secretKeyPath.toString()).encrypt("bad-store".getBytes(StandardCharsets.UTF_8));
+    Files.write(databasePath, encryptedInvalidStore);
+
+    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+
+    assertTrue(store.list().isEmpty());
+  }
 }
 

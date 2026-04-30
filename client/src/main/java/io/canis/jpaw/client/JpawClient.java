@@ -15,6 +15,8 @@ import java.util.Map;
 
 public class JpawClient implements Jpaw, AutoCloseable {
 
+  private static final String OK = "OK";
+
   private final SocketClient socketClient;
 
   public JpawClient() throws IOException {
@@ -30,7 +32,7 @@ public class JpawClient implements Jpaw, AutoCloseable {
   @Override
   public String health() throws IOException {
     String command = "|health";
-    return this.socketClient.sendCommand(command);
+    return requireOk(this.socketClient.sendCommand(command));
   }
 
   @Override
@@ -42,7 +44,7 @@ public class JpawClient implements Jpaw, AutoCloseable {
   @Override
   public String set(String key) throws IOException {
     String command = String.format("|set %s", key);
-    return this.socketClient.sendCommand(command);
+    return requireOk(this.socketClient.sendCommand(command));
   }
 
   @Override
@@ -107,13 +109,24 @@ public class JpawClient implements Jpaw, AutoCloseable {
   @Override
   public boolean delete(String key) throws IOException {
     String command = String.format("|del %s", key);
-    this.socketClient.sendCommand(command);
+    requireOk(this.socketClient.sendCommand(command));
     return true;
   }
 
   @Override
   public void close() throws IOException {
     this.socketClient.close();
+  }
+
+  private String requireOk(String response) throws IOException {
+    String parsed = Parser.parseString(response);
+    if (parsed.startsWith("ERROR:")) {
+      throw new IOException(parsed);
+    }
+    if (!OK.equals(parsed)) {
+      throw new IOException("Unexpected server response: " + parsed);
+    }
+    return parsed;
   }
 
 }

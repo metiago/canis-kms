@@ -9,7 +9,13 @@ import java.util.Map;
 public class Parser {
 
   public static String parseString(String s) {
-    return s.replace("|s>", "");
+    if (s == null) {
+      return "";
+    }
+    if (s.startsWith("|s>")) {
+      return s.substring(3);
+    }
+    return s;
   }
 
   public static List<Map<String, Object>> parseArray(String message) {
@@ -46,25 +52,25 @@ public class Parser {
   }
 
   private static void processStringMapEntry(String part, Map<String, Object> map) {
-    String[] keyValue = part.substring(2).split(":");
-    if (keyValue.length == 2) {
+    String[] keyValue = part.substring(2).split(":", 2);
+    if (keyValue.length == 2 && !keyValue[0].isBlank()) {
       map.put(keyValue[0].trim(), keyValue[1].trim());
     }
   }
 
   private static void processIntMapEntry(String part, Map<String, Object> map) {
-    String[] keyValue = part.substring(2).split(":");
-    if (keyValue.length == 2) {
+    String[] keyValue = part.substring(2).split(":", 2);
+    if (keyValue.length == 2 && !keyValue[0].isBlank()) {
       try {
         map.put(keyValue[0].trim(), Integer.parseInt(keyValue[1].trim()));
       } catch (NumberFormatException e) {
-        System.out.println("Invalid integer format for key: " + keyValue[0]);
+        return;
       }
     }
   }
 
   public static Integer parseInt(String input) {
-    String s = input.replace("|i>", "");
+    String s = input.startsWith("|i>") ? input.substring(3) : input;
     return Integer.parseInt(s);
   }
 }
