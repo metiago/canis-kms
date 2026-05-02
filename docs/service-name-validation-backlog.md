@@ -30,18 +30,18 @@ delimiter characters such as `|` and `:`.
    - Behavior: reject invalid service names for `set`, `get`, `get-public`, `decrypt`, and `del`.
    - Response shape: return a typed error string such as `|s>ERROR: Invalid service name`.
 
-3. Add focused client tests.
+3. Done: Add focused client tests.
    - Verify valid names such as `serviceA`, `service-a`, `service_a`, `service.a`, and `svc123`.
    - Verify invalid names with spaces, tabs, newlines, `|`, `:`, empty strings, and names longer
      than 128 characters.
    - Verify invalid names do not call `SocketClient.sendCommand`.
 
-4. Add focused server handler tests.
+4. Done: Add focused server handler tests.
    - Verify invalid names are rejected for every key-oriented command.
    - Verify invalid names do not call `KeyValueStore.set`, `get`, or `delete`.
    - Verify audit logging records rejected commands without logging raw payloads.
 
-5. Document the validation contract in client package documentation.
+5. Done: Document the validation contract in client package documentation.
    - Update the client README with accepted service-name characters.
    - Mention that raw CANISP is unsupported for application integrations.
 

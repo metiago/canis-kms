@@ -23,6 +23,8 @@ Threat model and deployment assumptions are documented in
 [docs/threat-model.md](docs/threat-model.md).
 Client package publishing steps are documented in
 [docs/client-package-deploy.md](docs/client-package-deploy.md).
+Client package usage and validation rules are documented in
+[docs/client-package.md](docs/client-package.md).
 Service-name validation follow-up work is tracked in
 [docs/service-name-validation-backlog.md](docs/service-name-validation-backlog.md).
 
