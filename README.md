@@ -21,6 +21,8 @@ and server.
 The current protocol is documented in [docs/canisp-protocol.md](docs/canisp-protocol.md).
 Threat model and deployment assumptions are documented in
 [docs/threat-model.md](docs/threat-model.md).
+Client package publishing steps are documented in
+[docs/client-package-deploy.md](docs/client-package-deploy.md).
 Service-name validation follow-up work is tracked in
 [docs/service-name-validation-backlog.md](docs/service-name-validation-backlog.md).
 

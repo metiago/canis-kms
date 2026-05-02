@@ -43,20 +43,23 @@ public class JpawClient implements Jpaw, AutoCloseable {
 
   @Override
   public String set(String key) throws IOException {
-    String command = String.format("|set %s", key);
+    String serviceName = ServiceNameValidator.requireValid(key);
+    String command = String.format("|set %s", serviceName);
     return requireOk(this.socketClient.sendCommand(command));
   }
 
   @Override
   public Map<String, Object> get(String key) throws IOException {
-    String command = String.format("|get %s", key);
+    String serviceName = ServiceNameValidator.requireValid(key);
+    String command = String.format("|get %s", serviceName);
     var socketResp = this.socketClient.sendCommand(command);
     return Parser.parseMap(socketResp);
   }
 
   @Override
   public String getPublicKey(String key) throws IOException {
-    String command = String.format("|get-public %s", key);
+    String serviceName = ServiceNameValidator.requireValid(key);
+    String command = String.format("|get-public %s", serviceName);
     String response = Parser.parseString(this.socketClient.sendCommand(command));
 
     if (response.startsWith("ERROR:")) {
@@ -75,8 +78,9 @@ public class JpawClient implements Jpaw, AutoCloseable {
 
   @Override
   public byte[] decrypt(String key, byte[] encryptedData) throws IOException {
+    String serviceName = ServiceNameValidator.requireValid(key);
     String encryptedBase64 = Base64.getEncoder().encodeToString(encryptedData);
-    String command = String.format("|decrypt %s %s", key, encryptedBase64);
+    String command = String.format("|decrypt %s %s", serviceName, encryptedBase64);
     String response = Parser.parseString(this.socketClient.sendCommand(command));
 
     if (response.startsWith("ERROR:")) {
@@ -88,8 +92,9 @@ public class JpawClient implements Jpaw, AutoCloseable {
 
   @Override
   public void encryptFile(String key, File inputFile, File outputFile) throws IOException {
+    String serviceName = ServiceNameValidator.requireValid(key);
     try {
-      PublicKey publicKey = EnvelopeCryptographer.publicKeyFromString(getPublicKey(key));
+      PublicKey publicKey = EnvelopeCryptographer.publicKeyFromString(getPublicKey(serviceName));
       EnvelopeCryptographer.encryptFile(inputFile, outputFile, publicKey);
     } catch (GeneralSecurityException e) {
       throw new IOException("Failed to encrypt file.", e);
@@ -98,9 +103,10 @@ public class JpawClient implements Jpaw, AutoCloseable {
 
   @Override
   public void decryptFile(String key, File inputFile, File outputFile) throws IOException {
+    String serviceName = ServiceNameValidator.requireValid(key);
     try {
       EnvelopeCryptographer.decryptFile(inputFile, outputFile,
-          encryptedDataKey -> decrypt(key, encryptedDataKey));
+          encryptedDataKey -> decrypt(serviceName, encryptedDataKey));
     } catch (GeneralSecurityException e) {
       throw new IOException("Failed to decrypt file.", e);
     }
@@ -108,7 +114,8 @@ public class JpawClient implements Jpaw, AutoCloseable {
 
   @Override
   public boolean delete(String key) throws IOException {
-    String command = String.format("|del %s", key);
+    String serviceName = ServiceNameValidator.requireValid(key);
+    String command = String.format("|del %s", serviceName);
     requireOk(this.socketClient.sendCommand(command));
     return true;
   }
