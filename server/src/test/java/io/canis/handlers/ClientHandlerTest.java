@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import io.canis.protocol.ProtocolError;
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
 import io.canis.crypto.AsymmetricGenerator;
@@ -70,7 +71,7 @@ public class ClientHandlerTest {
 
     handler.run();
 
-    assertEquals("|s>ERROR: Request too large", readResponse(response.toByteArray()));
+    assertEquals(stringResponse(ProtocolError.REQUEST_TOO_LARGE), readResponse(response.toByteArray()));
   }
 
   @Test
@@ -178,7 +179,7 @@ public class ClientHandlerTest {
 
       String message = runCommand(command, store);
 
-      assertEquals("|s>ERROR: Invalid service name", message);
+      assertEquals(stringResponse(ProtocolError.INVALID_SERVICE_NAME), message);
       verifyNoInteractions(store);
     }
   }
@@ -189,7 +190,7 @@ public class ClientHandlerTest {
 
     String message = runCommand("|decrypt serviceA payload with spaces", store);
 
-    assertEquals("|s>ERROR: Invalid input format", message);
+    assertEquals(stringResponse(ProtocolError.INVALID_INPUT_FORMAT), message);
     verifyNoInteractions(store);
   }
 
@@ -205,7 +206,7 @@ public class ClientHandlerTest {
 
       String message = runCommand("|set service|A", store);
 
-      assertEquals("|s>ERROR: Invalid service name", message);
+      assertEquals(stringResponse(ProtocolError.INVALID_SERVICE_NAME), message);
       verifyNoInteractions(store);
       assertTrue(appender.list.stream()
           .map(ILoggingEvent::getFormattedMessage)
@@ -228,6 +229,10 @@ public class ClientHandlerTest {
       in.readFully(payload);
       return new String(payload, StandardCharsets.UTF_8);
     }
+  }
+
+  private String stringResponse(ProtocolError error) {
+    return "|s>" + error.wireMessage();
   }
 
   private String runCommand(String command, KeyValueStore store) throws Exception {

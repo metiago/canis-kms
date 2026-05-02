@@ -8,10 +8,14 @@ import static io.canis.protocol.Commands.GET;
 import static io.canis.protocol.Commands.GET_PUBLIC;
 import static io.canis.protocol.Commands.HEALTH;
 import static io.canis.protocol.Commands.INVALID_COMMAND;
-import static io.canis.protocol.Commands.INVALID_SERVICE_NAME;
 import static io.canis.protocol.Commands.LIST;
 import static io.canis.protocol.Commands.OK_COMMAND;
 import static io.canis.protocol.Commands.VERSION;
+import static io.canis.protocol.ProtocolError.DECRYPTION_FAILED;
+import static io.canis.protocol.ProtocolError.INVALID_INPUT_FORMAT;
+import static io.canis.protocol.ProtocolError.INVALID_SERVICE_NAME;
+import static io.canis.protocol.ProtocolError.KEY_NOT_FOUND;
+import static io.canis.protocol.ProtocolError.REQUEST_TOO_LARGE;
 
 import io.canis.audit.AuditLogger;
 import io.canis.crypto.AsymmetricGenerator;
@@ -93,7 +97,7 @@ public class ClientHandler implements Runnable {
     } catch (LineTooLongException e) {
       logger.warn("Request exceeded maximum size for IP {}", this.socket.getRemoteSocketAddress());
       AuditLogger.commandRejected(serviceIdentity, this.socket.getRemoteSocketAddress(), "request_too_large");
-      sendResponse(out, "ERROR: Request too large");
+      sendResponse(out, REQUEST_TOO_LARGE.wireMessage());
       return null;
     }
   }
@@ -184,7 +188,7 @@ public class ClientHandler implements Runnable {
 
     logger.warn("Invalid service name received from IP {}", this.socket.getRemoteSocketAddress());
     AuditLogger.commandRejected(serviceIdentity, this.socket.getRemoteSocketAddress(), "invalid_service_name");
-    sendResponse(out, INVALID_SERVICE_NAME);
+    sendResponse(out, INVALID_SERVICE_NAME.wireMessage());
     return false;
   }
 
@@ -216,7 +220,7 @@ public class ClientHandler implements Runnable {
     logger.info("Getting public key by key: {}", key);
     Entry entry = store.get(key);
     if (entry == null || entry.getPublicKey() == null) {
-      return "ERROR: Key not found";
+      return KEY_NOT_FOUND.wireMessage();
     }
     return entry.getPublicKey();
   }
@@ -231,7 +235,7 @@ public class ClientHandler implements Runnable {
     if (parts.length != 2) {
       AuditLogger.decryptFailed(
           serviceIdentity, "unknown", this.socket.getRemoteSocketAddress(), "invalid_input_format");
-      sendResponse(out, "ERROR: Invalid input format");
+      sendResponse(out, INVALID_INPUT_FORMAT.wireMessage());
       return;
     }
 
@@ -245,7 +249,7 @@ public class ClientHandler implements Runnable {
     Entry entry = store.get(key);
     if (entry == null || entry.getPrivateKey() == null) {
       AuditLogger.decryptFailed(serviceIdentity, key, this.socket.getRemoteSocketAddress(), "key_not_found");
-      sendResponse(out, "ERROR: Key not found");
+      sendResponse(out, KEY_NOT_FOUND.wireMessage());
       return;
     }
 
@@ -258,7 +262,7 @@ public class ClientHandler implements Runnable {
     } catch (Exception e) {
       logger.error("Failed to decrypt payload for key {}", key, e);
       AuditLogger.decryptFailed(serviceIdentity, key, this.socket.getRemoteSocketAddress(), "decryption_failed");
-      sendResponse(out, "ERROR: Decryption failed");
+      sendResponse(out, DECRYPTION_FAILED.wireMessage());
     }
   }
 }

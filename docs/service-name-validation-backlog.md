@@ -45,7 +45,7 @@ delimiter characters such as `|` and `:`.
    - Update the client README with accepted service-name characters.
    - Mention that raw CANISP is unsupported for application integrations.
 
-6. Consider typed error constants.
+6. Done: Consider typed error constants.
    - Add protocol constants for common errors, including invalid service name.
    - Keep client error handling consistent across all key-oriented operations.
 
