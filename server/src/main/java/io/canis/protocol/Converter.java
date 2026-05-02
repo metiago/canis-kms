@@ -1,4 +1,4 @@
-package io.canis.utils;
+package io.canis.protocol;
 
 
 import io.canis.store.Entry;

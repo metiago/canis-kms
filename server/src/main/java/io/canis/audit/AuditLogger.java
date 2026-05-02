@@ -1,4 +1,4 @@
-package io.canis.utils;
+package io.canis.audit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

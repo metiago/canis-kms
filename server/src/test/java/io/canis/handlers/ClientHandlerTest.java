@@ -10,9 +10,9 @@ import static org.mockito.Mockito.when;
 
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
-import io.canis.utils.AsymmetricGenerator;
-import io.canis.utils.BoundedLineReader;
-import io.canis.utils.Cryptographer;
+import io.canis.crypto.AsymmetricGenerator;
+import io.canis.crypto.Cryptographer;
+import io.canis.net.BoundedLineReader;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

@@ -1,4 +1,4 @@
-package io.canis.utils;
+package io.canis.net;
 
 import java.io.BufferedReader;
 import java.io.IOException;

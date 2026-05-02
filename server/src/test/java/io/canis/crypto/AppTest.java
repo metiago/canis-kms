@@ -1,11 +1,11 @@
-//package io.canis.server.utils;
+//package io.canis.crypto;
 //
 //
 //import static org.junit.jupiter.api.Assertions.assertEquals;
 //
 //import io.canis.Server;
 //import io.canis.jpaw.client.JpawClient;
-//import io.canis.utils.Cryptographer;
+//import io.canis.crypto.Cryptographer;
 //import java.io.BufferedWriter;
 //import java.io.File;
 //import java.io.FileWriter;

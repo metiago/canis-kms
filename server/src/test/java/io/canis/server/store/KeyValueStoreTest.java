@@ -13,7 +13,7 @@ import static org.mockito.Mockito.verify;
 
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
-import io.canis.utils.SymmetricGenerator;
+import io.canis.crypto.SymmetricGenerator;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

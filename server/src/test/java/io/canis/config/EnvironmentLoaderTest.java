@@ -1,9 +1,8 @@
-package io.canis.utils;
+package io.canis.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.canis.models.Environment;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

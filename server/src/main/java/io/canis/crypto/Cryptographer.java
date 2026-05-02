@@ -1,4 +1,4 @@
-package io.canis.utils;
+package io.canis.crypto;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

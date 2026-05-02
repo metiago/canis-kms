@@ -1,4 +1,4 @@
-package io.canis.handlers;
+package io.canis.protocol;
 
 public class Commands {
 

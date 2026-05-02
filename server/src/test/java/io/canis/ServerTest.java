@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import io.canis.models.Environment;
+import io.canis.config.Environment;
 import io.canis.models.LoginCredentials;
 import io.canis.store.KeyValueStore;
 import java.util.Map;

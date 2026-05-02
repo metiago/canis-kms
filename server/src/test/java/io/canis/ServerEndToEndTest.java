@@ -3,7 +3,7 @@ package io.canis;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.canis.models.Environment;
+import io.canis.config.Environment;
 import io.canis.store.KeyValueStore;
 import java.io.DataInputStream;
 import java.io.IOException;

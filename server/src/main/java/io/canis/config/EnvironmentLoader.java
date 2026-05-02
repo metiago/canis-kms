@@ -1,6 +1,5 @@
-package io.canis.utils;
+package io.canis.config;
 
-import io.canis.models.Environment;
 import java.util.HashMap;
 import java.util.Map;
 

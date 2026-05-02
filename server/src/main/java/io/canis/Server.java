@@ -1,15 +1,15 @@
 package io.canis;
 
-import static io.canis.handlers.Commands.LOGIN;
-import static io.canis.utils.EnvironmentLoader.loadEnvironment;
+import static io.canis.config.EnvironmentLoader.loadEnvironment;
+import static io.canis.protocol.Commands.LOGIN;
 
+import io.canis.audit.AuditLogger;
+import io.canis.config.Environment;
 import io.canis.handlers.ClientHandler;
-import io.canis.models.Environment;
 import io.canis.models.LoginCredentials;
+import io.canis.net.BoundedLineReader;
+import io.canis.net.BoundedLineReader.LineTooLongException;
 import io.canis.store.KeyValueStore;
-import io.canis.utils.AuditLogger;
-import io.canis.utils.BoundedLineReader;
-import io.canis.utils.BoundedLineReader.LineTooLongException;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;

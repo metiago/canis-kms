@@ -1,9 +1,8 @@
-package io.canis.server.utils;
+package io.canis.crypto;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import io.canis.utils.SymmetricGenerator;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;

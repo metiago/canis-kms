@@ -1,11 +1,9 @@
-package io.canis.server.utils;
+package io.canis.crypto;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.canis.utils.AsymmetricGenerator;
-import io.canis.utils.Cryptographer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

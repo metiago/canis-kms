@@ -1,4 +1,4 @@
-package io.canis.models;
+package io.canis.config;
 
 import java.util.Map;
 

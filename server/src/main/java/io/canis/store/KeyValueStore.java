@@ -1,6 +1,6 @@
 package io.canis.store;
 
-import io.canis.utils.SymmetricGenerator;
+import io.canis.crypto.SymmetricGenerator;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
