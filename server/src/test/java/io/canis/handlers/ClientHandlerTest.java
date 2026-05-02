@@ -9,6 +9,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
 import io.canis.crypto.AsymmetricGenerator;
@@ -27,6 +30,7 @@ import java.security.KeyPair;
 import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 public class ClientHandlerTest {
 
@@ -187,6 +191,34 @@ public class ClientHandlerTest {
 
     assertEquals("|s>ERROR: Invalid input format", message);
     verifyNoInteractions(store);
+  }
+
+  @Test
+  void testInvalidServiceNameAuditLogDoesNotIncludeRawPayload() throws Exception {
+    Logger auditLogger = (Logger) LoggerFactory.getLogger("io.canis.audit");
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    appender.start();
+    auditLogger.addAppender(appender);
+
+    try {
+      KeyValueStore store = mock(KeyValueStore.class);
+
+      String message = runCommand("|set service|A", store);
+
+      assertEquals("|s>ERROR: Invalid service name", message);
+      verifyNoInteractions(store);
+      assertTrue(appender.list.stream()
+          .map(ILoggingEvent::getFormattedMessage)
+          .anyMatch(logMessage -> logMessage.contains("event=command_rejected")
+              && logMessage.contains("reason=invalid_service_name")));
+      assertFalse(appender.list.stream()
+          .map(ILoggingEvent::getFormattedMessage)
+          .anyMatch(logMessage -> logMessage.contains("|set service|A")
+              || logMessage.contains("service|A")));
+    } finally {
+      auditLogger.detachAppender(appender);
+      appender.stop();
+    }
   }
 
   private String readResponse(byte[] bytes) throws Exception {
