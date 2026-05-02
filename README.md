@@ -1,8 +1,9 @@
 ## CANIS - KMS
 
 **CANIS** is a custom-built Key Management System (KMS) designed to manage public and private keys
-for applications using a unique protocol called **CANISP (Canis Protocol)**. It serves as a secure
-intermediary for applications that handle sensitive data.
+for applications through the official Java client. The client and server communicate through an
+internal Redis-inspired protocol called **CANISP (Canis Protocol)**. CANISP is not RESP-compatible
+and is not the application-facing API.
 
 Applications generating text files containing sensitive information leverage CANIS for encryption
 and decryption. Before saving such files to disk, these applications encrypt them using a public key
@@ -14,11 +15,14 @@ decrypt them by asking CANIS to unwrap the file key.
 In addition to its key management functionality, CANIS provides a key-value store where the key is
 an arbitrary identifier, and the value is an object containing attributes such as name, public key,
 and private key. These key-value pairs are persisted in .dat files for secure and reliable storage.
-The CANISP protocol supports various data types—including arrays of maps, strings, integers, and
-individual maps—enabling flexible and structured data communication between applications.
+The CANISP protocol supports various data types, including arrays of maps, strings, integers, and
+individual maps, enabling flexible and structured data communication between the official client
+and server.
 The current protocol is documented in [docs/canisp-protocol.md](docs/canisp-protocol.md).
 Threat model and deployment assumptions are documented in
 [docs/threat-model.md](docs/threat-model.md).
+Service-name validation follow-up work is tracked in
+[docs/service-name-validation-backlog.md](docs/service-name-validation-backlog.md).
 
 #### Key Features:
 
@@ -27,8 +31,10 @@ Threat model and deployment assumptions are documented in
     - Utilizes TCP/IP for reliable communication, ensuring data integrity and order.
 
 2. **Custom Protocol (CANISP):**
-    - The CANISP protocol defines a structured format for data transmission, allowing clients to
-      send commands and data in a consistent manner.
+    - The CANISP protocol defines a structured internal format for data transmission between the
+      CANIS server and official client.
+    - Application developers should use the official Java client instead of writing raw CANISP
+      socket messages.
     - Supports the following data types:
         - **Arrays of Maps:** Allows clients to send multiple key-value pairs in a structured
           format.
@@ -53,8 +59,8 @@ Threat model and deployment assumptions are documented in
       applications.
 
 5. **Command Handling:**
-    - The server processes incoming commands based on the CANISP protocol, allowing for operations
-      such as:
+    - The server processes incoming CANISP commands from authenticated clients, allowing for
+      operations such as:
         - Registering a new application with its associated data.
         - Retrieving application data based on the registered name.
         - Updating or deleting application data as needed.

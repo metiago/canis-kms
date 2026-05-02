@@ -4,6 +4,17 @@ CANISP is the internal wire protocol used between the CANIS server and the offic
 `client` Maven artifact. Application code should use `JpawClient` instead of writing raw socket
 messages.
 
+CANISP is Redis-inspired in its interaction model: it uses a simple TCP request/response loop,
+compact text commands, and typed response payloads. It is not RESP-compatible and should not be
+used with Redis clients or Redis servers.
+
+CANISP plays the same role for CANIS that a database wire protocol plays beneath a JDBC driver. It
+is part of the client/server implementation contract, not the application-facing API. The public
+integration surface for Java applications is the official client library.
+
+The protocol is documented for maintainers, debugging, research, and PoCs. Compatibility work
+should keep the CANIS server and official client aligned.
+
 ## Version
 
 Current protocol version: `CANISP/1`
@@ -54,6 +65,28 @@ CANISP response payloads use typed prefixes:
 ```
 
 The current Java client owns payload parsing through `Parser`.
+
+## Application Integration Contract
+
+Application developers should not construct CANISP command lines directly. They should use the
+official Java client so command construction, response parsing, socket limits, and envelope
+operations stay centralized in one implementation.
+
+Raw CANISP messages are useful for protocol tests, debugging, and research, but they are not the
+supported application API.
+
+## Service Names
+
+CANISP/1 treats service names as identifiers, not arbitrary free-form text. The intended service
+name format is:
+
+```text
+[A-Za-z0-9._-]{1,128}
+```
+
+This format keeps command construction unambiguous for the current line-oriented protocol. The
+official client and server should both validate service names before using them in commands or
+stored entries.
 
 ## Commands
 

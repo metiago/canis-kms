@@ -8,6 +8,9 @@ key operations on behalf of authenticated clients.
 
 - Applications should use the official `client` Maven artifact instead of writing raw socket
   messages.
+- CANISP is an internal client/server protocol, similar to the wire protocol beneath a database
+  driver. It is documented for maintainers, debugging, research, and PoCs, but it is not the
+  application-facing API.
 - The CANIS server process, its host, and its encrypted database file are inside the trusted
   boundary.
 - The TCP network between applications and CANIS is outside the process boundary. Deployments should
@@ -33,6 +36,8 @@ key operations on behalf of authenticated clients.
 - `|get-public serviceName` returns the public key used by clients to encrypt file keys.
 - `|decrypt serviceName payload` performs a server-side private-key operation.
 - `|del serviceName` removes the stored key entry.
+- Service names should be treated as identifiers and validated by both the official client and the
+  server before command execution.
 - Rotation should be handled by creating a new service key name or replacing the existing key and
   re-encrypting file envelopes that still need to be readable.
 
