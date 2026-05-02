@@ -24,7 +24,7 @@ delimiter characters such as `|` and `:`.
    - Affected methods: `set`, `get`, `getPublicKey`, `decrypt`, `encryptFile`, `decryptFile`,
      and `delete`.
 
-2. Add server-side service-name validation before store operations.
+2. Done: Add server-side service-name validation before store operations.
    - Scope: server module.
    - Suggested location: protocol or store boundary.
    - Behavior: reject invalid service names for `set`, `get`, `get-public`, `decrypt`, and `del`.

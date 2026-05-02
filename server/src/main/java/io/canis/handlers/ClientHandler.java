@@ -8,6 +8,7 @@ import static io.canis.protocol.Commands.GET;
 import static io.canis.protocol.Commands.GET_PUBLIC;
 import static io.canis.protocol.Commands.HEALTH;
 import static io.canis.protocol.Commands.INVALID_COMMAND;
+import static io.canis.protocol.Commands.INVALID_SERVICE_NAME;
 import static io.canis.protocol.Commands.LIST;
 import static io.canis.protocol.Commands.OK_COMMAND;
 import static io.canis.protocol.Commands.VERSION;
@@ -18,6 +19,7 @@ import io.canis.crypto.Cryptographer;
 import io.canis.net.BoundedLineReader;
 import io.canis.net.BoundedLineReader.LineTooLongException;
 import io.canis.protocol.Converter;
+import io.canis.protocol.ServiceNameValidator;
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
 import java.io.BufferedReader;
@@ -109,22 +111,31 @@ public class ClientHandler implements Runnable {
 
     } else if (input.startsWith(ADD)) {
       logger.info("Adding key for IP {}", this.socket.getRemoteSocketAddress());
-      String args = input.substring(4).trim();
-      add(args);
-      AuditLogger.keyCreated(serviceIdentity, args, this.socket.getRemoteSocketAddress());
+      String serviceName = input.substring(ADD.length()).trim();
+      if (!validateServiceName(serviceName, out)) {
+        return;
+      }
+      add(serviceName);
+      AuditLogger.keyCreated(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
       sendResponse(out, OK_COMMAND);
 
     } else if (input.startsWith(GET_PUBLIC)) {
       logger.info("Getting public key for IP {}", this.socket.getRemoteSocketAddress());
-      String args = input.substring(GET_PUBLIC.length()).trim();
-      AuditLogger.keyAccessed(serviceIdentity, args, this.socket.getRemoteSocketAddress());
-      sendResponse(out, getPublicKey(args));
+      String serviceName = input.substring(GET_PUBLIC.length()).trim();
+      if (!validateServiceName(serviceName, out)) {
+        return;
+      }
+      AuditLogger.keyAccessed(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
+      sendResponse(out, getPublicKey(serviceName));
 
     } else if (input.startsWith(GET)) {
       logger.info("Getting key for IP {}", this.socket.getRemoteSocketAddress());
-      String args = input.substring(4).trim();
-      Entry entry = get(args);
-      AuditLogger.keyAccessed(serviceIdentity, args, this.socket.getRemoteSocketAddress());
+      String serviceName = input.substring(GET.length()).trim();
+      if (!validateServiceName(serviceName, out)) {
+        return;
+      }
+      Entry entry = get(serviceName);
+      AuditLogger.keyAccessed(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
       var bytes = Converter.toMap(entry.toMap()).getBytes(StandardCharsets.UTF_8);
       out.writeInt(bytes.length);
       out.write(bytes);
@@ -143,9 +154,12 @@ public class ClientHandler implements Runnable {
 
     } else if (input.startsWith(DELETE)) {
       logger.info("Deleting key for IP {}", this.socket.getRemoteSocketAddress());
-      String args = input.substring(4).trim();
-      delete(args);
-      AuditLogger.keyDeleted(serviceIdentity, args, this.socket.getRemoteSocketAddress());
+      String serviceName = input.substring(DELETE.length()).trim();
+      if (!validateServiceName(serviceName, out)) {
+        return;
+      }
+      delete(serviceName);
+      AuditLogger.keyDeleted(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
       sendResponse(out, OK_COMMAND);
 
     } else {
@@ -161,6 +175,17 @@ public class ClientHandler implements Runnable {
     var resp = String.format("%s%s", "|s>", command).getBytes(StandardCharsets.UTF_8);
     out.writeInt(resp.length);
     out.write(resp);
+  }
+
+  private boolean validateServiceName(String serviceName, DataOutputStream out) throws IOException {
+    if (ServiceNameValidator.isValid(serviceName)) {
+      return true;
+    }
+
+    logger.warn("Invalid service name received from IP {}", this.socket.getRemoteSocketAddress());
+    AuditLogger.commandRejected(serviceIdentity, this.socket.getRemoteSocketAddress(), "invalid_service_name");
+    sendResponse(out, INVALID_SERVICE_NAME);
+    return false;
   }
 
   private List<Entry> list() throws IOException {
@@ -202,8 +227,8 @@ public class ClientHandler implements Runnable {
   }
 
   private void decrypt(String args, DataOutputStream out) throws IOException {
-    String[] parts = args.split("\\s+", 2);
-    if (parts.length < 2) {
+    String[] parts = args.split("\\s+");
+    if (parts.length != 2) {
       AuditLogger.decryptFailed(
           serviceIdentity, "unknown", this.socket.getRemoteSocketAddress(), "invalid_input_format");
       sendResponse(out, "ERROR: Invalid input format");
@@ -211,6 +236,10 @@ public class ClientHandler implements Runnable {
     }
 
     String key = parts[0];
+    if (!validateServiceName(key, out)) {
+      return;
+    }
+
     logger.info("Service {} requested decrypt with key {}", serviceIdentity, key);
 
     Entry entry = store.get(key);

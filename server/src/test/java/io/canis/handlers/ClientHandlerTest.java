@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.canis.store.Entry;
@@ -158,6 +159,36 @@ public class ClientHandlerTest {
     assertFalse(message.contains("private-key-a"));
   }
 
+  @Test
+  void testInvalidServiceNamesAreRejectedBeforeStoreAccess() throws Exception {
+    String[] invalidServiceNameCommands = {
+        "|set service A",
+        "|get service|A",
+        "|get-public service:A",
+        "|decrypt service|A YWJj",
+        "|del service:A"
+    };
+
+    for (String command : invalidServiceNameCommands) {
+      KeyValueStore store = mock(KeyValueStore.class);
+
+      String message = runCommand(command, store);
+
+      assertEquals("|s>ERROR: Invalid service name", message);
+      verifyNoInteractions(store);
+    }
+  }
+
+  @Test
+  void testMalformedDecryptCommandIsRejectedBeforeStoreAccess() throws Exception {
+    KeyValueStore store = mock(KeyValueStore.class);
+
+    String message = runCommand("|decrypt serviceA payload with spaces", store);
+
+    assertEquals("|s>ERROR: Invalid input format", message);
+    verifyNoInteractions(store);
+  }
+
   private String readResponse(byte[] bytes) throws Exception {
     try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes))) {
       int length = in.readInt();
@@ -165,5 +196,21 @@ public class ClientHandlerTest {
       in.readFully(payload);
       return new String(payload, StandardCharsets.UTF_8);
     }
+  }
+
+  private String runCommand(String command, KeyValueStore store) throws Exception {
+    Socket socket = mock(Socket.class);
+    when(socket.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 3307));
+
+    ByteArrayOutputStream response = new ByteArrayOutputStream();
+    ClientHandler handler = new ClientHandler(
+        socket,
+        new BufferedReader(new StringReader(command)),
+        new DataOutputStream(response),
+        store);
+
+    handler.run();
+
+    return readResponse(response.toByteArray());
   }
 }

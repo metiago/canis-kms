@@ -13,5 +13,6 @@ public class Commands {
   public static final String DELETE = "|del ";
   public static final String DECRYPT = "|decrypt ";
   public static final String INVALID_COMMAND = "Unknown command";
+  public static final String INVALID_SERVICE_NAME = "ERROR: Invalid service name";
   public static final String OK_COMMAND = "OK";
 }
