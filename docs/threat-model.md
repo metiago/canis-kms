@@ -46,7 +46,9 @@ key operations on behalf of authenticated clients.
 - `CANIS_SECRET_KEY` points to the AES key file used to encrypt the CANIS database.
 - The secret key file must be protected by host filesystem permissions and backed up separately from
   the encrypted database.
-- Losing the secret key file makes the encrypted CANIS store unreadable.
+- Losing or misconfiguring the secret key file while the database exists prevents CANIS startup.
+  CANIS will not generate a replacement key or start with an empty store in this case; restore the
+  original key file from a protected backup.
 - Compromise of both the encrypted database and `CANIS_SECRET_KEY` compromises stored private keys.
 
 ## Persistence And Backups

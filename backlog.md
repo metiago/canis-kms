@@ -2,24 +2,6 @@
 
 ## High
 
-### Fail fast when the database exists but `CANIS_SECRET_KEY` is missing or wrong
-
-When the configured secret-key file is missing, `SymmetricGenerator` creates a brand-new AES key
-file automatically. If an encrypted database already exists, `KeyValueStore` then fails to decrypt
-it, logs the error, and continues with an empty in-memory store. That hides a fatal recovery
-problem and allows the server to come up looking healthy while effectively losing access to all
-existing keys.
-
-Relevant code:
-- `server/src/main/java/io/canis/crypto/SymmetricGenerator.java`
-- `server/src/main/java/io/canis/store/KeyValueStore.java`
-- `docs/threat-model.md`
-
-Follow-up:
-- Treat “database exists but secret key is missing/invalid” as startup failure.
-- Do not auto-generate a replacement key in that case.
-- Surface the failure clearly to operators.
-
 ## Medium
 
 ### Make missing-key behavior consistent for `get`

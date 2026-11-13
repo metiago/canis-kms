@@ -2,6 +2,7 @@ package io.canis.server.store;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -154,7 +155,7 @@ public class KeyValueStoreTest {
   }
 
   @Test
-  public void testMissingSecretKeyFileForExistingStoreLeavesStoreEmpty() throws Exception {
+  public void testMissingSecretKeyFileForExistingStoreFailsAndPreservesDatabase() throws Exception {
     Path databasePath = tempDir.resolve("missing-secret-db.dat");
     Path secretKeyPath = tempDir.resolve("missing-secret.key");
 
@@ -162,9 +163,15 @@ public class KeyValueStoreTest {
     store.set("serviceA", new Entry("serviceA", "public-key", "private-key"));
     Files.delete(secretKeyPath);
 
-    KeyValueStore reloadedStore = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
+    byte[] databaseBeforeReload = Files.readAllBytes(databasePath);
 
-    assertNull(reloadedStore.get("serviceA"));
+    IllegalStateException failure = assertThrows(IllegalStateException.class,
+        () -> new KeyValueStore(databasePath.toString(), secretKeyPath.toString()));
+
+    assertTrue(failure.getMessage().contains("existing CANIS database"));
+    assertTrue(failure.getMessage().contains("CANIS_SECRET_KEY"));
+    assertArrayEquals(databaseBeforeReload, Files.readAllBytes(databasePath));
+    assertTrue(Files.notExists(secretKeyPath));
   }
 
   @Test
@@ -174,9 +181,10 @@ public class KeyValueStoreTest {
     Files.writeString(secretKeyPath, "not-base64", StandardCharsets.UTF_8);
     Files.write(databasePath, "encrypted".getBytes(StandardCharsets.UTF_8));
 
-    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-
-    assertTrue(store.list().isEmpty());
+    assertThrows(IllegalStateException.class,
+        () -> new KeyValueStore(databasePath.toString(), secretKeyPath.toString()));
+    assertEquals("not-base64", Files.readString(secretKeyPath));
+    assertArrayEquals("encrypted".getBytes(StandardCharsets.UTF_8), Files.readAllBytes(databasePath));
   }
 
   @Test
@@ -186,13 +194,14 @@ public class KeyValueStoreTest {
     new SymmetricGenerator(secretKeyPath.toString());
     Files.write(databasePath, "not-a-canis-envelope".getBytes(StandardCharsets.UTF_8));
 
-    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-
-    assertTrue(store.list().isEmpty());
+    assertThrows(IllegalStateException.class,
+        () -> new KeyValueStore(databasePath.toString(), secretKeyPath.toString()));
+    assertArrayEquals("not-a-canis-envelope".getBytes(StandardCharsets.UTF_8),
+        Files.readAllBytes(databasePath));
   }
 
   @Test
-  public void testWrongEncryptionKeyLeavesStoreEmpty() throws Exception {
+  public void testWrongEncryptionKeyFailsAndDoesNotCreateReplacementKey() throws Exception {
     Path databasePath = tempDir.resolve("wrong-key-db.dat");
     Path secretKeyPath = tempDir.resolve("secret.key");
     Path wrongSecretKeyPath = tempDir.resolve("wrong-secret.key");
@@ -200,9 +209,12 @@ public class KeyValueStoreTest {
     KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
     store.set("serviceA", new Entry("serviceA", "public-key", "private-key"));
 
-    KeyValueStore reloadedStore = new KeyValueStore(databasePath.toString(), wrongSecretKeyPath.toString());
+    byte[] databaseBeforeReload = Files.readAllBytes(databasePath);
 
-    assertNull(reloadedStore.get("serviceA"));
+    assertThrows(IllegalStateException.class,
+        () -> new KeyValueStore(databasePath.toString(), wrongSecretKeyPath.toString()));
+    assertArrayEquals(databaseBeforeReload, Files.readAllBytes(databasePath));
+    assertTrue(Files.notExists(wrongSecretKeyPath));
   }
 
   @Test
@@ -213,9 +225,8 @@ public class KeyValueStoreTest {
         new SymmetricGenerator(secretKeyPath.toString()).encrypt("bad-store".getBytes(StandardCharsets.UTF_8));
     Files.write(databasePath, encryptedInvalidStore);
 
-    KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-
-    assertTrue(store.list().isEmpty());
+    assertThrows(IllegalStateException.class,
+        () -> new KeyValueStore(databasePath.toString(), secretKeyPath.toString()));
   }
 }
 

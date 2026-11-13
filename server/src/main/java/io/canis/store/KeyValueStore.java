@@ -48,7 +48,6 @@ public class KeyValueStore {
     try {
       File file = new File(filePath);
       if (file.exists()) {
-
         try (InputStream fis = new FileInputStream(file);
             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
@@ -59,16 +58,15 @@ public class KeyValueStore {
             baos.write(buffer, 0, bytesRead);
           }
           byte[] encryptedData = baos.toByteArray();
-          byte[] decryptedData = symmetricGenerator().decrypt(encryptedData);
+          byte[] decryptedData = symmetricGenerator(false).decrypt(encryptedData);
           store = deserializeVersionedStore(decryptedData);
-
-        } catch (IOException e) {
-          logger.error(e.getMessage(), e);
+        } catch (Exception e) {
+          throw new IllegalStateException(
+              "Unable to load the existing CANIS database. Verify that CANIS_SECRET_KEY points "
+                  + "to the original valid key file; the database was left unchanged.",
+              e);
         }
       }
-
-    } catch (Exception e) {
-      logger.error(e.getMessage(), e);
     } finally {
       lock.writeLock().unlock();
     }
@@ -207,6 +205,11 @@ public class KeyValueStore {
   }
 
   private SymmetricGenerator symmetricGenerator() throws NoSuchAlgorithmException, IOException {
-    return new SymmetricGenerator(secretKeyPath);
+    return symmetricGenerator(true);
+  }
+
+  private SymmetricGenerator symmetricGenerator(boolean generateKeyIfMissing)
+      throws NoSuchAlgorithmException, IOException {
+    return new SymmetricGenerator(secretKeyPath, generateKeyIfMissing);
   }
 }

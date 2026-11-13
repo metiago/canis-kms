@@ -35,15 +35,24 @@ public class SymmetricGenerator {
   }
 
   public SymmetricGenerator(String secretKeyPath) throws NoSuchAlgorithmException, IOException {
-    this.secretKeyPath = secretKeyPath;
-    this.generatePrivateKey();
+    this(secretKeyPath, true);
   }
 
-  private void generatePrivateKey() throws NoSuchAlgorithmException, IOException {
+  public SymmetricGenerator(String secretKeyPath, boolean generateKeyIfMissing)
+      throws NoSuchAlgorithmException, IOException {
+    this.secretKeyPath = secretKeyPath;
+    this.generatePrivateKey(generateKeyIfMissing);
+  }
+
+  private void generatePrivateKey(boolean generateKeyIfMissing)
+      throws NoSuchAlgorithmException, IOException {
     if (secretKeyPath == null || secretKeyPath.isBlank()) {
       throw new IOException("CANIS_SECRET_KEY is not set");
     }
     if (!new File(secretKeyPath).exists()) {
+      if (!generateKeyIfMissing) {
+        throw new IOException("CANIS_SECRET_KEY file is missing");
+      }
       this.secretKey = generateSecretKey();
       String encodedKey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
       saveKeyToFile(encodedKey);

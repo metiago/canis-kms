@@ -2,6 +2,7 @@ package io.canis.crypto;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -26,5 +27,14 @@ public class SymmetricGeneratorTest {
     assertFalse(Arrays.equals(firstCiphertext, secondCiphertext));
     assertArrayEquals(plaintext, generator.decrypt(firstCiphertext));
     assertArrayEquals(plaintext, new SymmetricGenerator(secretKeyPath.toString()).decrypt(secondCiphertext));
+  }
+
+  @Test
+  void testDoesNotGenerateMissingKeyWhenGenerationIsDisabled() {
+    Path secretKeyPath = tempDir.resolve("missing.key");
+
+    assertThrows(java.io.IOException.class,
+        () -> new SymmetricGenerator(secretKeyPath.toString(), false));
+    assertFalse(java.nio.file.Files.exists(secretKeyPath));
   }
 }
