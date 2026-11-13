@@ -165,6 +165,39 @@ public class ClientHandlerTest {
   }
 
   @Test
+  void testSetRejectsDuplicateAndPreservesExistingEntry() throws Exception {
+    Entry existing = new Entry("serviceA", "original-public", "original-private");
+    KeyValueStore store = mock(KeyValueStore.class);
+    when(store.get("serviceA")).thenReturn(existing);
+
+    String message = runCommand("|set serviceA", store);
+
+    assertEquals("|s>ERROR: Service already exists", message);
+    verify(store).get("serviceA");
+    verifyNoInteractionsAfterGet(store);
+  }
+
+  @Test
+  void testSetCreatesEntryWhenServiceDoesNotExist() throws Exception {
+    KeyValueStore store = mock(KeyValueStore.class);
+    when(store.create(org.mockito.ArgumentMatchers.eq("serviceA"),
+        org.mockito.ArgumentMatchers.any(Entry.class))).thenReturn(true);
+
+    String message = runCommand("|set serviceA", store);
+
+    assertEquals("|s>OK", message);
+    verify(store).create(org.mockito.ArgumentMatchers.eq("serviceA"),
+        org.mockito.ArgumentMatchers.any(Entry.class));
+  }
+
+  private void verifyNoInteractionsAfterGet(KeyValueStore store) {
+    org.mockito.Mockito.verify(store, org.mockito.Mockito.never()).create(
+        org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Entry.class));
+    org.mockito.Mockito.verify(store, org.mockito.Mockito.never()).set(
+        org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Entry.class));
+  }
+
+  @Test
   void testInvalidServiceNamesAreRejectedBeforeStoreAccess() throws Exception {
     String[] invalidServiceNameCommands = {
         "|set service A",

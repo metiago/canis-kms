@@ -31,15 +31,15 @@ key operations on behalf of authenticated clients.
 
 ## Key Lifecycle
 
-- `|set serviceName` creates a new RSA key pair for the named service and persists it in the CANIS
-  store.
+- `|set serviceName` creates a new RSA key pair only when the service name is unused. A duplicate
+  request returns `ERROR: Service already exists` and preserves the existing key pair. To rotate,
+  create a new service name and re-encrypt file envelopes that still need to be readable before
+  deleting the old service key.
 - `|get-public serviceName` returns the public key used by clients to encrypt file keys.
 - `|decrypt serviceName payload` performs a server-side private-key operation.
 - `|del serviceName` removes the stored key entry.
 - Service names should be treated as identifiers and validated by both the official client and the
   server before command execution.
-- Rotation should be handled by creating a new service key name or replacing the existing key and
-  re-encrypting file envelopes that still need to be readable.
 
 ## Secret Key Storage
 

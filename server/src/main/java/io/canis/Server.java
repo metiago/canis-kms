@@ -48,7 +48,7 @@ public class Server {
     this.port = env.port();
     this.serviceCredentials = env.serviceCredentials();
     this.store = store;
-    this.executorService = Executors.newFixedThreadPool(6);
+    this.executorService = Executors.newVirtualThreadPerTaskExecutor();
   }
 
   public void start() {

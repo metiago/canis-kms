@@ -15,6 +15,7 @@ import static io.canis.protocol.ProtocolError.DECRYPTION_FAILED;
 import static io.canis.protocol.ProtocolError.INVALID_INPUT_FORMAT;
 import static io.canis.protocol.ProtocolError.INVALID_SERVICE_NAME;
 import static io.canis.protocol.ProtocolError.KEY_NOT_FOUND;
+import static io.canis.protocol.ProtocolError.SERVICE_ALREADY_EXISTS;
 import static io.canis.protocol.ProtocolError.REQUEST_TOO_LARGE;
 
 import io.canis.audit.AuditLogger;
@@ -119,7 +120,12 @@ public class ClientHandler implements Runnable {
       if (!validateServiceName(serviceName, out)) {
         return;
       }
-      add(serviceName);
+      if (!add(serviceName)) {
+        AuditLogger.commandRejected(
+            serviceIdentity, this.socket.getRemoteSocketAddress(), "service_already_exists");
+        sendResponse(out, SERVICE_ALREADY_EXISTS.wireMessage());
+        return;
+      }
       AuditLogger.keyCreated(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
       sendResponse(out, OK_COMMAND);
 
@@ -196,8 +202,11 @@ public class ClientHandler implements Runnable {
     return store.list();
   }
 
-  private void add(String args) throws NoSuchAlgorithmException {
+  private boolean add(String args) throws NoSuchAlgorithmException {
     logger.info("Adding new key with args: {}", args);
+    if (store.get(args) != null) {
+      return false;
+    }
     KeyPair keyPair = AsymmetricGenerator.generateKeyPair();
     PublicKey publicKey = keyPair.getPublic();
     PrivateKey privateKey = keyPair.getPrivate();
@@ -208,7 +217,7 @@ public class ClientHandler implements Runnable {
     metadata.setName(args);
     metadata.setPublicKey(publicKeyBase64);
     metadata.setPrivateKey(privateKeyBase64);
-    store.set(args, metadata);
+    return store.create(args, metadata);
   }
 
   private Entry get(String key) {

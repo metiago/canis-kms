@@ -2,22 +2,6 @@
 
 ## High
 
-### Prevent silent key rotation on duplicate `|set`
-
-Re-running `|set` on an existing service currently overwrites the stored keypair without warning.
-`ClientHandler` accepts every `|set` as success and always generates a fresh RSA keypair before
-persisting it. That can strand already-encrypted data, because files wrapped with the old public key
-become undecryptable as soon as the old private key is replaced.
-
-Relevant code:
-- `server/src/main/java/io/canis/handlers/ClientHandler.java`
-- `docs/threat-model.md`
-
-Follow-up:
-- Decide whether `|set` means create-only or rotate.
-- If create-only, reject duplicates with an explicit error.
-- If rotation is supported, make it an explicit operation with clear migration semantics.
-
 ### Fail fast when the database exists but `CANIS_SECRET_KEY` is missing or wrong
 
 When the configured secret-key file is missing, `SymmetricGenerator` creates a brand-new AES key

@@ -5,6 +5,7 @@ public enum ProtocolError {
   REQUEST_TOO_LARGE("REQUEST_TOO_LARGE", "Request too large"),
   INVALID_SERVICE_NAME("INVALID_SERVICE_NAME", "Invalid service name"),
   INVALID_INPUT_FORMAT("INVALID_INPUT_FORMAT", "Invalid input format"),
+  SERVICE_ALREADY_EXISTS("SERVICE_ALREADY_EXISTS", "Service already exists"),
   KEY_NOT_FOUND("KEY_NOT_FOUND", "Key not found"),
   DECRYPTION_FAILED("DECRYPTION_FAILED", "Decryption failed");
 

@@ -101,6 +101,21 @@ public class KeyValueStore {
     }
   }
 
+  /** Creates an entry only when the key is absent, without replacing existing key material. */
+  public boolean create(String key, Entry value) {
+    lock.writeLock().lock();
+    try {
+      if (store.containsKey(key)) {
+        return false;
+      }
+      store.put(key, value);
+      saveToFile();
+      return true;
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
   public Entry get(String key) {
     lock.readLock().lock();
     try {
