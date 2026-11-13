@@ -165,6 +165,27 @@ public class ClientHandlerTest {
   }
 
   @Test
+  void testGetMissingKeyReturnsKeyNotFound() throws Exception {
+    KeyValueStore store = mock(KeyValueStore.class);
+
+    assertEquals(stringResponse(ProtocolError.KEY_NOT_FOUND), runCommand("|get missing", store));
+    verify(store).get("missing");
+  }
+
+  @Test
+  void testGetExistingKeyReturnsMetadataWithoutPrivateKey() throws Exception {
+    KeyValueStore store = mock(KeyValueStore.class);
+    when(store.get("serviceA")).thenReturn(
+        new Entry("serviceA", "public-key-a", "private-key-a"));
+
+    String response = runCommand("|get serviceA", store);
+
+    assertTrue(response.contains("|ms>name:serviceA"));
+    assertTrue(response.contains("|ms>publicKey:public-key-a"));
+    assertFalse(response.contains("private-key-a"));
+  }
+
+  @Test
   void testSetRejectsDuplicateAndPreservesExistingEntry() throws Exception {
     Entry existing = new Entry("serviceA", "original-public", "original-private");
     KeyValueStore store = mock(KeyValueStore.class);

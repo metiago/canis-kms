@@ -156,6 +156,9 @@ Returns entry metadata without private key material:
 |ms>name:serviceName|ms>publicKey:base64
 ```
 
+If the service name does not exist, the server returns `|s>ERROR: Key not found`. The official
+Java client translates this response to `null` from `get`.
+
 ### Get Public Key
 
 ```text

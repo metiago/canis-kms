@@ -53,6 +53,13 @@ public class JpawClient implements Jpaw, AutoCloseable {
     String serviceName = ServiceNameValidator.requireValid(key);
     String command = String.format("|get %s", serviceName);
     var socketResp = this.socketClient.sendCommand(command);
+    String response = Parser.parseString(socketResp);
+    if ("ERROR: Key not found".equals(response)) {
+      return null;
+    }
+    if (response.startsWith("ERROR:")) {
+      throw new IOException(response);
+    }
     return Parser.parseMap(socketResp);
   }
 

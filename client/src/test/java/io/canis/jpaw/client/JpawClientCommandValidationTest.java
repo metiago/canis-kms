@@ -1,6 +1,7 @@
 package io.canis.jpaw.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -33,6 +34,32 @@ class JpawClientCommandValidationTest {
     when(socketClient.sendCommand("|set serviceA")).thenReturn("|s>NO");
 
     assertThrows(IOException.class, () -> client.set("serviceA"));
+  }
+
+  @Test
+  void testGetReturnsNullForMissingKey() throws Exception {
+    JpawClient client = new JpawClient(socketClient);
+    when(socketClient.sendCommand("|get missing")).thenReturn("|s>ERROR: Key not found");
+
+    assertNull(client.get("missing"));
+  }
+
+  @Test
+  void testGetRejectsOtherServerErrors() throws Exception {
+    JpawClient client = new JpawClient(socketClient);
+    when(socketClient.sendCommand("|get serviceA"))
+        .thenReturn("|s>ERROR: Invalid service name");
+
+    assertThrows(IOException.class, () -> client.get("serviceA"));
+  }
+
+  @Test
+  void testGetReturnsExistingMetadata() throws Exception {
+    JpawClient client = new JpawClient(socketClient);
+    when(socketClient.sendCommand("|get serviceA"))
+        .thenReturn("|ms>name:serviceA|ms>publicKey:public-key-a");
+
+    assertEquals("serviceA", client.get("serviceA").get("name"));
   }
 
   @Test

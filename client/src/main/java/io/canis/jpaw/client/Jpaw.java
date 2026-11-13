@@ -43,7 +43,7 @@ public interface Jpaw {
    * @param key the key whose associated value is to be retrieved.
    * @return a {@code Map<String, Object>} containing the value associated with the key,
    *         or {@code null} if the key does not exist.
-   * @throws IOException if an I/O error occurs while retrieving the value.
+   * @throws IOException if an I/O or server error occurs while retrieving the value.
    */
   Map<String, Object> get(String key) throws IOException;
 

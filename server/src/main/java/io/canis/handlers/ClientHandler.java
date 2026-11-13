@@ -38,7 +38,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,7 +143,11 @@ public class ClientHandler implements Runnable {
       if (!validateServiceName(serviceName, out)) {
         return;
       }
-      Entry entry = get(serviceName);
+      Entry entry = store.get(serviceName);
+      if (entry == null) {
+        sendResponse(out, KEY_NOT_FOUND.wireMessage());
+        return;
+      }
       AuditLogger.keyAccessed(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
       var bytes = Converter.toMap(entry.toMap()).getBytes(StandardCharsets.UTF_8);
       out.writeInt(bytes.length);
@@ -218,11 +221,6 @@ public class ClientHandler implements Runnable {
     metadata.setPublicKey(publicKeyBase64);
     metadata.setPrivateKey(privateKeyBase64);
     return store.create(args, metadata);
-  }
-
-  private Entry get(String key) {
-    logger.info("Getting by key: {}", key);
-    return Optional.ofNullable(store.get(key)).orElse(new Entry());
   }
 
   private String getPublicKey(String key) {
