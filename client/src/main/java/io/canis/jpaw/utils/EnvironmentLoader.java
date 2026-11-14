@@ -16,7 +16,7 @@ public final class EnvironmentLoader {
 
   static Environment loadEnvironment(Map<String, String> environment) {
     String serverPort = require(environment, "CANIS_SERVER_PORT");
-    String serverHost = optional(environment, "CANIS_SERVER_HOST", DEFAULT_SERVER_HOST);
+    String serverHost = optional(environment);
     String username = require(environment, "CANIS_USERNAME");
     String password = require(environment, "CANIS_PASSWORD");
 
@@ -31,10 +31,10 @@ public final class EnvironmentLoader {
     return value;
   }
 
-  private static String optional(Map<String, String> environment, String name, String defaultValue) {
-    String value = environment.get(name);
+  private static String optional(Map<String, String> environment) {
+    String value = environment.get("CANIS_SERVER_HOST");
     if (value == null || value.isBlank()) {
-      return defaultValue;
+      return EnvironmentLoader.DEFAULT_SERVER_HOST;
     }
     return value;
   }

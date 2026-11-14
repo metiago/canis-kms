@@ -76,7 +76,7 @@ Service-name validation follow-up work is tracked in
 - Data Storage: File I/O for `.dat` encrypted file persistence
 
 ### Prerequisites
-- Java 17+
+- Java 21+
 - Maven
 
 ### Testing & Running

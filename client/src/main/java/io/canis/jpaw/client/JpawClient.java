@@ -22,7 +22,7 @@ public class JpawClient implements Jpaw, AutoCloseable {
   public JpawClient() throws IOException {
     Environment env = loadEnvironment();
     this.socketClient = new SocketClient(
-        env.getHost(), env.getPort(), env.getUsername(), env.getPassword());
+        env.host(), env.port(), env.username(), env.password());
   }
 
   JpawClient(SocketClient socketClient) {

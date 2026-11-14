@@ -14,10 +14,10 @@ public class EnvironmentLoaderTest {
   void testLoadEnvironment() {
     Environment environment = EnvironmentLoader.loadEnvironment(validEnvironment());
 
-    assertEquals("admin", environment.getUsername());
-    assertEquals("123", environment.getPassword());
-    assertEquals("localhost", environment.getHost());
-    assertEquals(3307, environment.getPort());
+    assertEquals("admin", environment.username());
+    assertEquals("123", environment.password());
+    assertEquals("localhost", environment.host());
+    assertEquals(3307, environment.port());
   }
 
   @Test
@@ -27,7 +27,7 @@ public class EnvironmentLoaderTest {
 
     Environment environment = EnvironmentLoader.loadEnvironment(rawEnvironment);
 
-    assertEquals("canis.internal", environment.getHost());
+    assertEquals("canis.internal", environment.host());
   }
 
   @Test
