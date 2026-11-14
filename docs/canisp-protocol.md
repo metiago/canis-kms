@@ -44,8 +44,10 @@ should introduce a new protocol version and keep `JpawClient` aligned with serve
 6. Each command is a single newline-terminated text command.
 7. Each response is a 4-byte signed integer length followed by the UTF-8 response payload.
 
-TLS changes the transport, not CANISP/1 command or response framing. The current official Java
-client requires the TLS update in backlog Issue #2 before it can connect to a TLS-only server.
+TLS changes the transport, not CANISP/1 command or response framing. The official Java client
+performs TLS 1.3 mutual authentication, validates the server chain and configured hostname, and
+has no plaintext fallback. Client identity and server trust material are loaded from external
+PKCS#12 stores.
 
 ## Limits
 

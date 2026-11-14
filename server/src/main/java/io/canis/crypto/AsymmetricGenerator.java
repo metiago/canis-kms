@@ -20,7 +20,7 @@ public class AsymmetricGenerator {
         return keyGen.generateKeyPair();
     }
 
-    public static String publicKeyToString(PublicKey publicKey) {       
+    public static String publicKeyToString(PublicKey publicKey) {
         byte[] encodedKey = publicKey.getEncoded();
         return Base64.getEncoder().encodeToString(encodedKey);
     }
@@ -33,8 +33,8 @@ public class AsymmetricGenerator {
     public static PublicKey stringToPublicKey(String publicKey) throws Exception {
         byte[] decodedKey = Base64.getDecoder().decode(publicKey);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(decodedKey);
-        KeyFactory keyFactory  = KeyFactory.getInstance("RSA");
-        return keyFactory .generatePublic(spec);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        return keyFactory.generatePublic(spec);
     }
 
     public static PrivateKey stringToPrivateKey(String privateKey) throws Exception {
@@ -45,7 +45,7 @@ public class AsymmetricGenerator {
     }
 
     public static PublicKey loadPublicKey(String filePath) throws Exception {
-       
+
         StringBuilder publicKeyString = new StringBuilder();
         try (Reader reader = new FileReader(filePath)) {
             int ch;
@@ -57,8 +57,8 @@ public class AsymmetricGenerator {
         byte[] decodedKey = Base64.getDecoder().decode(publicKeyString.toString());
 
         X509EncodedKeySpec spec = new X509EncodedKeySpec(decodedKey);
-        KeyFactory keyFactory  = KeyFactory.getInstance("RSA");
-        return keyFactory .generatePublic(spec);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        return keyFactory.generatePublic(spec);
     }
 
     public static PrivateKey loadPrivateKey(String filePath) throws Exception {
@@ -74,5 +74,4 @@ public class AsymmetricGenerator {
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         return keyFactory.generatePrivate(spec);
     }
-
 }

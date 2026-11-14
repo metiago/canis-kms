@@ -7,38 +7,24 @@ import org.junit.jupiter.api.Test;
 
 class ServiceNameValidatorTest {
 
-  @Test
-  void testAcceptsValidServiceNames() {
-    String[] validNames = {
-        "serviceA",
-        "service-a",
-        "service_a",
-        "service.a",
-        "svc123",
-        "a".repeat(128)
-    };
+    @Test
+    void testAcceptsValidServiceNames() {
+        String[] validNames = {"serviceA", "service-a", "service_a", "service.a", "svc123", "a".repeat(128)};
 
-    for (String serviceName : validNames) {
-      assertTrue(ServiceNameValidator.isValid(serviceName));
+        for (String serviceName : validNames) {
+            assertTrue(ServiceNameValidator.isValid(serviceName));
+        }
     }
-  }
 
-  @Test
-  void testRejectsInvalidServiceNames() {
-    String[] invalidNames = {
-        "",
-        " ",
-        "service A",
-        "service\tA",
-        "service\nA",
-        "service|A",
-        "service:A",
-        "a".repeat(129)
-    };
+    @Test
+    void testRejectsInvalidServiceNames() {
+        String[] invalidNames = {
+            "", " ", "service A", "service\tA", "service\nA", "service|A", "service:A", "a".repeat(129)
+        };
 
-    assertFalse(ServiceNameValidator.isValid(null));
-    for (String serviceName : invalidNames) {
-      assertFalse(ServiceNameValidator.isValid(serviceName));
+        assertFalse(ServiceNameValidator.isValid(null));
+        for (String serviceName : invalidNames) {
+            assertFalse(ServiceNameValidator.isValid(serviceName));
+        }
     }
-  }
 }

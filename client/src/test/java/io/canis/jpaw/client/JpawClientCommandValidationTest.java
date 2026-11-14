@@ -17,111 +17,101 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class JpawClientCommandValidationTest {
 
-  @Mock
-  SocketClient socketClient;
+    @Mock
+    SocketClient socketClient;
 
-  @Test
-  void testSetValidatesOkResponse() throws Exception {
-    JpawClient client = new JpawClient(socketClient);
-    when(socketClient.sendCommand("|set serviceA")).thenReturn("|s>OK");
+    @Test
+    void testSetValidatesOkResponse() throws Exception {
+        JpawClient client = new JpawClient(socketClient);
+        when(socketClient.sendCommand("|set serviceA")).thenReturn("|s>OK");
 
-    assertEquals("OK", client.set("serviceA"));
-  }
-
-  @Test
-  void testSetRejectsUnexpectedResponse() throws Exception {
-    JpawClient client = new JpawClient(socketClient);
-    when(socketClient.sendCommand("|set serviceA")).thenReturn("|s>NO");
-
-    assertThrows(IOException.class, () -> client.set("serviceA"));
-  }
-
-  @Test
-  void testGetReturnsNullForMissingKey() throws Exception {
-    JpawClient client = new JpawClient(socketClient);
-    when(socketClient.sendCommand("|get missing")).thenReturn("|s>ERROR: Key not found");
-
-    assertNull(client.get("missing"));
-  }
-
-  @Test
-  void testGetRejectsOtherServerErrors() throws Exception {
-    JpawClient client = new JpawClient(socketClient);
-    when(socketClient.sendCommand("|get serviceA"))
-        .thenReturn("|s>ERROR: Invalid service name");
-
-    assertThrows(IOException.class, () -> client.get("serviceA"));
-  }
-
-  @Test
-  void testGetReturnsExistingMetadata() throws Exception {
-    JpawClient client = new JpawClient(socketClient);
-    when(socketClient.sendCommand("|get serviceA"))
-        .thenReturn("|ms>name:serviceA|ms>publicKey:public-key-a");
-
-    assertEquals("serviceA", client.get("serviceA").get("name"));
-  }
-
-  @Test
-  void testDeleteValidatesOkResponse() throws Exception {
-    JpawClient client = new JpawClient(socketClient);
-    when(socketClient.sendCommand("|del serviceA")).thenReturn("|s>OK");
-
-    assertTrue(client.delete("serviceA"));
-  }
-
-  @Test
-  void testDeleteRejectsServerError() throws Exception {
-    JpawClient client = new JpawClient(socketClient);
-    when(socketClient.sendCommand("|del serviceA")).thenReturn("|s>ERROR: Delete failed");
-
-    assertThrows(IOException.class, () -> client.delete("serviceA"));
-  }
-
-  @Test
-  void testHealthValidatesOkResponse() throws Exception {
-    JpawClient client = new JpawClient(socketClient);
-    when(socketClient.sendCommand("|health")).thenReturn("|s>OK");
-
-    assertEquals("OK", client.health());
-  }
-
-  @Test
-  void testKeyCommandsRejectInvalidServiceNamesBeforeSending() {
-    JpawClient client = new JpawClient(socketClient);
-    String[] invalidNames = {
-        null,
-        "",
-        " ",
-        "service A",
-        "service\tA",
-        "service\nA",
-        "service|A",
-        "service:A",
-        "a".repeat(129)
-    };
-
-    for (String serviceName : invalidNames) {
-      assertRejectsInvalidServiceName(() -> client.set(serviceName));
-      assertRejectsInvalidServiceName(() -> client.get(serviceName));
-      assertRejectsInvalidServiceName(() -> client.getPublicKey(serviceName));
-      assertRejectsInvalidServiceName(() -> client.decrypt(serviceName, new byte[] {1, 2, 3}));
-      assertRejectsInvalidServiceName(
-          () -> client.encryptFile(serviceName, new File("input.txt"), new File("encrypted.dat")));
-      assertRejectsInvalidServiceName(
-          () -> client.decryptFile(serviceName, new File("encrypted.dat"), new File("output.txt")));
-      assertRejectsInvalidServiceName(() -> client.delete(serviceName));
+        assertEquals("OK", client.set("serviceA"));
     }
 
-    verifyNoInteractions(socketClient);
-  }
+    @Test
+    void testSetRejectsUnexpectedResponse() throws Exception {
+        JpawClient client = new JpawClient(socketClient);
+        when(socketClient.sendCommand("|set serviceA")).thenReturn("|s>NO");
 
-  private void assertRejectsInvalidServiceName(ThrowingCall call) {
-    assertThrows(IllegalArgumentException.class, call::run);
-  }
+        assertThrows(IOException.class, () -> client.set("serviceA"));
+    }
 
-  @FunctionalInterface
-  private interface ThrowingCall {
-    void run() throws Exception;
-  }
+    @Test
+    void testGetReturnsNullForMissingKey() throws Exception {
+        JpawClient client = new JpawClient(socketClient);
+        when(socketClient.sendCommand("|get missing")).thenReturn("|s>ERROR: Key not found");
+
+        assertNull(client.get("missing"));
+    }
+
+    @Test
+    void testGetRejectsOtherServerErrors() throws Exception {
+        JpawClient client = new JpawClient(socketClient);
+        when(socketClient.sendCommand("|get serviceA")).thenReturn("|s>ERROR: Invalid service name");
+
+        assertThrows(IOException.class, () -> client.get("serviceA"));
+    }
+
+    @Test
+    void testGetReturnsExistingMetadata() throws Exception {
+        JpawClient client = new JpawClient(socketClient);
+        when(socketClient.sendCommand("|get serviceA")).thenReturn("|ms>name:serviceA|ms>publicKey:public-key-a");
+
+        assertEquals("serviceA", client.get("serviceA").get("name"));
+    }
+
+    @Test
+    void testDeleteValidatesOkResponse() throws Exception {
+        JpawClient client = new JpawClient(socketClient);
+        when(socketClient.sendCommand("|del serviceA")).thenReturn("|s>OK");
+
+        assertTrue(client.delete("serviceA"));
+    }
+
+    @Test
+    void testDeleteRejectsServerError() throws Exception {
+        JpawClient client = new JpawClient(socketClient);
+        when(socketClient.sendCommand("|del serviceA")).thenReturn("|s>ERROR: Delete failed");
+
+        assertThrows(IOException.class, () -> client.delete("serviceA"));
+    }
+
+    @Test
+    void testHealthValidatesOkResponse() throws Exception {
+        JpawClient client = new JpawClient(socketClient);
+        when(socketClient.sendCommand("|health")).thenReturn("|s>OK");
+
+        assertEquals("OK", client.health());
+    }
+
+    @Test
+    void testKeyCommandsRejectInvalidServiceNamesBeforeSending() {
+        JpawClient client = new JpawClient(socketClient);
+        String[] invalidNames = {
+            null, "", " ", "service A", "service\tA", "service\nA", "service|A", "service:A", "a".repeat(129)
+        };
+
+        for (String serviceName : invalidNames) {
+            assertRejectsInvalidServiceName(() -> client.set(serviceName));
+            assertRejectsInvalidServiceName(() -> client.get(serviceName));
+            assertRejectsInvalidServiceName(() -> client.getPublicKey(serviceName));
+            assertRejectsInvalidServiceName(() -> client.decrypt(serviceName, new byte[] {1, 2, 3}));
+            assertRejectsInvalidServiceName(
+                    () -> client.encryptFile(serviceName, new File("input.txt"), new File("encrypted.dat")));
+            assertRejectsInvalidServiceName(
+                    () -> client.decryptFile(serviceName, new File("encrypted.dat"), new File("output.txt")));
+            assertRejectsInvalidServiceName(() -> client.delete(serviceName));
+        }
+
+        verifyNoInteractions(socketClient);
+    }
+
+    private void assertRejectsInvalidServiceName(ThrowingCall call) {
+        assertThrows(IllegalArgumentException.class, call::run);
+    }
+
+    @FunctionalInterface
+    private interface ThrowingCall {
+        void run() throws Exception;
+    }
 }

@@ -94,6 +94,11 @@ export CANIS_SERVER_PORT=3307;
 export CANIS_USERNAME=admin
 # service password
 export CANIS_PASSWORD=123;
+# client PKCS#12 identity and trusted-server stores (separate from server TLS settings)
+export CANIS_CLIENT_TLS_KEYSTORE=/secure/path/client.p12;
+export CANIS_CLIENT_TLS_KEYSTORE_PASSWORD=...;
+export CANIS_CLIENT_TLS_TRUSTSTORE=/secure/path/servers.p12;
+export CANIS_CLIENT_TLS_TRUSTSTORE_PASSWORD=...;
 # optional comma-separated credentials for additional authenticated clients
 export CANIS_SERVICE_CREDENTIALS=serviceA:secret-a,serviceB:secret-b;
 # secret file name
@@ -121,7 +126,7 @@ requires a trusted client certificate before CANISP login. Protect both PKCS#12 
 passwords with operating-system access controls; do not commit them or include them in images.
 The server certificate must identify the DNS name clients use. Rotate certificates before expiry.
 
-The current `JpawClient` still uses plaintext sockets. It cannot connect to this TLS-only server
-until the client TLS migration in backlog Issue #2 is deployed. Coordinate both releases; there is
-no plaintext fallback. Use the server integration tests as an example of a TLS 1.3 client with a
-client identity, trusted server certificate, and hostname validation.
+The official `JpawClient` uses TLS 1.3 with client-certificate authentication, trusted server
+certificate validation, and hostname verification. Configure its PKCS#12 identity and trust stores
+with the `CANIS_CLIENT_TLS_*` variables above. The client fails closed and has no plaintext
+fallback. Keep client and server certificates and passwords external to source control.

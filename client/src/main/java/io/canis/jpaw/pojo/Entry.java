@@ -4,11 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public record Entry(
-        String name,
-        String publicKey,
-        String privateKey
-) implements Serializable {
+public record Entry(String name, String publicKey, String privateKey) implements Serializable {
 
     public Entry() {
         this(null, null, null);
@@ -24,8 +20,6 @@ public record Entry(
 
     @Override
     public String toString() {
-        return "Entry{" +
-                "name='" + name + '\'' +
-                '}';
+        return "Entry{" + "name='" + name + '\'' + '}';
     }
 }

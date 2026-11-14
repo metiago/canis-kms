@@ -40,9 +40,18 @@ export CANIS_SERVER_HOST=localhost
 export CANIS_SERVER_PORT=3307
 export CANIS_USERNAME=admin
 export CANIS_PASSWORD=your-password
+export CANIS_CLIENT_TLS_KEYSTORE=/secure/path/client-identity.p12
+export CANIS_CLIENT_TLS_KEYSTORE_PASSWORD=provided-by-secret-manager
+export CANIS_CLIENT_TLS_TRUSTSTORE=/secure/path/canis-servers.p12
+export CANIS_CLIENT_TLS_TRUSTSTORE_PASSWORD=provided-by-secret-manager
 ```
 
 `CANIS_SERVER_HOST` is optional and defaults to `localhost`.
+The client requires PKCS#12 identity and trust stores. The identity store must contain one valid
+client private key and certificate chain; the truststore must contain the trusted server
+certificate or issuing CA. The configured host is checked against the server certificate. TLS 1.3
+is mandatory and there is no plaintext fallback. Supply passwords through a protected environment
+or secret manager, protect store files with operating-system permissions, and never commit them.
 
 ## Service Names
 
