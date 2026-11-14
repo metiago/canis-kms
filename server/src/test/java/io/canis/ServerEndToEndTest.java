@@ -3,15 +3,13 @@ package io.canis;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.canis.config.Environment;
 import io.canis.store.KeyValueStore;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Map;
+import javax.net.ssl.SSLSocket;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -19,9 +17,11 @@ class ServerEndToEndTest {
 
   @TempDir
   Path tempDir;
+  private TlsTestSupport tls;
 
   @Test
   void testAuthenticatedCommandFlowAndPersistenceAcrossRestart() throws Exception {
+    tls = new TlsTestSupport(tempDir);
     Path databasePath = tempDir.resolve("db.dat");
     Path secretKeyPath = tempDir.resolve("secret.key");
 
@@ -60,9 +60,8 @@ class ServerEndToEndTest {
   }
 
   private Server startServer(Path databasePath, Path secretKeyPath) {
-    Environment environment = new Environment("123", "admin", 0, Map.of("admin", "123"));
     KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-    Server server = new Server(environment, store);
+    Server server = new Server(tls.environment(), store);
     Thread serverThread = new Thread(server::start);
     serverThread.setDaemon(true);
     serverThread.start();
@@ -77,8 +76,8 @@ class ServerEndToEndTest {
     return server.getPort();
   }
 
-  private String sendAuthenticatedCommand(int port, String command) throws IOException {
-    try (Socket socket = new Socket("localhost", port);
+  private String sendAuthenticatedCommand(int port, String command) throws Exception {
+    try (SSLSocket socket = tls.connect(port);
         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
         DataInputStream in = new DataInputStream(socket.getInputStream())) {
 

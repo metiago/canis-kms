@@ -3,16 +3,16 @@ package io.canis;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
-import io.canis.config.Environment;
 import io.canis.models.LoginCredentials;
 import io.canis.store.KeyValueStore;
-import java.util.Map;
 import java.util.Optional;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class ServerTest {
+  @TempDir Path tempDir;
 
   @Test
   void testParseLoginCredentials() {
@@ -57,8 +57,9 @@ public class ServerTest {
 
   @Test
   void testStopClosesServerLoop() throws Exception {
-    Environment environment = new Environment("123", "admin", 0, Map.of("admin", "123"));
-    Server server = new Server(environment, mock(KeyValueStore.class));
+    Server server = new Server(new TlsTestSupport(tempDir).environment(),
+        new KeyValueStore(tempDir.resolve("db.dat").toString(),
+            tempDir.resolve("secret.key").toString()));
     Thread serverThread = new Thread(server::start);
     serverThread.start();
 

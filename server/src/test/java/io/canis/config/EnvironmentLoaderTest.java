@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 public class EnvironmentLoaderTest {
@@ -59,12 +60,32 @@ public class EnvironmentLoaderTest {
         () -> EnvironmentLoader.loadEnvironment(environment));
   }
 
+  @Test
+  void testLoadEnvironmentRejectsMissingTlsSettings() {
+    Map<String, String> environment = validEnvironment();
+    environment.remove("CANIS_TLS_KEYSTORE");
+    assertThrows(IllegalStateException.class,
+        () -> EnvironmentLoader.loadEnvironment(environment));
+  }
+
+  @Test
+  void testLoadEnvironmentRejectsBlankTlsPassword() {
+    Map<String, String> environment = validEnvironment();
+    environment.put("CANIS_TLS_TRUSTSTORE_PASSWORD", " ");
+    assertThrows(IllegalStateException.class,
+        () -> EnvironmentLoader.loadEnvironment(environment));
+  }
+
   private Map<String, String> validEnvironment() {
     Map<String, String> environment = new HashMap<>();
     environment.put("CANIS_USERNAME", "admin");
     environment.put("CANIS_PASSWORD", "123");
     environment.put("CANIS_SECRET_KEY", "secret.txt");
     environment.put("CANIS_PORT", "3307");
+    environment.put("CANIS_TLS_KEYSTORE", "server.p12");
+    environment.put("CANIS_TLS_KEYSTORE_PASSWORD", UUID.randomUUID().toString());
+    environment.put("CANIS_TLS_TRUSTSTORE", "clients.p12");
+    environment.put("CANIS_TLS_TRUSTSTORE_PASSWORD", UUID.randomUUID().toString());
     return environment;
   }
 }

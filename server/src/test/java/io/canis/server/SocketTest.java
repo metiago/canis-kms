@@ -3,59 +3,72 @@ package io.canis.server;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import io.canis.Server;
+import io.canis.TlsTestSupport;
+import io.canis.store.KeyValueStore;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class SocketTest {
+  @TempDir static Path tempDir;
+  private static TlsTestSupport tls;
+  private static Server server;
 
   CountDownLatch latch = new CountDownLatch(3);
   Exception[] exceptions = new Exception[3];
   AssertionError[] assertionErrors = new AssertionError[3];
 
   @BeforeAll
-  static void serverStart() throws IOException, InterruptedException {
-    assumeTrue(System.getenv("CANIS_PORT") != null, "CANIS_PORT must be set");
-    assumeTrue(System.getenv("CANIS_USERNAME") != null, "CANIS_USERNAME must be set");
-    assumeTrue(System.getenv("CANIS_PASSWORD") != null, "CANIS_PASSWORD must be set");
-    assumeTrue(System.getenv("CANIS_SECRET_KEY") != null, "CANIS_SECRET_KEY must be set");
-
-    Thread serverThread = new Thread(() -> new Server().start());
+  static void serverStart() throws Exception {
+    tls = new TlsTestSupport(tempDir);
+    server = new Server(tls.environment(), new KeyValueStore(
+        tempDir.resolve("db.dat").toString(), tempDir.resolve("secret.key").toString()));
+    Thread serverThread = new Thread(server::start);
     serverThread.setDaemon(true);
     serverThread.start();
-    TimeUnit.MILLISECONDS.sleep(100);
+    long deadline = System.currentTimeMillis() + 3000;
+    while (server.getPort() == 0 && System.currentTimeMillis() < deadline) {
+      TimeUnit.MILLISECONDS.sleep(10);
+    }
+  }
+
+  @AfterAll
+  static void serverStop() {
+    server.stop();
   }
 
   @Test
-  void testLoginOK() throws IOException {
+  void testLoginOK() throws Exception {
     var resp = sendCommand(String.format("|login %s:%s", username(), password()));
     assertEquals("Authentication successful", resp);
   }
 
   @Test
-  void testInvalidCommandError() throws IOException {
+  void testInvalidCommandError() throws Exception {
     var resp = sendCommand("|health");
     assertEquals("Authentication failed", resp);
   }
 
   @Test
-  void testMalformedLoginError() throws IOException {
+  void testMalformedLoginError() throws Exception {
     var resp = sendCommand("|login");
     assertEquals("Invalid input format", resp);
   }
 
   @Test
-  public void testMultipleThreadOK() throws InterruptedException, IOException {
+  public void testMultipleThreadOK() throws Exception {
 
     var t1 = new Thread(() -> {
       try {
@@ -63,7 +76,7 @@ public class SocketTest {
         assertEquals("|s>OK", resp);
       } catch (AssertionError e) {
         assertionErrors[0] = e;
-      } catch (IOException e) {
+      } catch (Exception e) {
         exceptions[0] = e;
       } finally {
         latch.countDown();
@@ -76,7 +89,7 @@ public class SocketTest {
         assertEquals("|s>OK", resp);
       } catch (AssertionError e) {
         assertionErrors[1] = e;
-      } catch (IOException e) {
+      } catch (Exception e) {
         exceptions[1] = e;
       } finally {
         latch.countDown();
@@ -89,7 +102,7 @@ public class SocketTest {
         assertEquals("|s>OK", resp);
       } catch (AssertionError e) {
         assertionErrors[2] = e;
-      } catch (IOException e) {
+      } catch (Exception e) {
         exceptions[2] = e;
       } finally {
         latch.countDown();
@@ -118,9 +131,9 @@ public class SocketTest {
     assertTrue(resp.matches("\\|ms>.*"));
   }
 
-  String sendCommand(String command) throws IOException {
+  String sendCommand(String command) throws Exception {
 
-    try (Socket socket = new Socket("0.0.0.0", Integer.parseInt(System.getenv("CANIS_PORT")));
+    try (Socket socket = tls.connect(server.getPort());
         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
         InputStream inputStream = socket.getInputStream();
         DataInputStream dataInputStream = new DataInputStream(inputStream)) {
@@ -131,9 +144,9 @@ public class SocketTest {
     }
   }
 
-  String sendAuthenticatedCommand(String command) throws IOException {
+  String sendAuthenticatedCommand(String command) throws Exception {
 
-    try (Socket socket = new Socket("0.0.0.0", Integer.parseInt(System.getenv("CANIS_PORT")));
+    try (Socket socket = tls.connect(server.getPort());
         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
         InputStream inputStream = socket.getInputStream();
         DataInputStream dataInputStream = new DataInputStream(inputStream)) {
@@ -156,10 +169,10 @@ public class SocketTest {
   }
 
   String username() {
-    return System.getenv("CANIS_USERNAME");
+    return "admin";
   }
 
   String password() {
-    return System.getenv("CANIS_PASSWORD");
+    return "123";
   }
 }

@@ -2,6 +2,8 @@ package io.canis.config;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.nio.file.Path;
+import java.nio.file.InvalidPathException;
 
 public final class EnvironmentLoader {
 
@@ -19,7 +21,20 @@ public final class EnvironmentLoader {
     int port = parsePort(require(environment, "CANIS_PORT"));
     Map<String, String> serviceCredentials = loadServiceCredentials(environment, username, password);
 
-    return new Environment(password, username, port, serviceCredentials);
+    TlsConfiguration tls = new TlsConfiguration(
+        parsePath(require(environment, "CANIS_TLS_KEYSTORE")),
+        require(environment, "CANIS_TLS_KEYSTORE_PASSWORD"),
+        parsePath(require(environment, "CANIS_TLS_TRUSTSTORE")),
+        require(environment, "CANIS_TLS_TRUSTSTORE_PASSWORD"));
+    return new Environment(password, username, port, serviceCredentials, tls);
+  }
+
+  private static Path parsePath(String value) {
+    try {
+      return Path.of(value);
+    } catch (InvalidPathException e) {
+      throw new IllegalStateException("Invalid TLS store path", e);
+    }
   }
 
   private static String require(Map<String, String> environment, String name) {

@@ -72,7 +72,7 @@ Service-name validation follow-up work is tracked in
 **Technologies Used:**
 
 - Programming Language: Java
-- Networking: TCP/IP Sockets
+- Networking: JSSE TLS 1.3 sockets with client certificate authentication
 - Data Storage: File I/O for `.dat` encrypted file persistence
 
 ### Prerequisites
@@ -98,6 +98,13 @@ export CANIS_PASSWORD=123;
 export CANIS_SERVICE_CREDENTIALS=serviceA:secret-a,serviceB:secret-b;
 # secret file name
 export CANIS_SECRET_KEY=/my/secret/location/secret.txt;
+# PKCS#12 server identity containing its certificate chain and private key
+export CANIS_TLS_KEYSTORE=/my/secret/location/server.p12;
+# PKCS#12 truststore containing trusted client certificates or issuing CA certificates
+export CANIS_TLS_TRUSTSTORE=/my/secret/location/clients.p12;
+# Supply both store passwords from an external secret manager or protected environment
+export CANIS_TLS_KEYSTORE_PASSWORD=...;
+export CANIS_TLS_TRUSTSTORE_PASSWORD=...;
 
 # run tests
 mvn test
@@ -108,3 +115,13 @@ mvn package
 # start server
 java server/target/canis-jar-with-dependencies.jar
 ```
+
+The server fails startup if TLS material is missing or invalid. It accepts TLS 1.3 only and
+requires a trusted client certificate before CANISP login. Protect both PKCS#12 files and their
+passwords with operating-system access controls; do not commit them or include them in images.
+The server certificate must identify the DNS name clients use. Rotate certificates before expiry.
+
+The current `JpawClient` still uses plaintext sockets. It cannot connect to this TLS-only server
+until the client TLS migration in backlog Issue #2 is deployed. Coordinate both releases; there is
+no plaintext fallback. Use the server integration tests as an example of a TLS 1.3 client with a
+client identity, trusted server certificate, and hostname validation.

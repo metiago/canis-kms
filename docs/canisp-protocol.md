@@ -36,12 +36,16 @@ should introduce a new protocol version and keep `JpawClient` aligned with serve
 
 ## Connection Flow
 
-1. Client opens a TCP socket.
-2. Client sends one login command line.
-3. Server returns a length-prefixed authentication response.
-4. If authentication succeeds, the same connection can send CANISP commands.
-5. Each command is a single newline-terminated text command.
-6. Each response is a 4-byte signed integer length followed by the UTF-8 response payload.
+1. Client opens a TLS 1.3 connection and validates the server certificate and hostname.
+2. Server validates the client certificate against its external truststore.
+3. Client sends one login command line after the TLS handshake succeeds.
+4. Server returns a length-prefixed authentication response.
+5. If authentication succeeds, the same connection can send CANISP commands.
+6. Each command is a single newline-terminated text command.
+7. Each response is a 4-byte signed integer length followed by the UTF-8 response payload.
+
+TLS changes the transport, not CANISP/1 command or response framing. The current official Java
+client requires the TLS update in backlog Issue #2 before it can connect to a TLS-only server.
 
 ## Limits
 

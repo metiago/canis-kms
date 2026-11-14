@@ -13,9 +13,9 @@ key operations on behalf of authenticated clients.
   application-facing API.
 - The CANIS server process, its host, and its encrypted database file are inside the trusted
   boundary.
-- The TCP network between applications and CANIS is outside the process boundary. Deployments should
-  place CANIS on a trusted private network or behind transport protection such as TLS termination or
-  a service mesh.
+- The network between applications and CANIS is outside the process boundary. The server requires
+  TLS 1.3 and a trusted client certificate before accepting CANISP commands. Clients must validate
+  the server certificate and hostname. A private network remains useful defense in depth.
 - Shared filesystems that store encrypted files are untrusted for plaintext confidentiality. Files
   must remain encrypted at rest.
 

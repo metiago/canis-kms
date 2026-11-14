@@ -5,6 +5,7 @@ import static io.canis.protocol.Commands.LOGIN;
 
 import io.canis.audit.AuditLogger;
 import io.canis.config.Environment;
+import io.canis.config.TlsContextFactory;
 import io.canis.handlers.ClientHandler;
 import io.canis.models.LoginCredentials;
 import io.canis.net.BoundedLineReader;
@@ -23,6 +24,10 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +42,7 @@ public class Server {
   private final int port;
   private final Map<String, String> serviceCredentials;
   private final KeyValueStore store;
+  private final SSLContext tlsContext;
   private volatile boolean running;
   private volatile ServerSocket serverSocket;
 
@@ -44,26 +50,31 @@ public class Server {
     this(loadEnvironment(), new KeyValueStore());
   }
 
-  Server(Environment env, KeyValueStore store) {
+  public Server(Environment env, KeyValueStore store) {
     this.port = env.port();
     this.serviceCredentials = env.serviceCredentials();
     this.store = store;
+    this.tlsContext = TlsContextFactory.create(env.tls());
     this.executorService = Executors.newVirtualThreadPerTaskExecutor();
   }
 
   public void start() {
 
     running = true;
-    try (ServerSocket boundServerSocket = new ServerSocket(this.port)) {
+    try (SSLServerSocket boundServerSocket =
+        (SSLServerSocket) tlsContext.getServerSocketFactory().createServerSocket(this.port)) {
+      boundServerSocket.setEnabledProtocols(new String[] {"TLSv1.3"});
+      boundServerSocket.setNeedClientAuth(true);
       this.serverSocket = boundServerSocket;
-      logger.info("Server is listening on port {}", port);
+      logger.info("TLS server is listening on port {}", boundServerSocket.getLocalPort());
       while (running) {
         try {
-          Socket socket = boundServerSocket.accept();
+          SSLSocket socket = (SSLSocket) boundServerSocket.accept();
           executorService.submit(() -> handleConnection(socket));
         } catch (SocketException e) {
           if (running) {
-            logger.error(e.getMessage(), e);
+            logger.error("TLS server accept failed");
+            throw new IllegalStateException("TLS server accept failed");
           }
           break;
         }
@@ -71,7 +82,8 @@ public class Server {
 
     } catch (IOException e) {
       if (running) {
-        logger.error(e.getMessage(), e);
+        logger.error("TLS server failed to bind or accept connections");
+        throw new IllegalStateException("TLS server failed to start");
       }
     } finally {
       running = false;
@@ -100,9 +112,12 @@ public class Server {
     return currentServerSocket.getLocalPort();
   }
 
-  private void handleConnection(Socket socket) {
+  private void handleConnection(SSLSocket socket) {
     try {
       socket.setSoTimeout(SOCKET_TIMEOUT_MS);
+      socket.setEnabledProtocols(new String[] {"TLSv1.3"});
+      socket.setNeedClientAuth(true);
+      socket.startHandshake();
       BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
@@ -112,8 +127,11 @@ public class Server {
       } else {
         socket.close();
       }
+    } catch (SSLException e) {
+      logger.warn("TLS handshake or connection failed for {}", socket.getRemoteSocketAddress());
+      closeQuietly(socket);
     } catch (IOException e) {
-      logger.error(e.getMessage(), e);
+      logger.warn("Client connection failed for {}", socket.getRemoteSocketAddress());
       closeQuietly(socket);
     }
   }
