@@ -33,209 +33,208 @@ import org.slf4j.LoggerFactory;
 
 public class Server {
 
-  private static final Logger logger = LoggerFactory.getLogger(Server.class);
-  private static final int SOCKET_TIMEOUT_MS = 30_000;
-  private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
+    private static final int SOCKET_TIMEOUT_MS = 30_000;
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
 
-  private final ExecutorService executorService;
+    private final ExecutorService executorService;
 
-  private final int port;
-  private final Map<String, String> serviceCredentials;
-  private final KeyValueStore store;
-  private final SSLContext tlsContext;
-  private volatile boolean running;
-  private volatile ServerSocket serverSocket;
+    private final int port;
+    private final Map<String, String> serviceCredentials;
+    private final KeyValueStore store;
+    private final SSLContext tlsContext;
+    private volatile boolean running;
+    private volatile ServerSocket serverSocket;
 
-  public Server() {
-    this(loadEnvironment(), new KeyValueStore());
-  }
+    public Server() {
+        this(loadEnvironment(), new KeyValueStore());
+    }
 
-  public Server(Environment env, KeyValueStore store) {
-    this.port = env.port();
-    this.serviceCredentials = env.serviceCredentials();
-    this.store = store;
-    this.tlsContext = TlsContextFactory.create(env.tls());
-    this.executorService = Executors.newVirtualThreadPerTaskExecutor();
-  }
+    public Server(Environment env, KeyValueStore store) {
+        this.port = env.port();
+        this.serviceCredentials = env.serviceCredentials();
+        this.store = store;
+        this.tlsContext = TlsContextFactory.create(env.tls());
+        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
+    }
 
-  public void start() {
+    public void start() {
 
-    running = true;
-    try (SSLServerSocket boundServerSocket =
-        (SSLServerSocket) tlsContext.getServerSocketFactory().createServerSocket(this.port)) {
-      boundServerSocket.setEnabledProtocols(new String[] {"TLSv1.3"});
-      boundServerSocket.setNeedClientAuth(true);
-      this.serverSocket = boundServerSocket;
-      logger.info("TLS server is listening on port {}", boundServerSocket.getLocalPort());
-      while (running) {
-        try {
-          SSLSocket socket = (SSLSocket) boundServerSocket.accept();
-          executorService.submit(() -> handleConnection(socket));
-        } catch (SocketException e) {
-          if (running) {
-            logger.error("TLS server accept failed");
-            throw new IllegalStateException("TLS server accept failed");
-          }
-          break;
+        running = true;
+        try (SSLServerSocket boundServerSocket =
+                (SSLServerSocket) tlsContext.getServerSocketFactory().createServerSocket(this.port)) {
+            boundServerSocket.setEnabledProtocols(new String[] {"TLSv1.3"});
+            boundServerSocket.setNeedClientAuth(true);
+            this.serverSocket = boundServerSocket;
+            logger.info("TLS server is listening on port {}", boundServerSocket.getLocalPort());
+            while (running) {
+                try {
+                    SSLSocket socket = (SSLSocket) boundServerSocket.accept();
+                    executorService.submit(() -> handleConnection(socket));
+                } catch (SocketException e) {
+                    if (running) {
+                        logger.error("TLS server accept failed");
+                        throw new IllegalStateException("TLS server accept failed");
+                    }
+                    break;
+                }
+            }
+
+        } catch (IOException e) {
+            if (running) {
+                logger.error("TLS server failed to bind or accept connections");
+                throw new IllegalStateException("TLS server failed to start");
+            }
+        } finally {
+            running = false;
+            serverSocket = null;
+            shutdownExecutor();
         }
-      }
-
-    } catch (IOException e) {
-      if (running) {
-        logger.error("TLS server failed to bind or accept connections");
-        throw new IllegalStateException("TLS server failed to start");
-      }
-    } finally {
-      running = false;
-      serverSocket = null;
-      shutdownExecutor();
-    }
-  }
-
-  public void stop() {
-    running = false;
-    ServerSocket currentServerSocket = serverSocket;
-    if (currentServerSocket != null) {
-      try {
-        currentServerSocket.close();
-      } catch (IOException e) {
-        logger.warn(e.getMessage(), e);
-      }
-    }
-  }
-
-  public int getPort() {
-    ServerSocket currentServerSocket = serverSocket;
-    if (currentServerSocket == null) {
-      return port;
-    }
-    return currentServerSocket.getLocalPort();
-  }
-
-  private void handleConnection(SSLSocket socket) {
-    try {
-      socket.setSoTimeout(SOCKET_TIMEOUT_MS);
-      socket.setEnabledProtocols(new String[] {"TLSv1.3"});
-      socket.setNeedClientAuth(true);
-      socket.startHandshake();
-      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-      DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-
-      Optional<String> serviceIdentity = authenticate(socket, in, out);
-      if (serviceIdentity.isPresent()) {
-        new ClientHandler(socket, in, out, store, serviceIdentity.get()).run();
-      } else {
-        socket.close();
-      }
-    } catch (SSLException e) {
-      logger.warn("TLS handshake or connection failed for {}", socket.getRemoteSocketAddress());
-      closeQuietly(socket);
-    } catch (IOException e) {
-      logger.warn("Client connection failed for {}", socket.getRemoteSocketAddress());
-      closeQuietly(socket);
-    }
-  }
-
-  private Optional<String> authenticate(Socket socket, BufferedReader in, DataOutputStream out)
-      throws IOException {
-
-    String input;
-    try {
-      input = BoundedLineReader.readLine(in);
-    } catch (LineTooLongException e) {
-      logger.warn("Authentication request exceeded maximum size: {}", socket.getRemoteSocketAddress());
-      AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "request_too_large");
-      sendResponse(out, "Request too large");
-      return Optional.empty();
     }
 
-    if (input == null || !isLoginCommand(input)) {
-      logger.info("Authentication failed: missing or invalid login command");
-      AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "missing_login");
-      sendResponse(out, "Authentication failed");
-      return Optional.empty();
+    public void stop() {
+        running = false;
+        ServerSocket currentServerSocket = serverSocket;
+        if (currentServerSocket != null) {
+            try {
+                currentServerSocket.close();
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
+            }
+        }
     }
 
-    Optional<LoginCredentials> credentials = parseLoginCredentials(input);
-    if (credentials.isEmpty()) {
-      logger.info("Invalid input format when authenticating: {}", socket.getRemoteSocketAddress());
-      AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "invalid_login_format");
-      sendResponse(out, "Invalid input format");
-      return Optional.empty();
+    public int getPort() {
+        ServerSocket currentServerSocket = serverSocket;
+        if (currentServerSocket == null) {
+            return port;
+        }
+        return currentServerSocket.getLocalPort();
     }
 
-    String username = credentials.get().username();
-    String password = credentials.get().password();
+    private void handleConnection(SSLSocket socket) {
+        try {
+            socket.setSoTimeout(SOCKET_TIMEOUT_MS);
+            socket.setEnabledProtocols(new String[] {"TLSv1.3"});
+            socket.setNeedClientAuth(true);
+            socket.startHandshake();
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-    logger.info("Authenticating username: {}", username);
-    if (isCredentialValid(username, password)) {
-      logger.info("Authentication successful for username: {}", username);
-      AuditLogger.authenticationSucceeded(username, socket.getRemoteSocketAddress());
-      sendResponse(out, "Authentication successful");
-      return Optional.of(username);
+            Optional<String> serviceIdentity = authenticate(socket, in, out);
+            if (serviceIdentity.isPresent()) {
+                new ClientHandler(socket, in, out, store, serviceIdentity.get()).run();
+            } else {
+                socket.close();
+            }
+        } catch (SSLException e) {
+            logger.warn("TLS handshake or connection failed for {}", socket.getRemoteSocketAddress());
+            closeQuietly(socket);
+        } catch (IOException e) {
+            logger.warn("Client connection failed for {}", socket.getRemoteSocketAddress());
+            closeQuietly(socket);
+        }
     }
 
-    logger.info("Authentication failed for username: {}", username);
-    AuditLogger.authenticationFailed(username, socket.getRemoteSocketAddress(), "invalid_credentials");
-    sendResponse(out, "Authentication failed");
-    return Optional.empty();
-  }
+    private Optional<String> authenticate(Socket socket, BufferedReader in, DataOutputStream out) throws IOException {
 
-  private void sendResponse(DataOutputStream out, String response) throws IOException {
-    var resp = response.getBytes(StandardCharsets.UTF_8);
-    out.writeInt(resp.length);
-    out.write(resp);
-  }
+        String input;
+        try {
+            input = BoundedLineReader.readLine(in);
+        } catch (LineTooLongException e) {
+            logger.warn("Authentication request exceeded maximum size: {}", socket.getRemoteSocketAddress());
+            AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "request_too_large");
+            sendResponse(out, "Request too large");
+            return Optional.empty();
+        }
 
-  private boolean isCredentialValid(String u, String p) {
-    return p.equals(this.serviceCredentials.get(u));
-  }
+        if (input == null || !isLoginCommand(input)) {
+            logger.info("Authentication failed: missing or invalid login command");
+            AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "missing_login");
+            sendResponse(out, "Authentication failed");
+            return Optional.empty();
+        }
 
-  static Optional<LoginCredentials> parseLoginCredentials(String input) {
-    if (!isLoginCommand(input)) {
-      return Optional.empty();
+        Optional<LoginCredentials> credentials = parseLoginCredentials(input);
+        if (credentials.isEmpty()) {
+            logger.info("Invalid input format when authenticating: {}", socket.getRemoteSocketAddress());
+            AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "invalid_login_format");
+            sendResponse(out, "Invalid input format");
+            return Optional.empty();
+        }
+
+        String username = credentials.get().username();
+        String password = credentials.get().password();
+
+        logger.info("Authenticating username: {}", username);
+        if (isCredentialValid(username, password)) {
+            logger.info("Authentication successful for username: {}", username);
+            AuditLogger.authenticationSucceeded(username, socket.getRemoteSocketAddress());
+            sendResponse(out, "Authentication successful");
+            return Optional.of(username);
+        }
+
+        logger.info("Authentication failed for username: {}", username);
+        AuditLogger.authenticationFailed(username, socket.getRemoteSocketAddress(), "invalid_credentials");
+        sendResponse(out, "Authentication failed");
+        return Optional.empty();
     }
 
-    String args = input.substring(LOGIN.length()).trim();
-    int separator = args.indexOf(':');
-    if (separator < 0) {
-      return Optional.empty();
+    private void sendResponse(DataOutputStream out, String response) throws IOException {
+        var resp = response.getBytes(StandardCharsets.UTF_8);
+        out.writeInt(resp.length);
+        out.write(resp);
     }
 
-    String username = args.substring(0, separator).trim();
-    String password = args.substring(separator + 1).trim();
-    if (username.isEmpty() || password.isEmpty()) {
-      return Optional.empty();
+    private boolean isCredentialValid(String u, String p) {
+        return p.equals(this.serviceCredentials.get(u));
     }
 
-    return Optional.of(new LoginCredentials(username, password));
-  }
+    static Optional<LoginCredentials> parseLoginCredentials(String input) {
+        if (!isLoginCommand(input)) {
+            return Optional.empty();
+        }
 
-  private static boolean isLoginCommand(String input) {
-    return input != null && (input.equals(LOGIN) || input.startsWith(LOGIN + " "));
-  }
+        String args = input.substring(LOGIN.length()).trim();
+        int separator = args.indexOf(':');
+        if (separator < 0) {
+            return Optional.empty();
+        }
 
-  private void closeQuietly(Socket socket) {
-    try {
-      socket.close();
-    } catch (IOException e) {
-      logger.warn(e.getMessage(), e);
+        String username = args.substring(0, separator).trim();
+        String password = args.substring(separator + 1).trim();
+        if (username.isEmpty() || password.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new LoginCredentials(username, password));
     }
-  }
 
-  private void shutdownExecutor() {
-    executorService.shutdown();
-    try {
-      if (!executorService.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-        executorService.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      executorService.shutdownNow();
+    private static boolean isLoginCommand(String input) {
+        return input != null && (input.equals(LOGIN) || input.startsWith(LOGIN + " "));
     }
-  }
 
-  public static void main(String[] args) {
-    new Server().start();
-  }
+    private void closeQuietly(Socket socket) {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            logger.warn(e.getMessage(), e);
+        }
+    }
+
+    private void shutdownExecutor() {
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            executorService.shutdownNow();
+        }
+    }
+
+    public static void main(String[] args) {
+        new Server().start();
+    }
 }

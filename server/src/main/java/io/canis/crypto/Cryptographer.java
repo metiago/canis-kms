@@ -33,11 +33,8 @@ public class Cryptographer {
     private static final int GCM_TAG_LENGTH_BYTES = 16;
     private static final int GCM_TAG_LENGTH_BITS = 128;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final OAEPParameterSpec RSA_OAEP_PARAMETER_SPEC = new OAEPParameterSpec(
-            "SHA-256",
-            "MGF1",
-            MGF1ParameterSpec.SHA256,
-            PSource.PSpecified.DEFAULT);
+    private static final OAEPParameterSpec RSA_OAEP_PARAMETER_SPEC =
+            new OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT);
 
     public static byte[] decrypt(byte[] inputBytes, PrivateKey privateKey) throws GeneralSecurityException {
         Cipher cipher = Cipher.getInstance(RSA_OAEP_TRANSFORMATION);
@@ -81,7 +78,7 @@ public class Cryptographer {
         byte[] encryptedDataKey = encrypt(dataKey.getEncoded(), publicKey);
 
         try (ByteArrayOutputStream output = new ByteArrayOutputStream();
-             DataOutputStream envelope = new DataOutputStream(output)) {
+                DataOutputStream envelope = new DataOutputStream(output)) {
             envelope.write(HYBRID_ENVELOPE_MAGIC);
             envelope.writeInt(encryptedDataKey.length);
             envelope.writeInt(nonce.length);
@@ -95,10 +92,8 @@ public class Cryptographer {
         }
     }
 
-    private static byte[] decryptHybridEnvelope(byte[] envelopeBytes, PrivateKey privateKey)
-            throws Exception {
-        try (DataInputStream envelope =
-                     new DataInputStream(new ByteArrayInputStream(envelopeBytes))) {
+    private static byte[] decryptHybridEnvelope(byte[] envelopeBytes, PrivateKey privateKey) throws Exception {
+        try (DataInputStream envelope = new DataInputStream(new ByteArrayInputStream(envelopeBytes))) {
             byte[] magic = new byte[HYBRID_ENVELOPE_MAGIC.length];
             envelope.readFully(magic);
 
@@ -154,11 +149,8 @@ public class Cryptographer {
     }
 
     private static void validateHybridEnvelopeLengths(
-            int envelopeLength,
-            int encryptedDataKeyLength,
-            int nonceLength,
-            int ciphertextLength,
-            int tagLength) throws IOException {
+            int envelopeLength, int encryptedDataKeyLength, int nonceLength, int ciphertextLength, int tagLength)
+            throws IOException {
 
         if (encryptedDataKeyLength <= 0) {
             throw new IOException("Invalid hybrid envelope: encrypted data key is missing.");
@@ -174,11 +166,7 @@ public class Cryptographer {
         }
 
         long headerLength = HYBRID_ENVELOPE_MAGIC.length + (4L * Integer.BYTES);
-        long expectedLength = headerLength
-                + encryptedDataKeyLength
-                + nonceLength
-                + ciphertextLength
-                + tagLength;
+        long expectedLength = headerLength + encryptedDataKeyLength + nonceLength + ciphertextLength + tagLength;
         if (expectedLength != envelopeLength) {
             throw new IOException("Invalid hybrid envelope: length fields do not match payload.");
         }

@@ -1,28 +1,28 @@
-//package io.canis.crypto;
+// package io.canis.crypto;
 //
 //
-//import static org.junit.jupiter.api.Assertions.assertEquals;
+// import static org.junit.jupiter.api.Assertions.assertEquals;
 //
-//import io.canis.Server;
-//import io.canis.jpaw.client.JpawClient;
-//import io.canis.crypto.Cryptographer;
-//import java.io.BufferedWriter;
-//import java.io.File;
-//import java.io.FileWriter;
-//import java.io.IOException;
-//import java.nio.file.Files;
-//import java.security.KeyFactory;
-//import java.security.PrivateKey;
-//import java.security.PublicKey;
-//import java.security.spec.PKCS8EncodedKeySpec;
-//import java.security.spec.X509EncodedKeySpec;
-//import java.util.Base64;
-//import java.util.Map;
-//import org.junit.jupiter.api.AfterEach;
-//import org.junit.jupiter.api.BeforeAll;
-//import org.junit.jupiter.api.Test;
+// import io.canis.Server;
+// import io.canis.jpaw.client.JpawClient;
+// import io.canis.crypto.Cryptographer;
+// import java.io.BufferedWriter;
+// import java.io.File;
+// import java.io.FileWriter;
+// import java.io.IOException;
+// import java.nio.file.Files;
+// import java.security.KeyFactory;
+// import java.security.PrivateKey;
+// import java.security.PublicKey;
+// import java.security.spec.PKCS8EncodedKeySpec;
+// import java.security.spec.X509EncodedKeySpec;
+// import java.util.Base64;
+// import java.util.Map;
+// import org.junit.jupiter.api.AfterEach;
+// import org.junit.jupiter.api.BeforeAll;
+// import org.junit.jupiter.api.Test;
 //
-//public class AppTest {
+// public class AppTest {
 //
 //  private static final String INPUT_FILE_PATH = System.getProperty("user.dir") + "\\content.txt";
 //  private static final String ENCRYPTED_FILE_PATH = System.getProperty("user.dir") + "\\file.enc";
@@ -109,4 +109,4 @@
 //  public void tearDown() {
 //    cleanUpFiles();
 //  }
-//}
+// }

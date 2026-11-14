@@ -10,82 +10,76 @@ import org.junit.jupiter.api.Test;
 
 public class EnvironmentLoaderTest {
 
-  @Test
-  void testLoadEnvironment() {
-    Environment environment = EnvironmentLoader.loadEnvironment(validEnvironment());
+    @Test
+    void testLoadEnvironment() {
+        Environment environment = EnvironmentLoader.loadEnvironment(validEnvironment());
 
-    assertEquals("admin", environment.username());
-    assertEquals("123", environment.password());
-    assertEquals(3307, environment.port());
-    assertEquals("123", environment.serviceCredentials().get("admin"));
-  }
+        assertEquals("admin", environment.username());
+        assertEquals("123", environment.password());
+        assertEquals(3307, environment.port());
+        assertEquals("123", environment.serviceCredentials().get("admin"));
+    }
 
-  @Test
-  void testLoadEnvironmentWithServiceCredentials() {
-    Map<String, String> rawEnvironment = validEnvironment();
-    rawEnvironment.put("CANIS_SERVICE_CREDENTIALS",
-        "serviceA:secret-a, serviceB:secret:b:with:colons");
+    @Test
+    void testLoadEnvironmentWithServiceCredentials() {
+        Map<String, String> rawEnvironment = validEnvironment();
+        rawEnvironment.put("CANIS_SERVICE_CREDENTIALS", "serviceA:secret-a, serviceB:secret:b:with:colons");
 
-    Environment environment = EnvironmentLoader.loadEnvironment(rawEnvironment);
+        Environment environment = EnvironmentLoader.loadEnvironment(rawEnvironment);
 
-    assertEquals("secret-a", environment.serviceCredentials().get("serviceA"));
-    assertEquals("secret:b:with:colons", environment.serviceCredentials().get("serviceB"));
-    assertEquals("123", environment.serviceCredentials().get("admin"));
-  }
+        assertEquals("secret-a", environment.serviceCredentials().get("serviceA"));
+        assertEquals("secret:b:with:colons", environment.serviceCredentials().get("serviceB"));
+        assertEquals("123", environment.serviceCredentials().get("admin"));
+    }
 
-  @Test
-  void testLoadEnvironmentRejectsInvalidServiceCredentials() {
-    Map<String, String> environment = validEnvironment();
-    environment.put("CANIS_SERVICE_CREDENTIALS", "serviceA");
+    @Test
+    void testLoadEnvironmentRejectsInvalidServiceCredentials() {
+        Map<String, String> environment = validEnvironment();
+        environment.put("CANIS_SERVICE_CREDENTIALS", "serviceA");
 
-    assertThrows(IllegalStateException.class,
-        () -> EnvironmentLoader.loadEnvironment(environment));
-  }
+        assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+    }
 
-  @Test
-  void testLoadEnvironmentRejectsMissingRequiredValue() {
-    Map<String, String> environment = validEnvironment();
-    environment.remove("CANIS_SECRET_KEY");
+    @Test
+    void testLoadEnvironmentRejectsMissingRequiredValue() {
+        Map<String, String> environment = validEnvironment();
+        environment.remove("CANIS_SECRET_KEY");
 
-    assertThrows(IllegalStateException.class,
-        () -> EnvironmentLoader.loadEnvironment(environment));
-  }
+        assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+    }
 
-  @Test
-  void testLoadEnvironmentRejectsInvalidPort() {
-    Map<String, String> environment = validEnvironment();
-    environment.put("CANIS_PORT", "70000");
+    @Test
+    void testLoadEnvironmentRejectsInvalidPort() {
+        Map<String, String> environment = validEnvironment();
+        environment.put("CANIS_PORT", "70000");
 
-    assertThrows(IllegalStateException.class,
-        () -> EnvironmentLoader.loadEnvironment(environment));
-  }
+        assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+    }
 
-  @Test
-  void testLoadEnvironmentRejectsMissingTlsSettings() {
-    Map<String, String> environment = validEnvironment();
-    environment.remove("CANIS_TLS_KEYSTORE");
-    assertThrows(IllegalStateException.class,
-        () -> EnvironmentLoader.loadEnvironment(environment));
-  }
+    @Test
+    void testLoadEnvironmentRejectsMissingTlsSettings() {
+        Map<String, String> environment = validEnvironment();
+        environment.remove("CANIS_TLS_KEYSTORE");
+        assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+    }
 
-  @Test
-  void testLoadEnvironmentRejectsBlankTlsPassword() {
-    Map<String, String> environment = validEnvironment();
-    environment.put("CANIS_TLS_TRUSTSTORE_PASSWORD", " ");
-    assertThrows(IllegalStateException.class,
-        () -> EnvironmentLoader.loadEnvironment(environment));
-  }
+    @Test
+    void testLoadEnvironmentRejectsBlankTlsPassword() {
+        Map<String, String> environment = validEnvironment();
+        environment.put("CANIS_TLS_TRUSTSTORE_PASSWORD", " ");
+        assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+    }
 
-  private Map<String, String> validEnvironment() {
-    Map<String, String> environment = new HashMap<>();
-    environment.put("CANIS_USERNAME", "admin");
-    environment.put("CANIS_PASSWORD", "123");
-    environment.put("CANIS_SECRET_KEY", "secret.txt");
-    environment.put("CANIS_PORT", "3307");
-    environment.put("CANIS_TLS_KEYSTORE", "server.p12");
-    environment.put("CANIS_TLS_KEYSTORE_PASSWORD", UUID.randomUUID().toString());
-    environment.put("CANIS_TLS_TRUSTSTORE", "clients.p12");
-    environment.put("CANIS_TLS_TRUSTSTORE_PASSWORD", UUID.randomUUID().toString());
-    return environment;
-  }
+    private Map<String, String> validEnvironment() {
+        Map<String, String> environment = new HashMap<>();
+        environment.put("CANIS_USERNAME", "admin");
+        environment.put("CANIS_PASSWORD", "123");
+        environment.put("CANIS_SECRET_KEY", "secret.txt");
+        environment.put("CANIS_PORT", "3307");
+        environment.put("CANIS_TLS_KEYSTORE", "server.p12");
+        environment.put("CANIS_TLS_KEYSTORE_PASSWORD", UUID.randomUUID().toString());
+        environment.put("CANIS_TLS_TRUSTSTORE", "clients.p12");
+        environment.put("CANIS_TLS_TRUSTSTORE_PASSWORD", UUID.randomUUID().toString());
+        return environment;
+    }
 }

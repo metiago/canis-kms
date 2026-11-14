@@ -1,4 +1,3 @@
 package io.canis.models;
 
-public record LoginCredentials(String username, String password) {
-}
+public record LoginCredentials(String username, String password) {}

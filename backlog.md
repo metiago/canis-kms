@@ -1,28 +1,16 @@
 # Milestone 1 - Security Transport
 
-## Issue #1 - Migrate CANIS Server from TCP to TLS
+## Completed in this milestone
 
-### Objetivo
-Substituir comunicação TCP pura por TLS obrigatório no servidor CANIS.
-
-### Tarefas
-
-- [ ] Substituir `ServerSocket` por `SSLServerSocket`
-- [ ] Configurar `SSLContext`
-- [ ] Carregar certificado e chave de forma externa
-- [ ] Configurar truststore externa
-- [ ] Restringir conexão para TLS 1.3
-- [ ] Desabilitar protocolos legados
-
-### Critérios de Aceitação
-
-- [ ] Nenhuma conexão plaintext é aceita
-- [ ] Apenas TLS 1.3 é permitido
-- [ ] Falhas de configuração impedem inicialização
+- **Issue #1 - Migrate CANIS Server from TCP to TLS:** completed in commit `666eba0`. The server uses TLS 1.3, requires client certificates, loads TLS identity/trust material externally, and has tests for plaintext, TLS 1.2, untrusted-client, and invalid-configuration rejection. See `ServerTlsSecurityTest` and `TlsContextFactory`.
 
 ---
 
 ## Issue #2 - Implement TLS in JpawClient
+
+**Status:** Implemented and verified in the working tree.
+
+**JOSS tracking:** See [submission-readiness.md](joss-papers/submission-readiness.md), item 2. Keep implementation tasks here; the JOSS checklist records the submission dependency and evidence.
 
 ### Objetivo
 
@@ -30,15 +18,21 @@ Adicionar suporte TLS ao cliente CANIS.
 
 ### Tarefas
 
-- [ ] Criar conexão usando `SSLSocket`
-- [ ] Configurar truststore
-- [ ] Validar cadeia de certificados
-- [ ] Habilitar verificação de hostname
+- [x] Criar conexão usando `SSLSocket`
+- [x] Carregar identidade de cliente e truststore a partir de configuração externa
+- [x] Restringir a conexão a TLS 1.3, sem fallback plaintext
+- [x] Validar cadeia e hostname do servidor usando a identidade DNS configurada
+- [x] Documentar variáveis/configuração sem incluir segredos
 
 ### Critérios de Aceitação
 
-- [ ] Cliente rejeita certificados inválidos
-- [ ] Cliente rejeita hostnames incorretos
+- [x] Cliente rejeita certificados não confiáveis e falhas de handshake
+- [x] Cliente rejeita hostnames incorretos
+- [x] Cliente e servidor completam o fluxo de arquivo fim a fim usando mTLS
+- [x] Testes verificam certificado de cliente não confiável, certificado de servidor não confiável, TLS legado, plaintext e falha de handshake/protocolo
+- [x] Nenhum caminho de conexão plaintext permanece no cliente oficial
+
+**Evidence:** `mvn -q -pl client test` passed. `mvn -q -pl server -am '-Dtest=ServerEndToEndTest' '-Dsurefire.failIfNoSpecifiedTests=false' test` passed, including the official-client file workflow against the TLS server. Coverage is in `SocketClientTest`, `EnvironmentLoaderTest`, and `ServerEndToEndTest`.
 
 ---
 
@@ -63,6 +57,8 @@ Aplicar configuração segura de TLS.
 ---
 
 ## Issue #4 - Create TLS Security Test Suite
+
+**Coordenação:** Cobrir cenários negativos do cliente em Issue #2 e cenários do servidor já não cobertos pelos testes existentes. Evitar duplicar os testes de handshake de servidor.
 
 ### Objetivo
 

@@ -6,56 +6,53 @@ import java.util.Map;
 
 public class Entry implements Serializable {
 
-  private String name;
+    private String name;
 
-  private String publicKey;
+    private String publicKey;
 
-  private String privateKey;
+    private String privateKey;
 
-  public Entry() {
-  }
+    public Entry() {}
 
-  public Entry(String name, String publicKey, String privateKey) {
-    this.name = name;
-    this.publicKey = publicKey;
-    this.privateKey = privateKey;
-  }
+    public Entry(String name, String publicKey, String privateKey) {
+        this.name = name;
+        this.publicKey = publicKey;
+        this.privateKey = privateKey;
+    }
 
-  public String getName() {
-    return name;
-  }
+    public String getName() {
+        return name;
+    }
 
-  public void setName(String name) {
-    this.name = name;
-  }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-  public String getPublicKey() {
-    return publicKey;
-  }
+    public String getPublicKey() {
+        return publicKey;
+    }
 
-  public void setPublicKey(String publicKey) {
-    this.publicKey = publicKey;
-  }
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
+    }
 
-  public String getPrivateKey() {
-    return privateKey;
-  }
+    public String getPrivateKey() {
+        return privateKey;
+    }
 
-  public void setPrivateKey(String privateKey) {
-    this.privateKey = privateKey;
-  }
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
+    }
 
-  public Map<String, Object> toMap() {
-    Map<String, Object> map = new HashMap<>();
-    map.put("name", this.name);
-    map.put("publicKey", this.publicKey);
-    return map;
-  }
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", this.name);
+        map.put("publicKey", this.publicKey);
+        return map;
+    }
 
-  @Override
-  public String toString() {
-    return "Entry{" +
-        "name='" + name + '\'' +
-        '}';
-  }
+    @Override
+    public String toString() {
+        return "Entry{" + "name='" + name + '\'' + '}';
+    }
 }

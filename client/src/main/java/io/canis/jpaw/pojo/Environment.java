@@ -1,13 +1,21 @@
 package io.canis.jpaw.pojo;
 
-public record Environment(
-        String host,
-        int port,
-        String username,
-        String password
-) {
+import io.canis.jpaw.config.TlsConfiguration;
 
-  public Environment(String password, String username, String host, int port) {
-    this(host, port, username, password);
-  }
+public record Environment(String host, int port, String username, String password, TlsConfiguration tls) {
+
+    public Environment {
+        if (host == null || host.isBlank()) {
+            throw new IllegalArgumentException("Server host is required");
+        }
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Client credentials are required");
+        }
+        if (port < 1 || port > 65535) {
+            throw new IllegalArgumentException("Invalid server port");
+        }
+        if (tls == null) {
+            throw new IllegalArgumentException("TLS configuration is required");
+        }
+    }
 }

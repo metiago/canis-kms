@@ -1,7 +1,5 @@
 package io.canis.jpaw;
 
-
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -16,72 +14,69 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-
 @ExtendWith(MockitoExtension.class)
 class JpawTest {
 
-  @Mock
-  Jpaw jPaw;
+    @Mock
+    Jpaw jPaw;
 
-  @Test
-  void testLoginCommandError() throws IOException {
-    var expected = "Authentication failed";
-    when(jPaw.set(anyString())).thenReturn(expected);
-    String resp = jPaw.set(anyString());
-    assertEquals(expected, resp);
-  }
+    @Test
+    void testLoginCommandError() throws IOException {
+        var expected = "Authentication failed";
+        when(jPaw.set(anyString())).thenReturn(expected);
+        String resp = jPaw.set(anyString());
+        assertEquals(expected, resp);
+    }
 
-  @Test
-  void testLoginCommandOK() throws IOException {
-    var expected = "Authentication successful";
-    when(jPaw.set(anyString())).thenReturn(expected);
-    String resp = jPaw.set(anyString());
-    assertEquals(expected, resp);
-  }
+    @Test
+    void testLoginCommandOK() throws IOException {
+        var expected = "Authentication successful";
+        when(jPaw.set(anyString())).thenReturn(expected);
+        String resp = jPaw.set(anyString());
+        assertEquals(expected, resp);
+    }
 
-  @Test
-  void testHealthCommand() throws IOException {
-    var expected = "OK";
-    when(jPaw.health()).thenReturn("|s>OK");
-    String result = jPaw.health();
-    assertEquals(expected, Parser.parseString(result));
-  }
+    @Test
+    void testHealthCommand() throws IOException {
+        var expected = "OK";
+        when(jPaw.health()).thenReturn("|s>OK");
+        String result = jPaw.health();
+        assertEquals(expected, Parser.parseString(result));
+    }
 
-  @Test
-  void testProtocolVersionCommand() throws IOException {
-    when(jPaw.protocolVersion()).thenReturn("CANISP/1");
-    String result = jPaw.protocolVersion();
-    assertEquals("CANISP/1", result);
-  }
+    @Test
+    void testProtocolVersionCommand() throws IOException {
+        when(jPaw.protocolVersion()).thenReturn("CANISP/1");
+        String result = jPaw.protocolVersion();
+        assertEquals("CANISP/1", result);
+    }
 
-  @Test
-  void testAddCommand() throws IOException {
-    var expected = "OK";
-    when(jPaw.set(anyString())).thenReturn("OK");
-    String result = jPaw.set(anyString());
-    assertEquals(expected, result);
-  }
+    @Test
+    void testAddCommand() throws IOException {
+        var expected = "OK";
+        when(jPaw.set(anyString())).thenReturn("OK");
+        String result = jPaw.set(anyString());
+        assertEquals(expected, result);
+    }
 
-  @Test
-  void testGetCommand() throws IOException {
-    when(jPaw.get(anyString())).thenReturn(Map.of("name", "Mikey"));
-    Map<String, Object> result = jPaw.get("Mikey");
-    assertEquals("Mikey", result.get("name"));
-  }
+    @Test
+    void testGetCommand() throws IOException {
+        when(jPaw.get(anyString())).thenReturn(Map.of("name", "Mikey"));
+        Map<String, Object> result = jPaw.get("Mikey");
+        assertEquals("Mikey", result.get("name"));
+    }
 
-  @Test
-  void testGetPublicKeyCommand() throws IOException {
-    when(jPaw.getPublicKey(anyString())).thenReturn("public-key");
-    String result = jPaw.getPublicKey("Mikey");
-    assertEquals("public-key", result);
-  }
+    @Test
+    void testGetPublicKeyCommand() throws IOException {
+        when(jPaw.getPublicKey(anyString())).thenReturn("public-key");
+        String result = jPaw.getPublicKey("Mikey");
+        assertEquals("public-key", result);
+    }
 
-  @Test
-  void testDeleteCommand() throws IOException {
-    when(jPaw.delete(anyString())).thenReturn(true);
-    boolean result = jPaw.delete("Alice");
-    assertTrue(result);
-  }
+    @Test
+    void testDeleteCommand() throws IOException {
+        when(jPaw.delete(anyString())).thenReturn(true);
+        boolean result = jPaw.delete("Alice");
+        assertTrue(result);
+    }
 }
-
-

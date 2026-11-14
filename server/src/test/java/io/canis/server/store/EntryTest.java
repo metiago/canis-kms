@@ -9,14 +9,14 @@ import org.junit.jupiter.api.Test;
 
 public class EntryTest {
 
-  @Test
-  void testToMapDoesNotExposePrivateKey() {
-    Entry entry = new Entry("app", "public-key", "private-key");
+    @Test
+    void testToMapDoesNotExposePrivateKey() {
+        Entry entry = new Entry("app", "public-key", "private-key");
 
-    Map<String, Object> result = entry.toMap();
+        Map<String, Object> result = entry.toMap();
 
-    assertEquals("app", result.get("name"));
-    assertEquals("public-key", result.get("publicKey"));
-    assertFalse(result.containsKey("privateKey"));
-  }
+        assertEquals("app", result.get("name"));
+        assertEquals("public-key", result.get("publicKey"));
+        assertFalse(result.containsKey("privateKey"));
+    }
 }
