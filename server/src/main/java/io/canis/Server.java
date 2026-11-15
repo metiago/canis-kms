@@ -5,6 +5,7 @@ import static io.canis.protocol.Commands.LOGIN;
 
 import io.canis.audit.AuditLogger;
 import io.canis.config.Environment;
+import io.canis.config.TlsCipherPolicy;
 import io.canis.config.TlsContextFactory;
 import io.canis.handlers.ClientHandler;
 import io.canis.models.LoginCredentials;
@@ -15,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -62,9 +64,10 @@ public class Server {
 
         running = true;
         try (SSLServerSocket boundServerSocket =
-                (SSLServerSocket) tlsContext.getServerSocketFactory().createServerSocket(this.port)) {
-            boundServerSocket.setEnabledProtocols(new String[] {"TLSv1.3"});
+                (SSLServerSocket) tlsContext.getServerSocketFactory().createServerSocket()) {
+            TlsCipherPolicy.configure(boundServerSocket);
             boundServerSocket.setNeedClientAuth(true);
+            boundServerSocket.bind(new InetSocketAddress(this.port));
             this.serverSocket = boundServerSocket;
             logger.info("TLS server is listening on port {}", boundServerSocket.getLocalPort());
             while (running) {
@@ -80,6 +83,9 @@ public class Server {
                 }
             }
 
+        } catch (TlsCipherPolicy.NoApprovedCipherSuiteException e) {
+            logger.error("TLS server configuration rejected: no approved TLS 1.3 cipher suite is enabled");
+            throw e;
         } catch (IOException e) {
             if (running) {
                 logger.error("TLS server failed to bind or accept connections");
@@ -115,7 +121,7 @@ public class Server {
     private void handleConnection(SSLSocket socket) {
         try {
             socket.setSoTimeout(SOCKET_TIMEOUT_MS);
-            socket.setEnabledProtocols(new String[] {"TLSv1.3"});
+            TlsCipherPolicy.configure(socket);
             socket.setNeedClientAuth(true);
             socket.startHandshake();
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -132,6 +138,9 @@ public class Server {
             closeQuietly(socket);
         } catch (IOException e) {
             logger.warn("Client connection failed for {}", socket.getRemoteSocketAddress());
+            closeQuietly(socket);
+        } catch (TlsCipherPolicy.NoApprovedCipherSuiteException e) {
+            logger.warn("TLS connection rejected: no approved TLS 1.3 cipher suite is enabled");
             closeQuietly(socket);
         }
     }

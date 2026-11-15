@@ -1,5 +1,6 @@
 package io.canis.jpaw.client;
 
+import io.canis.jpaw.config.TlsCipherPolicy;
 import io.canis.jpaw.config.TlsConfiguration;
 import io.canis.jpaw.config.TlsContextFactory;
 import java.io.DataInputStream;
@@ -39,7 +40,7 @@ final class SocketClient implements AutoCloseable {
             transport.connect(new InetSocketAddress(address, port), SOCKET_TIMEOUT_MS);
             connected = (SSLSocket) context.getSocketFactory().createSocket(transport, address, port, true);
             connected.setSoTimeout(SOCKET_TIMEOUT_MS);
-            connected.setEnabledProtocols(new String[] {"TLSv1.3"});
+            TlsCipherPolicy.configure(connected);
             SSLParameters parameters = connected.getSSLParameters();
             parameters.setEndpointIdentificationAlgorithm("HTTPS");
             connected.setSSLParameters(parameters);
@@ -62,6 +63,9 @@ final class SocketClient implements AutoCloseable {
             }
             if (e instanceof IOException ioException) {
                 throw ioException;
+            }
+            if (e instanceof TlsCipherPolicy.NoApprovedCipherSuiteException) {
+                throw new IOException("No approved TLS 1.3 cipher suite is enabled.");
             }
             throw new IOException("TLS connection could not be established.");
         }

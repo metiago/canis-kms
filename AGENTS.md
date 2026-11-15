@@ -180,6 +180,7 @@ Each commit should:
 - Build successfully
 - Pass tests
 - Be independently reviewable
+- mvn spotless:apply
 
 Avoid large mixed-purpose commits.
 

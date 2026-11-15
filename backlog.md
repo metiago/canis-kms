@@ -8,7 +8,7 @@
 
 ## Issue #2 - Implement TLS in JpawClient
 
-**Status:** Implemented and verified in the working tree.
+**Status:** Completed and verified in the working tree.
 
 **JOSS tracking:** See [submission-readiness.md](joss-papers/submission-readiness.md), item 2. Keep implementation tasks here; the JOSS checklist records the submission dependency and evidence.
 
@@ -38,21 +38,29 @@ Adicionar suporte TLS ao cliente CANIS.
 
 ## Issue #3 - Harden TLS Configuration
 
+**Status:** Implemented and verified in the working tree.
+
 ### Objetivo
 
 Aplicar configuração segura de TLS.
 
 ### Tarefas
 
-- [ ] Permitir AES-GCM
-- [ ] Permitir ChaCha20-Poly1305
-- [ ] Proibir TrustManagers inseguros
-- [ ] Documentar configuração
+- [x] Permitir AES-GCM
+- [x] Permitir ChaCha20-Poly1305
+- [x] Proibir TrustManagers inseguros
+- [x] Documentar configuração
 
 ### Critérios de Aceitação
 
-- [ ] Não existe bypass de validação
-- [ ] Suites inseguras não são utilizadas
+- [x] Não existe bypass de validação
+- [x] Suites inseguras não são utilizadas
+
+**Evidence:** `mvn test` passed: 55 client tests (5 existing skips) and 60 server tests. `TlsCipherPolicyTest` verifies the allowlist on real sockets, preservation of provider-disabled suites, and rejection when no approved suite is enabled. `SocketClientTest` and `ServerTlsSecurityTest` verify negotiated TLS 1.3 suites and existing certificate, hostname, and protocol rejection paths. Trust managers are created with PKIX from configured trust stores.
+
+**Operational impact:** Client and server allow only provider-enabled TLS 1.3 AES-GCM and ChaCha20-Poly1305 suites. If no approved suite remains enabled, setup fails closed with a sanitized diagnostic before the server binds or the client handshakes. Peers must share an enabled approved suite. CANISP and stored data formats are unchanged.
+
+**Follow-up:** Keep the client and server suite lists aligned if the policy changes; a shared policy or cross-module check would reduce drift risk.
 
 ---
 
