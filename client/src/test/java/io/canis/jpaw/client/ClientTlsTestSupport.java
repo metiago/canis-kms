@@ -4,6 +4,8 @@ import io.canis.jpaw.config.TlsConfiguration;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.HexFormat;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -16,6 +18,8 @@ final class ClientTlsTestSupport {
     private final Path serverIdentity;
     private final Path clientTrust;
     private final Path serverTrust;
+    private Path certificateAuthority;
+    private Path certificateAuthorityTrust;
 
     ClientTlsTestSupport(Path directory) throws Exception {
         this.directory = directory;
@@ -47,12 +51,146 @@ final class ClientTlsTestSupport {
     }
 
     SSLServerSocket server(boolean trustClient) throws Exception {
-        SSLServerSocket server = (SSLServerSocket)
-                serverContext(trustClient).getServerSocketFactory().createServerSocket(0);
+        return server(serverContext(trustClient));
+    }
+
+    SSLServerSocket serverWithExpiredCertificate() throws Exception {
+        return serverWithCertificate("expired-server", "2020/01/01 00:00:00", "serverAuth");
+    }
+
+    SSLServerSocket serverWithValidCaCertificate() throws Exception {
+        return serverWithCertificate("valid-server", null, "serverAuth");
+    }
+
+    SSLServerSocket serverWithWrongUsageCertificate() throws Exception {
+        return serverWithCertificate("wrong-usage-server", null, "clientAuth");
+    }
+
+    TlsConfiguration certificateAuthorityTrustConfiguration() throws Exception {
+        ensureCertificateAuthority();
+        return new TlsConfiguration(clientIdentity, password, certificateAuthorityTrust, password);
+    }
+
+    private SSLServerSocket serverWithCertificate(String alias, String startDate, String extendedKeyUsage)
+            throws Exception {
+        ensureCertificateAuthority();
+        Path identity = directory.resolve(alias + ".p12");
+        generate(alias, identity, "localhost");
+        Path request = directory.resolve(alias + ".csr");
+        Path certificate = directory.resolve(alias + ".cer");
+        run(
+                "-certreq",
+                "-alias",
+                alias,
+                "-keystore",
+                identity.toString(),
+                "-storetype",
+                "PKCS12",
+                "-storepass",
+                password,
+                "-file",
+                request.toString());
+        var issue = new java.util.ArrayList<String>(java.util.List.of(
+                "-gencert",
+                "-alias",
+                "ca",
+                "-keystore",
+                certificateAuthority.toString(),
+                "-storetype",
+                "PKCS12",
+                "-storepass",
+                password,
+                "-infile",
+                request.toString(),
+                "-outfile",
+                certificate.toString(),
+                "-validity",
+                startDate == null ? "2" : "1",
+                "-ext",
+                "SAN=dns:localhost",
+                "-ext",
+                "EKU=" + extendedKeyUsage));
+        if (startDate != null) {
+            issue.add("-startdate");
+            issue.add(startDate);
+        }
+        run(issue.toArray(String[]::new));
+        importCertificate("ca", directory.resolve("ca.cer"), identity);
+        importCertificate(alias, certificate, identity);
+        verifyIssuedCertificate(identity, alias, startDate != null, extendedKeyUsage);
+        return server(context(identity, clientIdentity));
+    }
+
+    private void verifyIssuedCertificate(Path identity, String alias, boolean expired, String extendedKeyUsage)
+            throws Exception {
+        X509Certificate certificate = (X509Certificate) load(identity).getCertificate(alias);
+        if (expired != certificate.getNotAfter().before(new Date())) {
+            throw new IllegalStateException("TLS test certificate has the wrong validity period");
+        }
+        String expectedUsage = extendedKeyUsage.equals("serverAuth") ? "1.3.6.1.5.5.7.3.1" : "1.3.6.1.5.5.7.3.2";
+        if (!java.util.List.of(expectedUsage).equals(certificate.getExtendedKeyUsage())) {
+            throw new IllegalStateException("TLS test certificate has the wrong extended key usage");
+        }
+        certificate.verify(load(certificateAuthority).getCertificate("ca").getPublicKey());
+    }
+
+    private SSLServerSocket server(SSLContext context) throws Exception {
+        SSLServerSocket server =
+                (SSLServerSocket) context.getServerSocketFactory().createServerSocket(0);
         server.setEnabledProtocols(new String[] {"TLSv1.3"});
         server.setNeedClientAuth(true);
         server.setSoTimeout(3000);
         return server;
+    }
+
+    private void ensureCertificateAuthority() throws Exception {
+        if (certificateAuthority != null) {
+            return;
+        }
+        certificateAuthority = directory.resolve("ca.p12");
+        certificateAuthorityTrust = directory.resolve("ca-trust.p12");
+        run(
+                "-genkeypair",
+                "-alias",
+                "ca",
+                "-keyalg",
+                "RSA",
+                "-keysize",
+                "2048",
+                "-validity",
+                "30",
+                "-dname",
+                "CN=CANIS test CA",
+                "-ext",
+                "BC=ca:true",
+                "-ext",
+                "KU=keyCertSign,cRLSign",
+                "-keystore",
+                certificateAuthority.toString(),
+                "-storetype",
+                "PKCS12",
+                "-storepass",
+                password,
+                "-keypass",
+                password,
+                "-noprompt");
+        exportAndTrust("ca", certificateAuthority, certificateAuthorityTrust);
+    }
+
+    private void importCertificate(String alias, Path certificate, Path store) throws Exception {
+        run(
+                "-importcert",
+                "-alias",
+                alias,
+                "-file",
+                certificate.toString(),
+                "-keystore",
+                store.toString(),
+                "-storetype",
+                "PKCS12",
+                "-storepass",
+                password,
+                "-noprompt");
     }
 
     private SSLContext context(Path identityPath, Path trustPath) throws Exception {
