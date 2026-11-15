@@ -126,6 +126,15 @@ requires a trusted client certificate before CANISP login. Protect both PKCS#12 
 passwords with operating-system access controls; do not commit them or include them in images.
 The server certificate must identify the DNS name clients use. Rotate certificates before expiry.
 
+Both endpoints allow only the TLS 1.3 suites `TLS_AES_128_GCM_SHA256`,
+`TLS_AES_256_GCM_SHA384`, and `TLS_CHACHA20_POLY1305_SHA256`. Each endpoint enables only
+approved suites already enabled by its Java TLS provider. Provider-disabled suites stay disabled;
+if no approved suite remains, setup fails closed with a sanitized configuration error. Peers must
+share at least one enabled approved suite. The server uses PKIX validation for client
+certificates, and the official client uses PKIX validation plus hostname verification for the
+server certificate. There is no certificate-validation bypass or plaintext fallback. Cipher
+suite selection is fixed in the application and has no environment-variable override.
+
 The official `JpawClient` uses TLS 1.3 with client-certificate authentication, trusted server
 certificate validation, and hostname verification. Configure its PKCS#12 identity and trust stores
 with the `CANIS_CLIENT_TLS_*` variables above. The client fails closed and has no plaintext

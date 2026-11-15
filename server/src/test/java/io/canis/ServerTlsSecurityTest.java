@@ -13,10 +13,13 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import javax.net.ssl.SSLSocket;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.io.TempDir;
 
 class ServerTlsSecurityTest {
@@ -71,6 +74,29 @@ class ServerTlsSecurityTest {
             socket.setEnabledProtocols(new String[] {"TLSv1.2"});
             assertThrows(IOException.class, socket::startHandshake);
         }
+    }
+
+    @Test
+    void negotiatesEveryProviderEnabledApprovedTls13Suite(TestReporter reporter) throws Exception {
+        String[] approved = {"TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"};
+        int tested = 0;
+        var providerDisabled = new ArrayList<String>();
+        for (String suite : approved) {
+            try (SSLSocket socket = tls.connect(server.getPort())) {
+                if (!Arrays.asList(socket.getEnabledCipherSuites()).contains(suite)) {
+                    providerDisabled.add(suite);
+                    continue;
+                }
+                socket.setEnabledCipherSuites(new String[] {suite});
+                socket.startHandshake();
+                assertEquals("TLSv1.3", socket.getSession().getProtocol());
+                assertEquals(suite, socket.getSession().getCipherSuite());
+                tested++;
+            }
+        }
+        reporter.publishEntry(
+                "providerDisabledSuites", providerDisabled.isEmpty() ? "none" : String.join(",", providerDisabled));
+        assertTrue(tested > 0);
     }
 
     @Test

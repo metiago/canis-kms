@@ -33,7 +33,7 @@ public final class TlsContextFactory {
 
             KeyManagerFactory keys = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             keys.init(identity, keyPassword);
-            TrustManagerFactory trust = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            TrustManagerFactory trust = TrustManagerFactory.getInstance("PKIX");
             trust.init(trustedClients);
             SSLContext context = SSLContext.getInstance("TLSv1.3");
             context.init(keys.getKeyManagers(), trust.getTrustManagers(), null);

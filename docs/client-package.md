@@ -53,6 +53,13 @@ certificate or issuing CA. The configured host is checked against the server cer
 is mandatory and there is no plaintext fallback. Supply passwords through a protected environment
 or secret manager, protect store files with operating-system permissions, and never commit them.
 
+The client offers only `TLS_AES_128_GCM_SHA256`, `TLS_AES_256_GCM_SHA384`, and
+`TLS_CHACHA20_POLY1305_SHA256`, limited to suites already enabled by its Java TLS provider.
+Provider-disabled suites stay disabled. The client fails with a sanitized configuration error
+if none are enabled, or a handshake error if the server shares no enabled approved suite.
+Certificate-chain validation uses PKIX and hostname verification remains mandatory. There is no
+option to bypass validation or override the cipher-suite policy through environment variables.
+
 ## Service Names
 
 Service names are identifiers, not arbitrary free-form text. Client methods that receive a service

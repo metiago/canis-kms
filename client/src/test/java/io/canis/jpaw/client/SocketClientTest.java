@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -23,6 +24,7 @@ import javax.crypto.spec.PSource;
 import javax.net.ssl.SSLSocket;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.io.TempDir;
 
 class SocketClientTest {
@@ -189,6 +191,49 @@ class SocketClientTest {
                             "localhost", server.getLocalPort(), "admin", "123", tls.clientConfiguration()));
             thread.join(3000);
         }
+    }
+
+    @Test
+    void negotiatesEveryProviderEnabledApprovedTls13Suite(TestReporter reporter) throws Exception {
+        String[] approved = {"TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"};
+        int tested = 0;
+        var providerDisabled = new java.util.ArrayList<String>();
+        for (String suite : approved) {
+            try (var server = tls.server(true)) {
+                if (!java.util.Arrays.asList(server.getEnabledCipherSuites()).contains(suite)) {
+                    providerDisabled.add(suite);
+                    continue;
+                }
+                server.setEnabledCipherSuites(new String[] {suite});
+                AtomicReference<String> negotiated = new AtomicReference<>();
+                AtomicReference<Throwable> failure = new AtomicReference<>();
+                Thread thread = new Thread(() -> {
+                    try (SSLSocket socket = (SSLSocket) server.accept()) {
+                        socket.setSoTimeout(3000);
+                        socket.startHandshake();
+                        negotiated.set(socket.getSession().getCipherSuite());
+                        new BufferedReader(new InputStreamReader(socket.getInputStream())).readLine();
+                        writeResponse(new DataOutputStream(socket.getOutputStream()), "Authentication successful");
+                    } catch (Throwable e) {
+                        failure.set(e);
+                    }
+                });
+                thread.start();
+                try (SocketClient ignored = new SocketClient(
+                        "localhost", server.getLocalPort(), "admin", "123", tls.clientConfiguration())) {
+                    // Construction completes the authenticated TLS handshake.
+                }
+                thread.join(3000);
+                if (failure.get() != null) {
+                    throw new AssertionError("TLS test server failed", failure.get());
+                }
+                assertEquals(suite, negotiated.get());
+                tested++;
+            }
+        }
+        reporter.publishEntry(
+                "providerDisabledSuites", providerDisabled.isEmpty() ? "none" : String.join(",", providerDisabled));
+        assertTrue(tested > 0);
     }
 
     private void authenticateAndWaitForClose(javax.net.ssl.SSLServerSocket server, AtomicReference<Throwable> failure) {
