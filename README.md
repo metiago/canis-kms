@@ -75,6 +75,21 @@ Service-name validation follow-up work is tracked in
 - Networking: JSSE TLS 1.3 sockets with client certificate authentication
 - Data Storage: File I/O for `.dat` encrypted file persistence
 
+#### Architecture
+```mermaid
+flowchart LR
+    APP["Business Application"]
+    CLIENT["JpawClient"]
+    SERVER["Canis Server"]
+    STORE[("In-Memory Key Store")]
+    DB[("Encrypted .dat File")]
+
+    APP --> CLIENT
+    CLIENT <-->|"mTLS 1.3 / TCP 3307"| SERVER
+    SERVER <--> STORE
+    STORE <--> DB
+```
+
 ### Prerequisites
 - Java 21+
 - Maven
