@@ -1,6 +1,6 @@
 Read AGENTS.md.
 
-Review the implementation of Issue #3.
+Review the implementation of Issue #4.
 
 Perform:
 

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.canis.jpaw.config.TlsConfiguration;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -133,39 +134,115 @@ class SocketClientTest {
     }
 
     @Test
+    void authenticatesWithValidCaSignedServerCertificate() throws Exception {
+        try (var server = tls.serverWithValidCaCertificate()) {
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            Thread thread = new Thread(() -> authenticateAndWaitForClose(server, failure));
+            thread.start();
+            try (SocketClient ignored = new SocketClient(
+                    "localhost", server.getLocalPort(), "admin", "123", tls.certificateAuthorityTrustConfiguration())) {
+                // Construction completes the TLS handshake and CANISP login.
+            }
+            thread.join(3000);
+            assertFalse(thread.isAlive());
+            if (failure.get() != null) {
+                throw new AssertionError("TLS test server failed", failure.get());
+            }
+        }
+    }
+
+    @Test
+    void rejectsExpiredServerCertificateBeforeSendingLogin() throws Exception {
+        try (var server = tls.serverWithExpiredCertificate()) {
+            AtomicReference<String> received = new AtomicReference<>();
+            Thread thread = new Thread(() -> acceptAndRead(server, received));
+            thread.start();
+            assertThrows(
+                    IOException.class,
+                    () -> new SocketClient(
+                            "localhost",
+                            server.getLocalPort(),
+                            "admin",
+                            "123",
+                            tls.certificateAuthorityTrustConfiguration()));
+            thread.join(3000);
+            assertFalse(thread.isAlive());
+            assertNull(received.get());
+        }
+    }
+
+    @Test
+    void rejectsServerCertificateWithWrongExtendedKeyUsageBeforeSendingLogin() throws Exception {
+        try (var server = tls.serverWithWrongUsageCertificate()) {
+            AtomicReference<String> received = new AtomicReference<>();
+            Thread thread = new Thread(() -> acceptAndRead(server, received));
+            thread.start();
+            assertThrows(
+                    IOException.class,
+                    () -> new SocketClient(
+                            "localhost",
+                            server.getLocalPort(),
+                            "admin",
+                            "123",
+                            tls.certificateAuthorityTrustConfiguration()));
+            thread.join(3000);
+            assertFalse(thread.isAlive());
+            assertNull(received.get());
+        }
+    }
+
+    @Test
+    void rejectsMalformedTrustedServerStoreBeforeConnecting() throws Exception {
+        Path malformed = tempDir.resolve("malformed-trust.p12");
+        Files.write(malformed, new byte[] {1, 2, 3, 4});
+        TlsConfiguration valid = tls.clientConfiguration();
+        TlsConfiguration invalid =
+                new TlsConfiguration(valid.keyStore(), valid.keyStorePassword(), malformed, valid.trustStorePassword());
+
+        IOException failure =
+                assertThrows(IOException.class, () -> new SocketClient("localhost", 1, "admin", "123", invalid));
+        assertEquals("TLS connection could not be established.", failure.getMessage());
+    }
+
+    @Test
     void rejectsHostnameMismatch() throws Exception {
         try (var server = tls.server(true)) {
-            Thread thread = new Thread(() -> acceptAndRead(server, new AtomicReference<>()));
+            AtomicReference<String> received = new AtomicReference<>();
+            Thread thread = new Thread(() -> acceptAndRead(server, received));
             thread.start();
             assertThrows(
                     IOException.class,
                     () -> new SocketClient(
                             "127.0.0.1", server.getLocalPort(), "admin", "123", tls.clientConfiguration()));
             thread.join(3000);
+            assertNull(received.get());
         }
     }
 
     @Test
     void rejectsUntrustedClientCertificate() throws Exception {
         try (var server = tls.server(false)) {
-            Thread thread = new Thread(() -> acceptAndRead(server, new AtomicReference<>()));
+            AtomicReference<String> received = new AtomicReference<>();
+            Thread thread = new Thread(() -> acceptAndRead(server, received));
             thread.start();
             assertThrows(
                     IOException.class,
                     () -> new SocketClient(
                             "localhost", server.getLocalPort(), "admin", "123", tls.clientConfiguration()));
             thread.join(3000);
+            assertNull(received.get());
         }
     }
 
     @Test
     void rejectsPlaintextEndpointWithoutFallback() throws Exception {
         try (var server = new java.net.ServerSocket(0)) {
-            AtomicReference<String> received = new AtomicReference<>();
+            AtomicReference<Integer> firstByte = new AtomicReference<>();
             Thread thread = new Thread(() -> {
-                try (var socket = server.accept();
-                        var in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-                    received.set(in.readLine());
+                try (var socket = server.accept()) {
+                    socket.setSoTimeout(3000);
+                    firstByte.set(socket.getInputStream().read());
+                    socket.getOutputStream().write("HTTP/1.1 200 OK\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
                 } catch (IOException ignored) {
                 }
             });
@@ -175,7 +252,8 @@ class SocketClientTest {
                     () -> new SocketClient(
                             "localhost", server.getLocalPort(), "admin", "123", tls.clientConfiguration()));
             thread.join(3000);
-            assertFalse("|login admin:123".equals(received.get()));
+            assertFalse(thread.isAlive());
+            assertEquals(22, firstByte.get());
         }
     }
 
@@ -183,13 +261,15 @@ class SocketClientTest {
     void rejectsTls12OnlyPeer() throws Exception {
         try (var server = tls.server(true)) {
             server.setEnabledProtocols(new String[] {"TLSv1.2"});
-            Thread thread = new Thread(() -> acceptAndRead(server, new AtomicReference<>()));
+            AtomicReference<String> received = new AtomicReference<>();
+            Thread thread = new Thread(() -> acceptAndRead(server, received));
             thread.start();
             assertThrows(
                     IOException.class,
                     () -> new SocketClient(
                             "localhost", server.getLocalPort(), "admin", "123", tls.clientConfiguration()));
             thread.join(3000);
+            assertNull(received.get());
         }
     }
 

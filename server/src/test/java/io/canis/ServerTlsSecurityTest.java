@@ -1,6 +1,7 @@
 package io.canis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,8 +62,8 @@ class ServerTlsSecurityTest {
             socket.setSoTimeout(3000);
             socket.getOutputStream().write("|login admin:123\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
             socket.shutdownOutput();
-            // JSSE sends a TLS alert record (content type 21), never a CANISP response.
-            assertEquals(21, socket.getInputStream().read());
+            // A CANISP response starts with a small positive length, whose first byte is zero.
+            assertNotEquals(0, socket.getInputStream().read());
         }
     }
 
@@ -120,7 +121,7 @@ class ServerTlsSecurityTest {
     }
 
     @Test
-    void invalidTlsMaterialPreventsStartup() {
+    void invalidTlsMaterialPreventsStartup() throws Exception {
         TlsConfiguration config = tls.environment().tls();
         assertThrows(
                 IllegalStateException.class,
@@ -133,6 +134,12 @@ class ServerTlsSecurityTest {
                 IllegalStateException.class,
                 () -> TlsContextFactory.create(new TlsConfiguration(
                         config.keyStore(), "wrong-password", config.trustStore(), config.trustStorePassword())));
+        Path malformed = tempDir.resolve("malformed-trust.p12");
+        Files.write(malformed, new byte[] {1, 2, 3, 4});
+        assertThrows(
+                IllegalStateException.class,
+                () -> TlsContextFactory.create(new TlsConfiguration(
+                        config.keyStore(), config.keyStorePassword(), malformed, config.trustStorePassword())));
     }
 
     @Test

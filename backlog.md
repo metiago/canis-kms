@@ -66,6 +66,8 @@ Aplicar configuração segura de TLS.
 
 ## Issue #4 - Create TLS Security Test Suite
 
+**Status:** Completed and verified in the working tree.
+
 **Coordenação:** Cobrir cenários negativos do cliente em Issue #2 e cenários do servidor já não cobertos pelos testes existentes. Evitar duplicar os testes de handshake de servidor.
 
 ### Objetivo
@@ -74,16 +76,20 @@ Implementar testes negativos de TLS.
 
 ### Tarefas
 
-- [ ] Certificado expirado
-- [ ] Certificado inválido
-- [ ] Certificado não confiável
-- [ ] Hostname incorreto
-- [ ] Downgrade attack
-- [ ] Conexão plaintext
+- [x] Certificado expirado
+- [x] Certificado inválido
+- [x] Certificado não confiável
+- [x] Hostname incorreto
+- [x] Downgrade attack
+- [x] Conexão plaintext
 
 ### Critérios de Aceitação
 
-- [ ] Todos os cenários falham corretamente
+- [x] Todos os cenários falham corretamente
+
+**Evidence:** `mvn -q test` passed: 59 client tests (5 existing skips) and 63 server tests, with no failures or errors. `SocketClientTest` covers client-side rejection before login, including expired and wrong-purpose server certificates, malformed trust material, wrong hostname, untrusted peers, TLS 1.2, and a plaintext endpoint. `ServerTlsCertificateTest` proves a valid CA-signed client can authenticate and that expired or wrong-purpose client certificates receive no CANISP response. Existing `ServerTlsSecurityTest` covers untrusted clients, TLS 1.2, plaintext, invalid credentials, and invalid TLS material. See [TLS security tests](docs/tls-security-tests.md) for the scenario matrix and fixture design.
+
+**Operational and compatibility impact:** Test fixtures and documentation only; runtime TLS configuration, CANISP framing, and stored data are unchanged. Fixtures require JDK `keytool` and an approved TLS 1.3 cipher suite. A shared test fixture module could reduce the duplicated CA issuance helpers later.
 
 ---
 
