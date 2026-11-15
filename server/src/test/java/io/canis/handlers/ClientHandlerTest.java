@@ -12,8 +12,8 @@ import static org.mockito.Mockito.when;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import io.canis.crypto.AsymmetricGenerator;
 import io.canis.crypto.Cryptographer;
+import io.canis.crypto.SymmetricGenerator;
 import io.canis.net.BoundedLineReader;
 import io.canis.protocol.ProtocolError;
 import io.canis.store.Entry;
@@ -27,13 +27,22 @@ import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 
 public class ClientHandlerTest {
+
+    @TempDir
+    Path tempDir;
 
     @Test
     void testVersionCommandReturnsCanispVersion() throws Exception {
@@ -70,16 +79,16 @@ public class ClientHandlerTest {
 
     @Test
     void testDecryptCommandUsesStoredPrivateKey() throws Exception {
-        KeyPair keyPair = AsymmetricGenerator.generateKeyPair();
-        String privateKey = AsymmetricGenerator.privateKeyToString(keyPair.getPrivate());
-        String publicKey = AsymmetricGenerator.publicKeyToString(keyPair.getPublic());
-        Entry entry = new Entry("serviceA", publicKey, privateKey);
+        KeyValueStore store = new KeyValueStore(
+                tempDir.resolve("db.dat").toString(),
+                tempDir.resolve("secret.key").toString());
+        store.create("serviceA");
+        String privateKey = storedPrivateKey(tempDir.resolve("db.dat"), tempDir.resolve("secret.key"));
+        byte[] publicKeyBytes = Base64.getDecoder().decode(store.get("serviceA").publicKey());
+        var publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKeyBytes));
 
         byte[] plaintext = "file-key".getBytes(StandardCharsets.UTF_8);
-        byte[] encrypted = Cryptographer.encrypt(plaintext, keyPair.getPublic());
-
-        KeyValueStore store = mock(KeyValueStore.class);
-        when(store.get("serviceA")).thenReturn(entry);
+        byte[] encrypted = Cryptographer.encrypt(plaintext, publicKey);
 
         Socket socket = mock(Socket.class);
         when(socket.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 3307));
@@ -100,15 +109,16 @@ public class ClientHandlerTest {
 
         assertArrayEquals(plaintext, Base64.getDecoder().decode(decryptedBase64));
         assertFalse(message.contains(privateKey));
+        assertFalse(runCommand("|get serviceA", store).contains(privateKey));
+        assertFalse(runCommand("|get-public serviceA", store).contains(privateKey));
+        assertFalse(runCommand("|list", store).contains(privateKey));
     }
 
     @Test
     void testListCommandUsesStoredEntries() throws Exception {
         KeyValueStore store = mock(KeyValueStore.class);
         when(store.list())
-                .thenReturn(List.of(
-                        new Entry("serviceA", "public-key-a", "private-key-a"),
-                        new Entry("serviceB", "public-key-b", "private-key-b")));
+                .thenReturn(List.of(new Entry("serviceA", "public-key-a"), new Entry("serviceB", "public-key-b")));
 
         Socket socket = mock(Socket.class);
         when(socket.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 3307));
@@ -134,7 +144,7 @@ public class ClientHandlerTest {
     @Test
     void testGetPublicCommandReturnsOnlyPublicKey() throws Exception {
         KeyValueStore store = mock(KeyValueStore.class);
-        when(store.get("serviceA")).thenReturn(new Entry("serviceA", "public-key-a", "private-key-a"));
+        when(store.get("serviceA")).thenReturn(new Entry("serviceA", "public-key-a"));
 
         Socket socket = mock(Socket.class);
         when(socket.getRemoteSocketAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 3307));
@@ -166,7 +176,7 @@ public class ClientHandlerTest {
     @Test
     void testGetExistingKeyReturnsMetadataWithoutPrivateKey() throws Exception {
         KeyValueStore store = mock(KeyValueStore.class);
-        when(store.get("serviceA")).thenReturn(new Entry("serviceA", "public-key-a", "private-key-a"));
+        when(store.get("serviceA")).thenReturn(new Entry("serviceA", "public-key-a"));
 
         String response = runCommand("|get serviceA", store);
 
@@ -177,7 +187,7 @@ public class ClientHandlerTest {
 
     @Test
     void testSetRejectsDuplicateAndPreservesExistingEntry() throws Exception {
-        Entry existing = new Entry("serviceA", "original-public", "original-private");
+        Entry existing = new Entry("serviceA", "original-public");
         KeyValueStore store = mock(KeyValueStore.class);
         when(store.get("serviceA")).thenReturn(existing);
 
@@ -191,21 +201,16 @@ public class ClientHandlerTest {
     @Test
     void testSetCreatesEntryWhenServiceDoesNotExist() throws Exception {
         KeyValueStore store = mock(KeyValueStore.class);
-        when(store.create(org.mockito.ArgumentMatchers.eq("serviceA"), org.mockito.ArgumentMatchers.any(Entry.class)))
-                .thenReturn(true);
+        when(store.create("serviceA")).thenReturn(true);
 
         String message = runCommand("|set serviceA", store);
 
         assertEquals("|s>OK", message);
-        verify(store)
-                .create(org.mockito.ArgumentMatchers.eq("serviceA"), org.mockito.ArgumentMatchers.any(Entry.class));
+        verify(store).create("serviceA");
     }
 
-    private void verifyNoInteractionsAfterGet(KeyValueStore store) {
-        org.mockito.Mockito.verify(store, org.mockito.Mockito.never())
-                .create(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Entry.class));
-        org.mockito.Mockito.verify(store, org.mockito.Mockito.never())
-                .set(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Entry.class));
+    private void verifyNoInteractionsAfterGet(KeyValueStore store) throws Exception {
+        org.mockito.Mockito.verify(store, org.mockito.Mockito.never()).create(org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
@@ -232,6 +237,46 @@ public class ClientHandlerTest {
 
         assertEquals(stringResponse(ProtocolError.INVALID_INPUT_FORMAT), message);
         verifyNoInteractions(store);
+    }
+
+    @Test
+    void testDecryptFailureDoesNotExposePrivateKeyInResponseOrLogs() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        String encodedPrivateKey = Base64.getEncoder()
+                .encodeToString(generator.generateKeyPair().getPrivate().getEncoded());
+        KeyValueStore store = mock(KeyValueStore.class);
+        when(store.decrypt(org.mockito.ArgumentMatchers.eq("serviceA"), org.mockito.ArgumentMatchers.any(byte[].class)))
+                .thenThrow(new GeneralSecurityException(encodedPrivateKey));
+
+        Logger handlerLogger = (Logger) LoggerFactory.getLogger(ClientHandler.class);
+        Logger auditLogger = (Logger) LoggerFactory.getLogger("io.canis.audit");
+        ListAppender<ILoggingEvent> handlerAppender = new ListAppender<>();
+        ListAppender<ILoggingEvent> auditAppender = new ListAppender<>();
+        handlerAppender.start();
+        auditAppender.start();
+        handlerLogger.addAppender(handlerAppender);
+        auditLogger.addAppender(auditAppender);
+        try {
+            String response = runCommand("|decrypt serviceA YWJj", store);
+            assertEquals(stringResponse(ProtocolError.DECRYPTION_FAILED), response);
+            assertFalse(response.contains(encodedPrivateKey));
+            assertTrue(handlerAppender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .anyMatch(message -> message.contains("Failed to decrypt payload")));
+            assertFalse(handlerAppender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .anyMatch(message -> message.contains(encodedPrivateKey)));
+            assertFalse(auditAppender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .anyMatch(message -> message.contains(encodedPrivateKey)));
+            assertTrue(handlerAppender.list.stream().allMatch(event -> event.getThrowableProxy() == null));
+        } finally {
+            handlerLogger.detachAppender(handlerAppender);
+            auditLogger.detachAppender(auditAppender);
+            handlerAppender.stop();
+            auditAppender.stop();
+        }
     }
 
     @Test
@@ -268,6 +313,23 @@ public class ClientHandlerTest {
             in.readFully(payload);
             return new String(payload, StandardCharsets.UTF_8);
         }
+    }
+
+    private String storedPrivateKey(Path database, Path secret) throws Exception {
+        byte[] serialized = new SymmetricGenerator(secret.toString()).decrypt(Files.readAllBytes(database));
+        try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(serialized))) {
+            in.skipNBytes("CANISDB1".length());
+            assertEquals(1, in.readInt());
+            readStoredString(in);
+            readStoredString(in);
+            readStoredString(in);
+            return readStoredString(in);
+        }
+    }
+
+    private String readStoredString(DataInputStream in) throws Exception {
+        int length = in.readInt();
+        return new String(in.readNBytes(length), StandardCharsets.UTF_8);
     }
 
     private String stringResponse(ProtocolError error) {

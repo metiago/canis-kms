@@ -19,8 +19,6 @@ import static io.canis.protocol.ProtocolError.REQUEST_TOO_LARGE;
 import static io.canis.protocol.ProtocolError.SERVICE_ALREADY_EXISTS;
 
 import io.canis.audit.AuditLogger;
-import io.canis.crypto.AsymmetricGenerator;
-import io.canis.crypto.Cryptographer;
 import io.canis.net.BoundedLineReader;
 import io.canis.net.BoundedLineReader.LineTooLongException;
 import io.canis.protocol.Converter;
@@ -32,12 +30,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.Base64;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,12 +73,12 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (IOException | NoSuchAlgorithmException e) {
-            logger.error(e.getMessage(), e);
+            logger.error("Client command processing failed");
         } finally {
             try {
                 socket.close();
             } catch (IOException e) {
-                logger.warn(e.getMessage(), e);
+                logger.warn("Client socket close failed");
             }
         }
     }
@@ -144,7 +140,7 @@ public class ClientHandler implements Runnable {
                 return;
             }
             AuditLogger.keyAccessed(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
-            var bytes = Converter.toMap(entry.toMap()).getBytes(StandardCharsets.UTF_8);
+            var bytes = Converter.toMap(entry).getBytes(StandardCharsets.UTF_8);
             out.writeInt(bytes.length);
             out.write(bytes);
 
@@ -205,26 +201,16 @@ public class ClientHandler implements Runnable {
         if (store.get(args) != null) {
             return false;
         }
-        KeyPair keyPair = AsymmetricGenerator.generateKeyPair();
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
-        var publicKeyBase64 = AsymmetricGenerator.publicKeyToString(publicKey);
-        var privateKeyBase64 = AsymmetricGenerator.privateKeyToString(privateKey);
-
-        var metadata = new Entry();
-        metadata.setName(args);
-        metadata.setPublicKey(publicKeyBase64);
-        metadata.setPrivateKey(privateKeyBase64);
-        return store.create(args, metadata);
+        return store.create(args);
     }
 
     private String getPublicKey(String key) {
         logger.info("Getting public key by key: {}", key);
         Entry entry = store.get(key);
-        if (entry == null || entry.getPublicKey() == null) {
+        if (entry == null || entry.publicKey() == null) {
             return KEY_NOT_FOUND.wireMessage();
         }
-        return entry.getPublicKey();
+        return entry.publicKey();
     }
 
     private void delete(String key) {
@@ -248,21 +234,16 @@ public class ClientHandler implements Runnable {
 
         logger.info("Service {} requested decrypt with key {}", serviceIdentity, key);
 
-        Entry entry = store.get(key);
-        if (entry == null || entry.getPrivateKey() == null) {
-            AuditLogger.decryptFailed(serviceIdentity, key, this.socket.getRemoteSocketAddress(), "key_not_found");
-            sendResponse(out, KEY_NOT_FOUND.wireMessage());
-            return;
-        }
-
         try {
             byte[] encryptedData = Base64.getDecoder().decode(parts[1]);
-            PrivateKey privateKey = AsymmetricGenerator.stringToPrivateKey(entry.getPrivateKey());
-            byte[] decryptedData = Cryptographer.decrypt(encryptedData, privateKey);
+            byte[] decryptedData = store.decrypt(key, encryptedData);
             AuditLogger.decryptSucceeded(serviceIdentity, key, this.socket.getRemoteSocketAddress());
             sendResponse(out, Base64.getEncoder().encodeToString(decryptedData));
+        } catch (NoSuchElementException e) {
+            AuditLogger.decryptFailed(serviceIdentity, key, this.socket.getRemoteSocketAddress(), "key_not_found");
+            sendResponse(out, KEY_NOT_FOUND.wireMessage());
         } catch (Exception e) {
-            logger.error("Failed to decrypt payload for key {}", key, e);
+            logger.error("Failed to decrypt payload for key {}", key);
             AuditLogger.decryptFailed(serviceIdentity, key, this.socket.getRemoteSocketAddress(), "decryption_failed");
             sendResponse(out, DECRYPTION_FAILED.wireMessage());
         }

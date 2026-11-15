@@ -76,13 +76,13 @@ public final class EnvironmentLoader {
 
             int separator = trimmed.indexOf(':');
             if (separator < 0) {
-                throw new IllegalStateException("Invalid CANIS_SERVICE_CREDENTIALS entry: " + trimmed);
+                throw new IllegalStateException("Invalid CANIS_SERVICE_CREDENTIALS entry");
             }
 
             String serviceName = trimmed.substring(0, separator).trim();
             String servicePassword = trimmed.substring(separator + 1).trim();
             if (serviceName.isEmpty() || servicePassword.isEmpty()) {
-                throw new IllegalStateException("Invalid CANIS_SERVICE_CREDENTIALS entry: " + trimmed);
+                throw new IllegalStateException("Invalid CANIS_SERVICE_CREDENTIALS entry");
             }
 
             credentials.put(serviceName, servicePassword);

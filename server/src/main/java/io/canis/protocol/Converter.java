@@ -2,26 +2,12 @@ package io.canis.protocol;
 
 import io.canis.store.Entry;
 import java.util.List;
-import java.util.Map;
 
 /** Converter utility to convert internal objects to string - canis protocol */
 public class Converter {
 
-    public static String toMap(Map<String, Object> map) {
-
-        StringBuilder builder = new StringBuilder();
-
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            if (value instanceof String) {
-                builder.append("|ms>").append(key).append(":").append(value);
-            } else if (value instanceof Integer) {
-                builder.append("|mi>").append(key).append(":").append(value);
-            }
-        }
-
-        return builder.toString();
+    public static String toMap(Entry entry) {
+        return "|ms>name:" + entry.name() + "|ms>publicKey:" + entry.publicKey();
     }
 
     public static String toArrayOfMaps(List<Entry> entries) {
@@ -30,8 +16,7 @@ public class Converter {
         builder.append("|a>");
 
         for (Entry entry : entries) {
-            builder.append("|ms>name:").append(entry.getName());
-            builder.append("|ms>publicKey:").append(entry.getPublicKey());
+            builder.append(toMap(entry));
 
             if (entries.size() > 1) {
                 builder.append("|a>");

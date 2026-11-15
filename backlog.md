@@ -116,11 +116,13 @@ Revisar geração, armazenamento e uso das chaves RSA.
 
 **Evidence:** [RSA key lifecycle review](docs/rsa-key-lifecycle.md) documents generation, encrypted storage, startup loading, server-side use, logical deletion, recovery, and outstanding risks. `ServerEndToEndTest` verifies that a real RSA key decrypts an encrypted file after restart and remains unavailable after deletion and another restart. `mvn -q test` passed: 59 client tests (5 existing skips) and 77 server tests, with no failures or errors.
 
-**Follow-up:** Persistence errors can still be acknowledged as success, a missing database can start empty, and server-side Java APIs can expose private-key material. Address these with fail-closed persistence and the key-protection work tracked in Issues #6-#10. No `CANISDB1`, CANISP, or runtime behavior was changed by this review.
+**Follow-up:** Issue #6 now prevents private-key export through supported server-side Java APIs and reports persistence failures. A missing database can still start empty, and database writes are not yet atomic. Address these with the remaining key-protection work tracked in Issues #7-#10. No `CANISDB1` or CANISP format was changed.
 
 ---
 
 ## Issue #6 - Prevent Private Key Exposure
+
+**Status:** Completed and verified in the working tree.
 
 ### Objetivo
 
@@ -128,14 +130,34 @@ Garantir que chaves privadas nunca sejam expostas.
 
 ### Tarefas
 
-- [ ] Revisar APIs públicas
-- [ ] Revisar serializações
-- [ ] Revisar logs
-- [ ] Revisar mensagens de erro
+- [x] Revisar APIs públicas
+- [x] Revisar serializações
+- [x] Revisar logs
+- [x] Revisar mensagens de erro
 
 ### Critérios de Aceitação
 
-- [ ] Nenhuma chave privada é exportada
+- [x] Nenhuma chave privada é exportada pelos caminhos suportados
+
+**Evidence:** [Private-key exposure boundary](docs/private-key-exposure.md) documents the Java API,
+CANISP, persistence, logging, and error boundaries. `Entry` now exposes only immutable public
+metadata; private-key operations remain inside `KeyValueStore`. `ClientHandlerTest` checks the
+actual generated private-key encoding against CANISP responses and checks that a key-bearing
+exception cannot enter operational or audit logs. `KeyValueStoreTest` verifies non-serializability,
+legacy `CANISDB1` loading and decryption, and tamper and save-failure paths. `mvn spotless:apply`
+and `mvn -q test` passed.
+
+**Operational and compatibility impact:** Existing encrypted databases and CANISP commands remain
+compatible. Server-side Java callers of the removed raw-key APIs must migrate to the store's
+metadata and decrypt operations. Database write failures now close the operation without a
+success response.
+
+**Remaining risks:** In-process arbitrary code, Java memory erasure, historical backups,
+cross-service decrypt authorization, master-key initialization, atomic database writes, and
+verifiable audit are outside this issue; see the linked boundary review and subsequent issues.
+
+**Review follow-up:** Issue #36 tracks the remaining public API and loaded-record exposure paths
+identified after implementation, together with decrypt authorization.
 
 ---
 
@@ -563,3 +585,42 @@ Publicar resultados em `docs/research`.
 - [ ] Discussão
 - [ ] Limitações
 - [ ] Reprodutibilidade
+
+---
+
+# Milestone 8 - Security Review Follow-up
+
+## Issue #36 - Close Private-Key Exposure Review Findings
+
+**Status:** Open. Follow-up to Issue #6 and its implementation review.
+
+### Objective
+
+Prevent private-key material from reaching public APIs or CANISP responses through malformed but
+decryptable stored records, and prevent one authenticated service from using another service's
+private key without authorization.
+
+### Tasks
+
+- [ ] Validate loaded `CANISDB1` public and private key encodings and that they form a matching RSA
+      pair before exposing metadata or serving requests. Fail closed on invalid records without
+      replacing or rewriting the database.
+- [ ] Remove the unused `privateKey` field and Java serialization capability from the client
+      artifact's `io.canis.jpaw.pojo.Entry`, or remove that type if it has no supported callers.
+- [ ] Define and enforce authorization for `|decrypt` by authenticated identity, including an
+      explicit policy for administrative access and existing service credentials.
+- [ ] Add tests for a private-key encoding placed in a stored public-key field, malformed legacy
+      records, client API/serialization boundaries, and cross-service decrypt denial. Cover the
+      official client over TLS as well as the handler in isolation.
+- [ ] Document startup failure behavior and compatibility impact for existing databases and
+      clients.
+
+### Acceptance criteria
+
+- [ ] No private-key material is returned through Java APIs, serialization, logs, exceptions, or
+      CANISP responses, including when a decryptable database contains malformed key fields.
+- [ ] Unauthorized cross-service decryption is rejected and audited without exposing key material.
+- [ ] Valid existing `CANISDB1` databases and authorized file workflows remain usable after restart.
+
+**Coordination:** Atomic database writes and missing-database handling remain with Issues #7-#8 and
+the lifecycle follow-up. Audit schema and integrity requirements remain with Issues #11-#19.

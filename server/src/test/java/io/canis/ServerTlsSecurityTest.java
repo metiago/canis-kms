@@ -147,7 +147,7 @@ class ServerTlsSecurityTest {
         Path database = tempDir.resolve("db.dat");
         Path key = tempDir.resolve("secret.key");
         KeyValueStore store = new KeyValueStore(database.toString(), key.toString());
-        store.set("sample", new io.canis.store.Entry());
+        store.create("sample");
         byte[] bytes = Files.readAllBytes(database);
         bytes[bytes.length - 1] ^= 1;
         Files.write(database, bytes);
