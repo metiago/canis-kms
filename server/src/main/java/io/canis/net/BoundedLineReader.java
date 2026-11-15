@@ -5,6 +5,7 @@ import java.io.IOException;
 
 public final class BoundedLineReader {
 
+    // The (1 MiB) is a reasonable safeguard against unbounded memory consumption and request-line abuse.
     public static final int MAX_LINE_CHARS = 1_048_576;
 
     private BoundedLineReader() {}
