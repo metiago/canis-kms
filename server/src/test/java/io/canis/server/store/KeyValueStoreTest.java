@@ -2,230 +2,211 @@ package io.canis.server.store;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
+import io.canis.crypto.Cryptographer;
 import io.canis.crypto.SymmetricGenerator;
 import io.canis.store.Entry;
 import io.canis.store.KeyValueStore;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.Base64;
+import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-public class KeyValueStoreTest {
+class KeyValueStoreTest {
 
     private static final byte[] STORE_MAGIC = "CANISDB1".getBytes(StandardCharsets.US_ASCII);
 
     @TempDir
     Path tempDir;
 
-    private KeyValueStore keyValueStore;
+    @Test
+    void createReturnsOnlyPublicMetadataAndDecrypts() throws Exception {
+        KeyValueStore store = newStore("active");
+        assertTrue(store.create("serviceA"));
+        Entry entry = store.get("serviceA");
+        assertNotNull(entry);
+        assertEquals("serviceA", entry.name());
+        assertEquals(1, store.list().size());
+        assertEquals(entry, store.list().get(0));
+        assertFalse(store.create("serviceA"));
+        assertEquals(entry, store.get("serviceA"));
 
-    @BeforeEach
-    public void setUp() throws NoSuchAlgorithmException, IOException {
-        keyValueStore = spy(new KeyValueStore());
-        doNothing().when(keyValueStore).loadFromFile();
-        doNothing().when(keyValueStore).saveToFile();
+        var publicKey = java.security.KeyFactory.getInstance("RSA")
+                .generatePublic(new java.security.spec.X509EncodedKeySpec(
+                        Base64.getDecoder().decode(entry.publicKey())));
+        byte[] plaintext = "file key".getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(plaintext, store.decrypt("serviceA", Cryptographer.encrypt(plaintext, publicKey)));
+        assertThrows(GeneralSecurityException.class, () -> store.decrypt("serviceA", new byte[] {1, 2, 3}));
+        assertThrows(GeneralSecurityException.class, () -> store.decrypt("serviceA", new byte[0]));
+        assertThrows(NoSuchElementException.class, () -> store.decrypt("missing", new byte[] {1}));
+
+        store.delete("serviceA");
+        assertNull(store.get("serviceA"));
     }
 
     @Test
-    public void testSetAndGet() {
-        Entry entry = new Entry();
-        entry.setName("Bob");
-        entry.setPublicKey("public-key-123");
-        entry.setPrivateKey("private-key-123");
-
-        keyValueStore.set("user1", entry);
-
-        Entry result = keyValueStore.get("user1");
-        assertNotNull(result);
-        assertEquals("Bob", result.getName());
-        assertEquals("public-key-123", result.getPublicKey());
-        assertEquals("private-key-123", result.getPrivateKey());
+    void metadataCannotBeSerializedAsAKeyBearingObject() throws Exception {
+        Entry entry = new Entry("serviceA", "public-key");
+        assertThrows(NotSerializableException.class, () -> {
+            try (ObjectOutputStream out = new ObjectOutputStream(new ByteArrayOutputStream())) {
+                out.writeObject(entry);
+            }
+        });
+        assertEquals(2, Entry.class.getRecordComponents().length);
+        assertFalse(Arrays.stream(Entry.class.getMethods())
+                .anyMatch(method -> method.getName().toLowerCase().contains("private")));
+        assertFalse(Arrays.stream(KeyValueStore.class.getMethods())
+                .anyMatch(method -> PrivateKey.class.isAssignableFrom(method.getReturnType())
+                        || KeyPair.class.isAssignableFrom(method.getReturnType())));
     }
 
     @Test
-    public void testDelete() {
+    void legacyEncryptedDatabaseStillLoadsAndDecrypts() throws Exception {
+        Path database = tempDir.resolve("legacy.db");
+        Path secret = tempDir.resolve("legacy.key");
+        KeyPair pair = generatePair();
+        String privateKey = Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded());
+        byte[] legacy = legacyRecord(
+                "serviceA", Base64.getEncoder().encodeToString(pair.getPublic().getEncoded()), privateKey);
+        Files.write(database, new SymmetricGenerator(secret.toString()).encrypt(legacy));
 
-        Entry entry = new Entry();
-        entry.setName("Alice");
-        entry.setPublicKey("public-key-456");
-        entry.setPrivateKey("private-key-456");
+        KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
+        Entry metadata = store.get("serviceA");
+        assertNotNull(metadata);
+        assertFalse(metadata.toString().contains(privateKey));
+        assertFalse(store.list().toString().contains(privateKey));
+        byte[] plaintext = "legacy file key".getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(plaintext, store.decrypt("serviceA", Cryptographer.encrypt(plaintext, pair.getPublic())));
 
-        keyValueStore.set("user2", entry);
-        keyValueStore.delete("user2");
-
-        assertNull(keyValueStore.get("user2"));
+        assertTrue(store.create("serviceB"));
+        byte[] saved = new SymmetricGenerator(secret.toString()).decrypt(Files.readAllBytes(database));
+        assertArrayEquals(STORE_MAGIC, Arrays.copyOf(saved, STORE_MAGIC.length));
+        KeyValueStore reloaded = new KeyValueStore(database.toString(), secret.toString());
+        assertArrayEquals(plaintext, reloaded.decrypt("serviceA", Cryptographer.encrypt(plaintext, pair.getPublic())));
     }
 
     @Test
-    public void testList() throws IOException {
-
-        Entry entry1 = new Entry();
-        entry1.setName("Alice");
-        entry1.setPublicKey("public-key-456");
-        entry1.setPrivateKey("private-key-456");
-
-        Entry entry2 = new Entry();
-        entry2.setName("Bob");
-        entry2.setPublicKey("public-key-789");
-        entry2.setPrivateKey("private-key-789");
-
-        keyValueStore.set("user1", entry1);
-        keyValueStore.set("user2", entry2);
-
-        List<Entry> data = keyValueStore.list();
-
-        assertNotNull(data);
-        assertTrue(!data.isEmpty());
+    void malformedStoredPrivateKeyNeverAppearsInException() throws Exception {
+        Path database = tempDir.resolve("malformed.db");
+        Path secret = tempDir.resolve("malformed.key");
+        String marker = "PRIVATE_MATERIAL_SENTINEL";
+        Files.write(
+                database,
+                new SymmetricGenerator(secret.toString()).encrypt(legacyRecord("serviceA", "public", marker)));
+        KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
+        GeneralSecurityException failure =
+                assertThrows(GeneralSecurityException.class, () -> store.decrypt("serviceA", new byte[] {1, 2, 3}));
+        assertFalse(failure.toString().contains(marker));
+        assertNull(failure.getCause());
     }
 
     @Test
-    public void testSaveToFile() {
-
-        Entry entry = new Entry();
-        entry.setName("Eve");
-        entry.setPublicKey("public-key-999");
-        entry.setPrivateKey("private-key-999");
-
-        keyValueStore.set("user3", entry);
-
-        verify(keyValueStore, times(1)).saveToFile();
+    void saveFailureDoesNotAcknowledgeOrRetainKey() {
+        Path database = tempDir.resolve("missing-parent").resolve("db.dat");
+        Path secret = tempDir.resolve("save-failure.key");
+        KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
+        assertThrows(IllegalStateException.class, () -> store.create("serviceA"));
+        assertNull(store.get("serviceA"));
+        assertTrue(Files.notExists(database));
     }
 
     @Test
-    public void testConcurrency() throws InterruptedException, ExecutionException {
+    void missingOrWrongMasterKeyAndTamperingFailClosed() throws Exception {
+        Path database = tempDir.resolve("protected.db");
+        Path secret = tempDir.resolve("protected.key");
+        KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
+        store.create("serviceA");
+        byte[] original = Files.readAllBytes(database);
 
-        Runnable task1 = () -> keyValueStore.set("ziggy", new Entry("Ziggy", "public-key-111", "private-key-111"));
-        Runnable task2 = () -> keyValueStore.set("bapi", new Entry("Bapi", "public-key-222", "private-key-222"));
-        Runnable task3 = () -> keyValueStore.set("tiago", new Entry("Tiago", "public-key-333", "private-key-333"));
+        Path wrong = tempDir.resolve("wrong.key");
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), wrong.toString()));
+        assertTrue(Files.notExists(wrong));
 
-        Thread thread1 = new Thread(task1);
-        Thread thread2 = new Thread(task2);
-        Thread thread3 = new Thread(task3);
-        thread1.start();
-        thread2.start();
-        thread3.start();
-        thread1.join();
-        thread2.join();
-        thread3.join();
+        byte[] tampered = original.clone();
+        tampered[tampered.length - 1] ^= 1;
+        Files.write(database, tampered);
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+        assertArrayEquals(tampered, Files.readAllBytes(database));
 
-        assertNotNull(keyValueStore.get("ziggy"));
-        assertNotNull(keyValueStore.get("tiago"));
-        assertNotNull(keyValueStore.get("bapi"));
+        Files.write(database, original);
+        Files.delete(secret);
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+        assertArrayEquals(original, Files.readAllBytes(database));
+        assertTrue(Files.notExists(secret));
     }
 
     @Test
-    public void testPersistenceUsesVersionedStoreFormat() throws Exception {
-        Path databasePath = tempDir.resolve("db.dat");
-        Path secretKeyPath = tempDir.resolve("secret.key");
+    void wrongExistingMasterKeyDoesNotReplaceDatabase() throws Exception {
+        Path database = tempDir.resolve("wrong-key.db");
+        Path originalSecret = tempDir.resolve("original.key");
+        Path wrongSecret = tempDir.resolve("different.key");
+        KeyValueStore store = new KeyValueStore(database.toString(), originalSecret.toString());
+        store.create("serviceA");
+        new SymmetricGenerator(wrongSecret.toString());
+        byte[] original = Files.readAllBytes(database);
 
-        KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-        store.set("serviceA", new Entry("serviceA", "public-key", "private-key"));
-
-        KeyValueStore reloadedStore = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-        Entry result = reloadedStore.get("serviceA");
-
-        assertNotNull(result);
-        assertEquals("serviceA", result.getName());
-        assertEquals("public-key", result.getPublicKey());
-        assertEquals("private-key", result.getPrivateKey());
-
-        byte[] encryptedStore = Files.readAllBytes(databasePath);
-        byte[] decryptedStore = new SymmetricGenerator(secretKeyPath.toString()).decrypt(encryptedStore);
-        assertArrayEquals(STORE_MAGIC, Arrays.copyOf(decryptedStore, STORE_MAGIC.length));
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), wrongSecret.toString()));
+        assertArrayEquals(original, Files.readAllBytes(database));
     }
 
     @Test
-    public void testMissingSecretKeyFileForExistingStoreFailsAndPreservesDatabase() throws Exception {
-        Path databasePath = tempDir.resolve("missing-secret-db.dat");
-        Path secretKeyPath = tempDir.resolve("missing-secret.key");
+    void invalidDecryptedStoreMarkerFailsClosed() throws Exception {
+        Path database = tempDir.resolve("invalid-marker.db");
+        Path secret = tempDir.resolve("invalid-marker.key");
+        byte[] invalid = new SymmetricGenerator(secret.toString())
+                .encrypt("invalid store marker".getBytes(StandardCharsets.UTF_8));
+        Files.write(database, invalid);
 
-        KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-        store.set("serviceA", new Entry("serviceA", "public-key", "private-key"));
-        Files.delete(secretKeyPath);
-
-        byte[] databaseBeforeReload = Files.readAllBytes(databasePath);
-
-        IllegalStateException failure = assertThrows(
-                IllegalStateException.class,
-                () -> new KeyValueStore(databasePath.toString(), secretKeyPath.toString()));
-
-        assertTrue(failure.getMessage().contains("existing CANIS database"));
-        assertTrue(failure.getMessage().contains("CANIS_SECRET_KEY"));
-        assertArrayEquals(databaseBeforeReload, Files.readAllBytes(databasePath));
-        assertTrue(Files.notExists(secretKeyPath));
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+        assertArrayEquals(invalid, Files.readAllBytes(database));
     }
 
-    @Test
-    public void testInvalidSecretKeyFileContentLeavesStoreEmpty() throws Exception {
-        Path databasePath = tempDir.resolve("invalid-secret-db.dat");
-        Path secretKeyPath = tempDir.resolve("invalid-secret.key");
-        Files.writeString(secretKeyPath, "not-base64", StandardCharsets.UTF_8);
-        Files.write(databasePath, "encrypted".getBytes(StandardCharsets.UTF_8));
-
-        assertThrows(
-                IllegalStateException.class,
-                () -> new KeyValueStore(databasePath.toString(), secretKeyPath.toString()));
-        assertEquals("not-base64", Files.readString(secretKeyPath));
-        assertArrayEquals("encrypted".getBytes(StandardCharsets.UTF_8), Files.readAllBytes(databasePath));
+    private KeyValueStore newStore(String name) {
+        return new KeyValueStore(
+                tempDir.resolve(name + ".db").toString(),
+                tempDir.resolve(name + ".key").toString());
     }
 
-    @Test
-    public void testCorruptEncryptedDatabaseFileLeavesStoreEmpty() throws Exception {
-        Path databasePath = tempDir.resolve("corrupt-db.dat");
-        Path secretKeyPath = tempDir.resolve("corrupt-secret.key");
-        new SymmetricGenerator(secretKeyPath.toString());
-        Files.write(databasePath, "not-a-canis-envelope".getBytes(StandardCharsets.UTF_8));
-
-        assertThrows(
-                IllegalStateException.class,
-                () -> new KeyValueStore(databasePath.toString(), secretKeyPath.toString()));
-        assertArrayEquals("not-a-canis-envelope".getBytes(StandardCharsets.UTF_8), Files.readAllBytes(databasePath));
+    private KeyPair generatePair() throws GeneralSecurityException {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        return generator.generateKeyPair();
     }
 
-    @Test
-    public void testWrongEncryptionKeyFailsAndDoesNotCreateReplacementKey() throws Exception {
-        Path databasePath = tempDir.resolve("wrong-key-db.dat");
-        Path secretKeyPath = tempDir.resolve("secret.key");
-        Path wrongSecretKeyPath = tempDir.resolve("wrong-secret.key");
-
-        KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-        store.set("serviceA", new Entry("serviceA", "public-key", "private-key"));
-
-        byte[] databaseBeforeReload = Files.readAllBytes(databasePath);
-
-        assertThrows(
-                IllegalStateException.class,
-                () -> new KeyValueStore(databasePath.toString(), wrongSecretKeyPath.toString()));
-        assertArrayEquals(databaseBeforeReload, Files.readAllBytes(databasePath));
-        assertTrue(Files.notExists(wrongSecretKeyPath));
+    private byte[] legacyRecord(String name, String publicKey, String privateKey) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
+            out.write(STORE_MAGIC);
+            out.writeInt(1);
+            writeString(out, name);
+            writeString(out, name);
+            writeString(out, publicKey);
+            writeString(out, privateKey);
+        }
+        return bytes.toByteArray();
     }
 
-    @Test
-    public void testInvalidDecryptedStoreFormatLeavesStoreEmpty() throws Exception {
-        Path databasePath = tempDir.resolve("invalid-format-db.dat");
-        Path secretKeyPath = tempDir.resolve("invalid-format-secret.key");
-        byte[] encryptedInvalidStore =
-                new SymmetricGenerator(secretKeyPath.toString()).encrypt("bad-store".getBytes(StandardCharsets.UTF_8));
-        Files.write(databasePath, encryptedInvalidStore);
-
-        assertThrows(
-                IllegalStateException.class,
-                () -> new KeyValueStore(databasePath.toString(), secretKeyPath.toString()));
+    private void writeString(DataOutputStream out, String value) throws IOException {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        out.writeInt(bytes.length);
+        out.write(bytes);
     }
 }

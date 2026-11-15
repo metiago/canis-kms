@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -31,7 +32,9 @@ public class FileEncryptionTest {
 
     @BeforeEach
     public void setUp() throws NoSuchAlgorithmException {
-        KeyPair keyPair = AsymmetricGenerator.generateKeyPair();
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        KeyPair keyPair = generator.generateKeyPair();
         publicKey = keyPair.getPublic();
         privateKey = keyPair.getPrivate();
         inputFile = tempDir.resolve("content.txt");

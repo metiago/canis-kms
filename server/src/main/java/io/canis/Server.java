@@ -105,7 +105,7 @@ public class Server {
             try {
                 currentServerSocket.close();
             } catch (IOException e) {
-                logger.warn(e.getMessage(), e);
+                logger.warn("TLS server socket close failed");
             }
         }
     }
@@ -227,7 +227,7 @@ public class Server {
         try {
             socket.close();
         } catch (IOException e) {
-            logger.warn(e.getMessage(), e);
+            logger.warn("Client socket close failed");
         }
     }
 

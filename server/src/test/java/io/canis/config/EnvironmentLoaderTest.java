@@ -1,6 +1,7 @@
 package io.canis.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
@@ -35,9 +36,12 @@ public class EnvironmentLoaderTest {
     @Test
     void testLoadEnvironmentRejectsInvalidServiceCredentials() {
         Map<String, String> environment = validEnvironment();
-        environment.put("CANIS_SERVICE_CREDENTIALS", "serviceA");
+        String sensitiveValue = "configuration-secret-sentinel";
+        environment.put("CANIS_SERVICE_CREDENTIALS", ":" + sensitiveValue);
 
-        assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+        IllegalStateException failure =
+                assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+        assertFalse(failure.toString().contains(sensitiveValue));
     }
 
     @Test

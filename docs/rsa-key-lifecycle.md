@@ -6,11 +6,12 @@ the limits of its guarantees. The on-disk `CANISDB1` format and the CANISP comma
 ## Creation
 
 After mutual TLS and CANIS credential authentication, `|set serviceName` validates the service
-name and checks whether it already exists. `AsymmetricGenerator` creates a 2048-bit RSA key pair
-with the JDK provider. The public key is Base64-encoded X.509 SubjectPublicKeyInfo; the private key
-is Base64-encoded PKCS#8. Both strings are placed in an `Entry`. `KeyValueStore.create` checks for
-duplicates again under a write lock, preventing concurrent requests from replacing an existing
-entry. A losing concurrent request may still generate a pair that is discarded.
+name and checks whether it already exists. `KeyValueStore.create` uses the JDK provider to create a
+2048-bit RSA key pair. The public key is Base64-encoded X.509 SubjectPublicKeyInfo; the private key
+is Base64-encoded PKCS#8 and retained in a private store record. The public `Entry` type contains
+only service name and public key. `KeyValueStore.create` checks for duplicates again under a write
+lock, preventing concurrent requests from replacing an existing entry. A losing concurrent
+request may still generate a pair that is discarded.
 
 ## Persistence and loading
 
@@ -35,9 +36,9 @@ issuing `|set` could create new key material that cannot decrypt earlier file en
 `|get` and `|list` expose the name and public key; `|get-public` exposes only the public key. The
 official client creates a fresh AES file key, encrypts the file with AES-GCM, and wraps the file key
 with RSA-OAEP using SHA-256 and MGF1-SHA-256. The wrapped key is stored in a `CANISHYB1` envelope.
-For decryption, the client sends the wrapped file key through `|decrypt`. The server reconstructs
-the RSA private key from the stored PKCS#8 string, unwraps the file key, and returns that file key
-over TLS. It does not send the RSA private key. The current access model permits any authenticated
+For decryption, the client sends the wrapped file key through `|decrypt`. The store reconstructs
+the RSA private key internally from the stored PKCS#8 string, unwraps the file key, and the handler
+returns that file key over TLS. It does not send the RSA private key. The current access model permits any authenticated
 CANIS client to request a decrypt operation for any stored service key.
 
 ## Deletion and destruction limits
@@ -53,13 +54,13 @@ no longer needed; rotation and revocation policy belong to Issue #9.
 
 | Finding | Effect | Follow-up |
 | --- | --- | --- |
-| `saveToFile` catches and logs write failures, then returns normally. It writes directly to the database file. | Create or delete can report success without durable persistence; an interrupted write can damage the file. | Make persistence atomic and propagate failures before acknowledging a mutation. Preserve `CANISDB1` compatibility. |
+| `saveToFile` writes directly to the database file. Issue #6 now propagates write failure and rolls back the in-memory mutation. | An interrupted write can still damage the database file. | Make persistence atomic while preserving `CANISDB1` compatibility. |
 | A missing database starts as empty; a missing master key may be generated on a later save. | Loss of files can be mistaken for a new installation. | Require explicit initialization and fail safely on ambiguous state (Issues #7 and #8). |
-| `Entry` exposes its private-key string through public Java methods; `AsymmetricGenerator` also exposes private-key encoding and file loading. | Server-side callers can obtain raw private material even though CANISP filters it. | Restrict private-key APIs and review logs and serialization (Issue #6). |
+| Server-side Java APIs previously exposed private-key strings through `Entry` and `AsymmetricGenerator`. | Issue #6 closes this export path for supported APIs: `Entry` contains public metadata, and the store performs key generation and decryption internally. | Keep the API boundary and output-path tests in place; review new serializers and logs. |
 | Private-key strings and historical encrypted database copies cannot be reliably erased by `|del`. | Logical deletion does not guarantee physical destruction. | Define retention, rotation, revocation, and backup policies (Issues #9 and #10). |
 
-Issue #5 documents these behaviors. The follow-up changes require separate tests and compatibility
-review; this review does not claim that the listed risks are resolved.
+Issue #5 documented the original behaviors. Issue #6 changed the Java API boundary and error
+handling; the other follow-up risks still require separate work.
 
 ## Verification
 
