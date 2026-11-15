@@ -1,6 +1,6 @@
 Read AGENTS.md.
 
-Implement this plan for Issue #4.
+Implement this plan.
 
 Follow all project constraints and security requirements defined in AGENTS.md.
 

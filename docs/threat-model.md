@@ -37,7 +37,8 @@ key operations on behalf of authenticated clients.
   deleting the old service key.
 - `|get-public serviceName` returns the public key used by clients to encrypt file keys.
 - `|decrypt serviceName payload` performs a server-side private-key operation.
-- `|del serviceName` removes the stored key entry.
+- `|del serviceName` removes the key from the active store. It does not guarantee erasure from
+  memory, backups, snapshots, or storage history. See [RSA key lifecycle](rsa-key-lifecycle.md).
 - Service names should be treated as identifiers and validated by both the official client and the
   server before command execution.
 
