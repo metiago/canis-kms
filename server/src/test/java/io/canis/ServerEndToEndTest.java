@@ -2,6 +2,7 @@ package io.canis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.canis.jpaw.client.JpawClient;
@@ -88,6 +89,66 @@ class ServerEndToEndTest {
             assertEquals(original, Files.readString(decrypted, StandardCharsets.UTF_8));
         } finally {
             server.stop();
+        }
+    }
+
+    @Test
+    void rsaKeyDecryptsAfterRestartAndDeletionPersistsAcrossRestart() throws Exception {
+        tls = new TlsTestSupport(tempDir);
+        Path databasePath = tempDir.resolve("lifecycle-db.dat");
+        Path secretKeyPath = tempDir.resolve("lifecycle-secret.key");
+        Path input = tempDir.resolve("lifecycle-input.txt");
+        Path encrypted = tempDir.resolve("lifecycle-input.canis");
+        Path decrypted = tempDir.resolve("lifecycle-output.txt");
+        Path afterDelete = tempDir.resolve("after-delete.txt");
+        String original = "RSA lifecycle across CANIS restarts\n".repeat(20);
+        Files.writeString(input, original, StandardCharsets.UTF_8);
+
+        String originalPublicKey;
+        Server firstServer = startServer(databasePath, secretKeyPath);
+        try {
+            var environment = new io.canis.jpaw.pojo.Environment(
+                    "localhost", waitForPort(firstServer), "admin", "123", tls.clientTlsConfiguration());
+            try (JpawClient client = new JpawClient(environment)) {
+                assertEquals("OK", client.set("serviceA"));
+                originalPublicKey = client.getPublicKey("serviceA");
+                client.encryptFile("serviceA", input.toFile(), encrypted.toFile());
+            }
+        } finally {
+            firstServer.stop();
+        }
+
+        Server secondServer = startServer(databasePath, secretKeyPath);
+        try {
+            var environment = new io.canis.jpaw.pojo.Environment(
+                    "localhost", waitForPort(secondServer), "admin", "123", tls.clientTlsConfiguration());
+            try (JpawClient client = new JpawClient(environment)) {
+                assertEquals(originalPublicKey, client.getPublicKey("serviceA"));
+                client.decryptFile("serviceA", encrypted.toFile(), decrypted.toFile());
+                assertEquals(original, Files.readString(decrypted, StandardCharsets.UTF_8));
+                assertTrue(client.delete("serviceA"));
+                assertThrows(
+                        IOException.class,
+                        () -> client.decryptFile("serviceA", encrypted.toFile(), afterDelete.toFile()));
+                assertFalse(Files.exists(afterDelete));
+            }
+        } finally {
+            secondServer.stop();
+        }
+
+        Server thirdServer = startServer(databasePath, secretKeyPath);
+        try {
+            var environment = new io.canis.jpaw.pojo.Environment(
+                    "localhost", waitForPort(thirdServer), "admin", "123", tls.clientTlsConfiguration());
+            try (JpawClient client = new JpawClient(environment)) {
+                assertThrows(IOException.class, () -> client.getPublicKey("serviceA"));
+                assertThrows(
+                        IOException.class,
+                        () -> client.decryptFile("serviceA", encrypted.toFile(), afterDelete.toFile()));
+                assertFalse(Files.exists(afterDelete));
+            }
+        } finally {
+            thirdServer.stop();
         }
     }
 

@@ -14,7 +14,8 @@ decrypt them by asking CANIS to unwrap the file key.
 
 In addition to its key management functionality, CANIS provides a key-value store where the key is
 an arbitrary identifier, and the value is an object containing attributes such as name, public key,
-and private key. These key-value pairs are persisted in .dat files for secure and reliable storage.
+and private key. The current store encrypts these entries in a `.dat` file; its lifecycle and
+durability limits are documented in [docs/rsa-key-lifecycle.md](docs/rsa-key-lifecycle.md).
 The CANISP protocol supports various data types, including arrays of maps, strings, integers, and
 individual maps, enabling flexible and structured data communication between the official client
 and server.

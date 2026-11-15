@@ -97,20 +97,26 @@ Implementar testes negativos de TLS.
 
 ## Issue #5 - Review RSA Key Lifecycle
 
+**Status:** Lifecycle review completed and verified in the working tree. Security follow-ups remain open.
+
 ### Objetivo
 
 Revisar geração, armazenamento e uso das chaves RSA.
 
 ### Tarefas
 
-- [ ] Revisar criação
-- [ ] Revisar persistência
-- [ ] Revisar carregamento
-- [ ] Revisar destruição
+- [x] Revisar criação
+- [x] Revisar persistência
+- [x] Revisar carregamento
+- [x] Revisar destruição
 
 ### Critérios de Aceitação
 
-- [ ] Fluxo documentado
+- [x] Fluxo documentado
+
+**Evidence:** [RSA key lifecycle review](docs/rsa-key-lifecycle.md) documents generation, encrypted storage, startup loading, server-side use, logical deletion, recovery, and outstanding risks. `ServerEndToEndTest` verifies that a real RSA key decrypts an encrypted file after restart and remains unavailable after deletion and another restart. `mvn -q test` passed: 59 client tests (5 existing skips) and 77 server tests, with no failures or errors.
+
+**Follow-up:** Persistence errors can still be acknowledged as success, a missing database can start empty, and server-side Java APIs can expose private-key material. Address these with fail-closed persistence and the key-protection work tracked in Issues #6-#10. No `CANISDB1`, CANISP, or runtime behavior was changed by this review.
 
 ---
 
