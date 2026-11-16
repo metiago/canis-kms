@@ -1,3 +1,20 @@
+# CANIS-KMS — App Production-Grade Backlog
+
+> Scope: engineering, security, operational reliability, deployment, and production readiness. This is a development plan, **not** a certification that CANIS-KMS is production-ready. Original issue IDs, checkboxes, and evidence are preserved from `backlog.md`.
+>
+> JOSS-specific research and publication work (original Issues #31–35) has moved to [JOSS Backlog](joss-backlog.md). The JOSS release may depend on selected issues here, but publication does not require completing every production feature.
+
+## Production release priorities
+
+- **P0 — Security boundaries:** close #36 (loaded-key validation, private-key exposure, cross-service decrypt authorization), #8 (database corruption validation and silent-recreation race), and #7 (all supported master-key startup paths).
+- **P1 — Operational reliability:** #10 backup/restore, #22 safe errors, #23 startup integrity, #24 graceful shutdown, #25 concurrency and recovery tests.
+- **P1/P2 — Security operations:** #11–19 audit schema, coverage, tamper evidence, and verification; prioritize according to the product's claims and threat model.
+- **P2 — Product maturity:** #9 rotation/revocation, #20–21 resource controls, #26–30 containers and deployment.
+
+**Release boundary:** Completion of an issue in the original roadmap means its listed work was reported as tested in a working tree, not independently verified against a tagged release. Re-run checks on a release candidate.
+
+---
+
 # Milestone 1 - Security Transport
 
 ## Completed in this milestone
@@ -10,7 +27,7 @@
 
 **Status:** Completed and verified in the working tree.
 
-**JOSS tracking:** See [submission-readiness.md](joss-papers/submission-readiness.md), item 2. Keep implementation tasks here; the JOSS checklist records the submission dependency and evidence.
+**JOSS release dependency:** The completed client/server TLS workflow must be re-verified on the submission candidate; track publication evidence in [JOSS Backlog](joss-backlog.md).
 
 ### Objetivo
 
@@ -618,66 +635,7 @@ Documentar implantação local.
 
 ---
 
-# Milestone 7 - Security Research
-
-## Issue #31 - Create Baseline Benchmark
-
-### Objetivo
-
-Gerar linha de base da implementação atual.
-
----
-
-## Issue #32 - TLS Performance Benchmark
-
-### Métricas
-
-- [ ] Latência
-- [ ] Throughput
-- [ ] Memória
-
-### Comparação
-
-- [ ] Sem TLS
-- [ ] Com TLS
-
----
-
-## Issue #33 - Multi-Service Interoperability Study
-
-### Objetivo
-
-Validar três instâncias compartilhando armazenamento.
-
----
-
-## Issue #34 - Security Fault Injection Experiments
-
-### Cenários
-
-- [ ] Roubo da chave mestra
-- [ ] Corrupção do armazenamento
-- [ ] Adulteração da auditoria
-
----
-
-## Issue #35 - Research Report
-
-### Objetivo
-
-Publicar resultados em `docs/research`.
-
-### Entregáveis
-
-- [ ] Metodologia
-- [ ] Resultados
-- [ ] Discussão
-- [ ] Limitações
-- [ ] Reprodutibilidade
-
----
-
-# Milestone 8 - Security Review Follow-up
+# Milestone 7 - Security Review Follow-up (original Milestone 8)
 
 ## Issue #36 - Close Private-Key Exposure Review Findings
 
