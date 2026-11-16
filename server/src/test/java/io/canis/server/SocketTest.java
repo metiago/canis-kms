@@ -37,6 +37,9 @@ public class SocketTest {
     static void serverStart() throws Exception {
         tls = new TlsTestSupport(tempDir);
         MasterKeyTestSupport.provision(tempDir.resolve("secret.key"));
+        KeyValueStore.initialize(
+                tempDir.resolve("db.dat").toString(),
+                tempDir.resolve("secret.key").toString());
         server = new Server(
                 tls.environment(),
                 new KeyValueStore(

@@ -51,12 +51,15 @@ key operations on behalf of authenticated clients.
   is absent. CANIS will not generate a replacement key. Restore the original key file from a
   protected backup when a database already exists.
 - The key is loaded once at startup. A later file replacement does not rotate the running server's
-  key. A valid key cannot be matched to an absent database; Issue #8 covers that ambiguity.
+  key. A valid key cannot be matched to an absent database; a new database requires an explicit
+  initialization command and normal startup rejects absence.
 - Compromise of both the encrypted database and `CANIS_SECRET_KEY` compromises stored private keys.
 
 ## Persistence And Backups
 
 - CANIS persists key metadata in an encrypted `CANISDB1` store.
+- Database authentication and parsing complete before the TLS listener binds. Unexpected database
+  loss or alteration during operation causes a recovery-required failure rather than an empty store.
 - Backups must include both the encrypted database and the secret key file, stored with separate
   access controls.
 - Restore tests should verify that CANIS can load the database and decrypt a known test envelope.

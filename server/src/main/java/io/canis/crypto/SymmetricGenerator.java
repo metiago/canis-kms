@@ -2,6 +2,7 @@ package io.canis.crypto;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import javax.crypto.Cipher;
@@ -20,6 +21,18 @@ public class SymmetricGenerator {
 
     public SymmetricGenerator(String secretKeyPath) {
         this.secretKey = MasterKeyLoader.load(secretKeyPath);
+    }
+
+    public boolean matchesKeyFile(String secretKeyPath) {
+        SecretKey candidate = MasterKeyLoader.load(secretKeyPath);
+        byte[] loaded = secretKey.getEncoded();
+        byte[] configured = candidate.getEncoded();
+        try {
+            return MessageDigest.isEqual(loaded, configured);
+        } finally {
+            Arrays.fill(loaded, (byte) 0);
+            Arrays.fill(configured, (byte) 0);
+        }
     }
 
     public byte[] encrypt(byte[] data) throws Exception {

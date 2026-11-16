@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Logger;
@@ -81,6 +81,9 @@ public class ClientHandlerTest {
     @Test
     void testDecryptCommandUsesStoredPrivateKey() throws Exception {
         MasterKeyTestSupport.provision(tempDir.resolve("secret.key"));
+        KeyValueStore.initialize(
+                tempDir.resolve("db.dat").toString(),
+                tempDir.resolve("secret.key").toString());
         KeyValueStore store = new KeyValueStore(
                 tempDir.resolve("db.dat").toString(),
                 tempDir.resolve("secret.key").toString());
@@ -227,7 +230,8 @@ public class ClientHandlerTest {
             String message = runCommand(command, store);
 
             assertEquals(stringResponse(ProtocolError.INVALID_SERVICE_NAME), message);
-            verifyNoInteractions(store);
+            verify(store).ensureHealthy();
+            verifyNoMoreInteractions(store);
         }
     }
 
@@ -238,7 +242,8 @@ public class ClientHandlerTest {
         String message = runCommand("|decrypt serviceA payload with spaces", store);
 
         assertEquals(stringResponse(ProtocolError.INVALID_INPUT_FORMAT), message);
-        verifyNoInteractions(store);
+        verify(store).ensureHealthy();
+        verifyNoMoreInteractions(store);
     }
 
     @Test
@@ -294,7 +299,8 @@ public class ClientHandlerTest {
             String message = runCommand("|set service|A", store);
 
             assertEquals(stringResponse(ProtocolError.INVALID_SERVICE_NAME), message);
-            verifyNoInteractions(store);
+            verify(store).ensureHealthy();
+            verifyNoMoreInteractions(store);
             assertTrue(appender.list.stream()
                     .map(ILoggingEvent::getFormattedMessage)
                     .anyMatch(logMessage -> logMessage.contains("event=command_rejected")
