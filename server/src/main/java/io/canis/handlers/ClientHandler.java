@@ -69,6 +69,7 @@ public class ClientHandler implements Runnable {
         try {
             String input;
             while ((input = readCommand()) != null) {
+                store.ensureHealthy();
                 executeCommand(input, out);
             }
 

@@ -41,8 +41,9 @@ and deletion. Existing TLS security suites cover invalid certificates and creden
 Java key objects and immutable strings cannot be reliably erased from memory. Earlier encrypted
 database copies may remain in backups or snapshots. Any authenticated CANIS client can currently
 request `|decrypt` with any stored service key; per-service authorization remains to be designed.
-The master-key and database initialization rules are tracked in Issues #7 and #8. Atomic database
-writes, structured audit schema and integrity verification, and key rotation remain separate
-follow-up work. Loaded RSA public and private components are not yet checked for a matching pair;
+The master-key and explicit database initialization rules are covered in Issues #7 and #8. Database
+writes now use atomic replacement; crash durability still needs platform-specific validation.
+Structured audit schema and integrity verification, and key rotation remain separate follow-up
+work. Loaded RSA public and private components are not yet checked for a matching pair;
 that integrity check would make malformed but authenticated legacy records fail at startup.
 Changes to serialization or logging need renewed private-key exposure tests.

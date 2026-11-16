@@ -3,7 +3,8 @@
 `CANIS_SECRET_KEY` is a path to an externally provisioned file containing the raw AES database key
 encoded as Base64. It is not the key value itself. The server reads and validates this file before
 opening its TLS listener. A missing or rejected key stops startup, even when the database does not
-exist. The runtime never generates or replaces this key file.
+exist. The runtime never generates or replaces this key file. The database itself must be explicitly
+initialized once; ordinary startup rejects a missing database.
 
 ## Provisioning and access
 
@@ -43,9 +44,22 @@ deployment configuration.
 CANIS loads the validated key once per process. Changing the file does not rotate the key in a
 running server; restart is required, and replacing the file without re-encrypting the database will
 make that database unreadable. Existing `CANISDB1` databases and `CANISGCM1` encrypted envelopes
-remain unchanged. When a database exists, authenticated decryption verifies that the key matches
-it. A valid but wrong key cannot be detected when the database is absent; missing-database handling
-is tracked in Issue #8.
+remain unchanged. Authenticated decryption verifies that the key matches an existing database.
+A valid but wrong key cannot be detected when the database is absent; initialization is an explicit
+operator action and must never be used to replace a lost database. With the server stopped and all
+server configuration present, run `java -jar server/target/canis-jar-with-dependencies.jar --init-db`
+once from the intended working directory. This creates only a new `db.dat` and refuses to overwrite
+an existing path. Keep that working directory under the service identity's control and deny
+untrusted users write or delete access; file replacement checks cannot protect against an actor who
+controls the directory between checks.
+
+If startup reports that database recovery is required, stop and investigate the configured working
+directory, storage access, and protected backups. Restore the original database and its matching
+master key, then start CANIS normally. Do not initialize an empty replacement for a lost database.
+If a database disappears or changes while the server runs, operations fail closed and the server
+stops accepting connections. Database writes stage encrypted data in the same directory and require
+an atomic replacement; a filesystem without atomic move support rejects the write. The encrypted
+database must be at most 256 MiB so a damaged or hostile file cannot force unbounded startup reads.
 
 Back up the database and its matching key separately with restricted access. If the key is lost,
 restore the original key from a protected backup. If startup rejects a key, investigate the reported

@@ -1,5 +1,6 @@
 package io.canis;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,6 +60,9 @@ public class ServerTest {
     @Test
     void testStopClosesServerLoop() throws Exception {
         MasterKeyTestSupport.provision(tempDir.resolve("secret.key"));
+        KeyValueStore.initialize(
+                tempDir.resolve("db.dat").toString(),
+                tempDir.resolve("secret.key").toString());
         Server server = new Server(
                 new TlsTestSupport(tempDir).environment(),
                 new KeyValueStore(
@@ -93,5 +97,30 @@ public class ServerTest {
         Files.writeString(key, "invalid base64!");
         assertThrows(IllegalStateException.class, () -> new Server(tls.environment(), database));
         assertFalse(Files.exists(database));
+    }
+
+    @Test
+    void missingDatabaseStopsConstructionAndInjectedStoreRequiresConfiguredKey() throws Exception {
+        TlsTestSupport tls = new TlsTestSupport(tempDir);
+        Path database = tempDir.resolve("fresh.db");
+        Path key = tls.environment().secretKeyPath();
+        MasterKeyTestSupport.provision(key);
+
+        assertThrows(IllegalStateException.class, () -> new Server(tls.environment(), database));
+        assertFalse(Files.exists(database));
+
+        KeyValueStore.initialize(database.toString(), key.toString());
+        byte[] initialized = Files.readAllBytes(database);
+        byte[] tampered = initialized.clone();
+        tampered[tampered.length - 1] ^= 1;
+        Files.write(database, tampered);
+        assertThrows(IllegalStateException.class, () -> new Server(tls.environment(), database));
+        assertArrayEquals(tampered, Files.readAllBytes(database));
+
+        Files.write(database, initialized);
+        KeyValueStore store = new KeyValueStore(database.toString(), key.toString());
+        Files.delete(key);
+        assertThrows(IllegalStateException.class, () -> new Server(tls.environment(), store));
+        assertTrue(Files.exists(database));
     }
 }

@@ -22,16 +22,16 @@ payload with AES-GCM under the key loaded from the file named by `CANIS_SECRET_K
 
 At startup, `KeyValueStore` reads an existing database, authenticates and decrypts the AES-GCM
 envelope, checks the `CANISDB1` marker, and reconstructs entries. A missing or wrong master key,
-corrupt encrypted data, or invalid store marker prevents loading. The loader does not currently
-parse each reconstructed RSA key or verify that its public and private parts match. If the database
-file is absent, it starts with an empty map, even if an older database was expected. The master-key
-file is validated and loaded before this database check, so a missing or invalid master key also
-prevents startup when the database is absent. See [master-key requirements](master-key.md).
+corrupt encrypted data, or invalid store marker prevents loading. The loader also rejects duplicate
+records, oversized fields, and trailing decrypted data. It does not currently parse each
+reconstructed RSA key or verify that its public and private parts match. A missing database rejects
+normal startup; a new one requires the explicit `--init-db` command. The master-key file is
+validated first. See [master-key requirements](master-key.md).
 
 The database and `CANIS_SECRET_KEY` file are both required for recovery. Back them up separately
 with access controls, restore the matching pair, and verify that a known encrypted file can be
 decrypted before serving clients. If either file is unexpectedly missing, stop and investigate;
-issuing `|set` could create new key material that cannot decrypt earlier file envelopes.
+normal startup will not create a replacement database.
 
 ## Use
 
@@ -56,13 +56,13 @@ no longer needed; rotation and revocation policy belong to Issue #9.
 
 | Finding | Effect | Follow-up |
 | --- | --- | --- |
-| `saveToFile` writes directly to the database file. Issue #6 now propagates write failure and rolls back the in-memory mutation. | An interrupted write can still damage the database file. | Make persistence atomic while preserving `CANISDB1` compatibility. |
-| A missing database starts as empty; a missing master key now prevents startup. | Database loss can still be mistaken for a new installation. | Require explicit database initialization and fail safely on ambiguous state (Issue #8). |
+| `saveToFile` stages and forces encrypted bytes before an atomic replacement. | Filesystems without atomic move support reject writes; directory metadata sync and power-loss durability need platform-specific review. | Verify crash recovery on supported filesystems. |
+| A missing database requires explicit initialization and prevents normal startup. | An operator could choose initialization after accidental database loss. | Document recovery and restore the original database with its matching master key. |
 | Server-side Java APIs previously exposed private-key strings through `Entry` and `AsymmetricGenerator`. | Issue #6 closes this export path for supported APIs: `Entry` contains public metadata, and the store performs key generation and decryption internally. | Keep the API boundary and output-path tests in place; review new serializers and logs. |
 | Private-key strings and historical encrypted database copies cannot be reliably erased by `|del`. | Logical deletion does not guarantee physical destruction. | Define retention, rotation, revocation, and backup policies (Issues #9 and #10). |
 
 Issue #5 documented the original behaviors. Issue #6 changed the Java API boundary and error
-handling; the other follow-up risks still require separate work.
+handling; Issue #8 now requires explicit initialization and safe database loading.
 
 ## Verification
 

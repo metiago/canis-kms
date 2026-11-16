@@ -134,16 +134,31 @@ mvn test
 mvn package
 
 # start server
-java server/target/canis-jar-with-dependencies.jar
+java -jar server/target/canis-jar-with-dependencies.jar
 ```
+
+For a new installation, explicitly initialize the encrypted database once after provisioning
+`CANIS_SECRET_KEY` and the other server settings:
+
+```bash
+java -jar server/target/canis-jar-with-dependencies.jar --init-db
+java -jar server/target/canis-jar-with-dependencies.jar
+```
+
+Initialization refuses an existing `db.dat`. Normal startup refuses a missing or invalid database;
+it never assumes that a missing file means a new installation. Run both commands from the same
+working directory because the database path is `db.dat` relative to that directory. If a previously
+used database is missing, restore it together with its matching master key from protected backups.
+See [database recovery requirements](docs/master-key.md) before attempting initialization.
 
 The server fails startup if TLS material is missing or invalid. It accepts TLS 1.3 only and
 requires a trusted client certificate before CANISP login. Protect both PKCS#12 files and their
 passwords with operating-system access controls; do not commit them or include them in images.
 The server certificate must identify the DNS name clients use. Rotate certificates before expiry.
 
-The database master key must already exist when the server starts. CANIS validates its format and
-filesystem permissions before listening and never generates a replacement during normal operation.
+The database master key and an explicitly initialized database must already exist when the server
+starts. CANIS validates the key format and filesystem permissions and authenticates the database
+before listening. It never generates a replacement during normal operation.
 See [database master-key requirements](docs/master-key.md) for provisioning, permissions, and
 recovery. Keep the key and encrypted database backed up as a matching pair.
 

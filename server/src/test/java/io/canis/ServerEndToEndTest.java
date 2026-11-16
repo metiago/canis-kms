@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.canis.config.Environment;
 import io.canis.jpaw.client.JpawClient;
 import io.canis.store.KeyValueStore;
 import java.io.DataInputStream;
@@ -23,6 +24,28 @@ class ServerEndToEndTest {
     Path tempDir;
 
     private TlsTestSupport tls;
+
+    @Test
+    void databaseLossStopsTlsServiceWithoutCreatingReplacement() throws Exception {
+        tls = new TlsTestSupport(tempDir);
+        Path database = tempDir.resolve("runtime-loss.db");
+        Path secret = tempDir.resolve("runtime-loss.key");
+        Server server = startServer(database, secret);
+        try {
+            int port = waitForPort(server);
+            assertTrue(port > 0);
+            Files.delete(database);
+            assertThrows(Exception.class, () -> sendAuthenticatedCommand(port, "|health"));
+            long deadline = System.currentTimeMillis() + 3000;
+            while (server.getPort() != 0 && System.currentTimeMillis() < deadline) {
+                Thread.sleep(10);
+            }
+            assertEquals(0, server.getPort());
+            assertFalse(Files.exists(database));
+        } finally {
+            server.stop();
+        }
+    }
 
     @Test
     void testAuthenticatedCommandFlowAndPersistenceAcrossRestart() throws Exception {
@@ -160,8 +183,14 @@ class ServerEndToEndTest {
                 throw new IllegalStateException("Unable to provision test master key", e);
             }
         }
+        if (Files.notExists(databasePath)) {
+            KeyValueStore.initialize(databasePath.toString(), secretKeyPath.toString());
+        }
         KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
-        Server server = new Server(tls.environment(), store);
+        Environment base = tls.environment();
+        Environment env = new Environment(
+                base.password(), base.username(), base.port(), base.serviceCredentials(), secretKeyPath, base.tls());
+        Server server = new Server(env, store);
         Thread serverThread = new Thread(server::start);
         serverThread.setDaemon(true);
         serverThread.start();

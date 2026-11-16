@@ -191,8 +191,8 @@ tampering rejection, and that a running store never recreates a missing key file
 **Operational and compatibility impact:** Operators must provision a protected Base64 AES key
 file before starting CANIS, including for an empty database. The key is loaded once per process;
 changing the file requires a restart. Existing `CANISDB1` and `CANISGCM1` formats are unchanged.
-See [master-key requirements](docs/master-key.md). A missing database can still start empty;
-Issue #8 covers that remaining ambiguity.
+See [master-key requirements](docs/master-key.md). Issue #8 now requires explicit initialization
+and rejects a missing database during normal startup.
 
 **Review findings (2026-11-16):**
 
@@ -209,13 +209,15 @@ Issue #8 covers that remaining ambiguity.
   host. Run them on a POSIX CI host and add cases for owner mismatch, inherited Windows ACLs, and
   captured logs that must not contain key-file content or paths.
 
-**Related existing risk:** A missing database still starts empty; Issue #8 owns explicit database
-initialization and safe recovery behavior. Cross-service decrypt authorization remains with Issue
+**Related follow-up:** Issue #8 now owns explicit database initialization and safe recovery behavior.
+Cross-service decrypt authorization remains with Issue
 #36. Existing `CANISDB1`/`CANISGCM1` formats remain compatible.
 
 ---
 
 ## Issue #8 - Prevent Silent Database Recreation
+
+**Status:** Implemented and tested; review follow-up remains open before acceptance.
 
 ### Objetivo
 
@@ -223,14 +225,66 @@ Impedir recriação automática do banco criptográfico.
 
 ### Tarefas
 
-- [ ] Detectar chave inválida
-- [ ] Detectar chave ausente
-- [ ] Detectar banco corrompido
-- [ ] Entrar em modo seguro
+- [x] Detectar chave inválida
+- [x] Detectar chave ausente
+- [ ] Detectar banco corrompido (authenticated records with invalid key fields still load)
+- [x] Entrar em modo seguro
 
 ### Critérios de Aceitação
 
-- [ ] Nenhum reset silencioso é executado
+- [ ] Nenhum reset silencioso é executado em todos os caminhos de escrita
+
+**Evidence:** `KeyValueStore` now requires an existing authenticated database during normal
+construction. The separate `--init-db` command creates a new empty database only with create-new
+semantics and a valid externally provisioned master key. Once a request detects database loss or
+change, the store enters a recovery-required state and stops further CANISP processing. Writes use
+a staged atomic replacement instead of truncating the current file. The encrypted `CANISDB1` and `CANISGCM1`
+formats are unchanged. `mvn spotless:apply` and `mvn -q test` passed on Windows (148 tests,
+7 existing skips, no failures or errors); the packaged server jar also built successfully.
+
+**Operational and compatibility impact:** Operators must run `--init-db` once for a new installation
+and keep the database working directory protected. Normal startup rejects an absent database, so a
+previously used installation must restore its original database and matching key from backup.
+Filesystems without atomic move support reject writes. Existing valid databases and CANISP clients
+remain compatible; databases larger than 256 MiB now require an explicit size-limit review.
+See [master-key and recovery requirements](docs/master-key.md).
+
+**Remaining risks:** Directory control by an untrusted local actor can race application file checks;
+protect the working directory with operating-system permissions. Directory metadata is not synced
+after an atomic replacement on every platform, so crash durability needs platform-specific review.
+Each operation reads and hashes the database, which can increase latency as it grows; future work
+should retain runtime tamper detection while reducing this cost.
+The existing audit logger still lacks the required schema and integrity verification; Issues #11-#19
+own that work. Runtime loss of the cached master-key file remains an Issue #7 follow-up.
+
+**Implementation review (2026-11-16):**
+
+- **Architecture:** `KeyValueStore` now combines initialization, file identity and digest checks,
+  atomic replacement, serialization, and RSA operations. A focused persistence component with an
+  explicit database configuration would isolate these concerns and allow deterministic fault
+  injection. `Server.main` also hardcodes `db.dat`, making the command sensitive to working directory.
+- **High — silent recreation race:** `KeyValueStore.saveToFile` checks the database, then performs
+  `Files.move(..., ATOMIC_MOVE, REPLACE_EXISTING)`. If the destination disappears after the final
+  check, the move can create it again. Close this gap and add a deterministic race test before
+  checking the no-silent-reset acceptance criterion.
+- **High — incomplete record validation:** Authenticated `CANISDB1` records with malformed RSA
+  fields still load; `KeyValueStoreTest.malformedStoredPrivateKeyNeverAppearsInException` exercises
+  that behavior. The parser also accepts malformed UTF-8 by replacement. Define and enforce valid
+  stored-key fields, coordinating with Issue #36, before marking corruption detection complete.
+- **Audit requirement:** Database initialization and recovery-required transitions use operational
+  logs only. `AuditLogger` lacks the required `eventId`, `timestamp`, `operation`, `identity`, and
+  `result` fields and integrity verification. Coordinate a verifiable event path with Issues #11-#19;
+  the current implementation does not satisfy the `AGENTS.md` audit requirements.
+- **Coverage gaps:** No test controls deletion in the check-to-move interval, injects an interrupted
+  or unsupported atomic move, or executes the packaged `--init-db` command end to end. The
+  end-to-end test helper initializes missing databases, so only dedicated startup tests catch
+  accidental startup recreation. Tests do not cover a symlinked database path or capture
+  storage-failure logs for path or key-material leakage. POSIX master-key permission and symlink
+  coverage was skipped on the Windows verification host;
+  run it in POSIX CI.
+- **Operational risks:** The TLS listener notices idle-time database loss only on a later request.
+  Every store operation reads and hashes up to 256 MiB, and directory metadata is not forced after
+  replacement. Review detection latency, scale, and power-loss recovery on supported filesystems.
 
 ---
 
@@ -657,5 +711,5 @@ private key without authorization.
 - [ ] Unauthorized cross-service decryption is rejected and audited without exposing key material.
 - [ ] Valid existing `CANISDB1` databases and authorized file workflows remain usable after restart.
 
-**Coordination:** Atomic database writes and missing-database handling remain with Issues #7-#8 and
-the lifecycle follow-up. Audit schema and integrity requirements remain with Issues #11-#19.
+**Coordination:** Issue #8 now covers atomic database writes and missing-database handling. Audit
+schema and integrity requirements remain with Issues #11-#19.

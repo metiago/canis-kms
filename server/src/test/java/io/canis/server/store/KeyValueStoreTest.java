@@ -39,6 +39,93 @@ class KeyValueStoreTest {
     Path tempDir;
 
     @Test
+    void databaseRequiresExplicitInitializationAndNeverOverwritesExistingFile() throws Exception {
+        Path database = tempDir.resolve("new.db");
+        Path secret = tempDir.resolve("new.key");
+        assertThrows(
+                IllegalStateException.class, () -> KeyValueStore.initialize(database.toString(), secret.toString()));
+        assertTrue(Files.notExists(database));
+        MasterKeyTestSupport.provision(secret);
+        assertThrows(IllegalStateException.class, () -> KeyValueStore.initialize(null, secret.toString()));
+
+        IllegalStateException failure = assertThrows(
+                IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+        assertFalse(failure.toString().contains(database.toString()));
+        assertFalse(failure.toString().contains(secret.toString()));
+        assertTrue(Files.notExists(database));
+
+        KeyValueStore.initialize(database.toString(), secret.toString());
+        byte[] initialized = Files.readAllBytes(database);
+        assertTrue(
+                new KeyValueStore(database.toString(), secret.toString()).list().isEmpty());
+        assertThrows(
+                IllegalStateException.class, () -> KeyValueStore.initialize(database.toString(), secret.toString()));
+        assertArrayEquals(initialized, Files.readAllBytes(database));
+    }
+
+    @Test
+    void runningStoreRejectsDatabaseLossAndTamperingWithoutRecreation() throws Exception {
+        Path database = tempDir.resolve("runtime.db");
+        Path secret = tempDir.resolve("runtime.key");
+        MasterKeyTestSupport.provision(secret);
+        KeyValueStore.initialize(database.toString(), secret.toString());
+        KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
+        Files.delete(database);
+
+        assertThrows(IllegalStateException.class, () -> store.get("serviceA"));
+        assertThrows(IllegalStateException.class, () -> store.create("serviceA"));
+        assertFalse(store.isHealthy());
+        assertTrue(Files.notExists(database));
+
+        KeyValueStore.initialize(database.toString(), secret.toString());
+        KeyValueStore second = new KeyValueStore(database.toString(), secret.toString());
+        byte[] tampered = Files.readAllBytes(database);
+        tampered[tampered.length - 1] ^= 1;
+        Files.write(database, tampered);
+        assertThrows(IllegalStateException.class, second::list);
+        assertFalse(second.isHealthy());
+        assertArrayEquals(tampered, Files.readAllBytes(database));
+    }
+
+    @Test
+    void authenticatedButMalformedRecordsAreRejected() throws Exception {
+        Path database = tempDir.resolve("malformed-records.db");
+        Path secret = tempDir.resolve("malformed-records.key");
+        MasterKeyTestSupport.provision(secret);
+        byte[] valid = legacyRecord("serviceA", "public", "private");
+        byte[] trailing = Arrays.copyOf(valid, valid.length + 1);
+        Files.write(database, new SymmetricGenerator(secret.toString()).encrypt(trailing));
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
+            out.write(STORE_MAGIC);
+            out.writeInt(1);
+            out.writeInt(Integer.MAX_VALUE);
+        }
+        byte[] oversized = new SymmetricGenerator(secret.toString()).encrypt(bytes.toByteArray());
+        Files.write(database, oversized);
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+        assertArrayEquals(oversized, Files.readAllBytes(database));
+
+        bytes.reset();
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
+            out.write(STORE_MAGIC);
+            out.writeInt(2);
+            for (int i = 0; i < 2; i++) {
+                writeString(out, "serviceA");
+                writeString(out, "serviceA");
+                writeString(out, "public");
+                writeString(out, "private");
+            }
+        }
+        byte[] duplicated = new SymmetricGenerator(secret.toString()).encrypt(bytes.toByteArray());
+        Files.write(database, duplicated);
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+        assertArrayEquals(duplicated, Files.readAllBytes(database));
+    }
+
+    @Test
     void createReturnsOnlyPublicMetadataAndDecrypts() throws Exception {
         KeyValueStore store = newStore("active");
         assertTrue(store.create("serviceA"));
@@ -123,12 +210,14 @@ class KeyValueStoreTest {
 
     @Test
     void saveFailureDoesNotAcknowledgeOrRetainKey() throws Exception {
-        Path database = tempDir.resolve("missing-parent").resolve("db.dat");
+        Path database = tempDir.resolve("save-failure.db");
         Path secret = tempDir.resolve("save-failure.key");
         MasterKeyTestSupport.provision(secret);
+        KeyValueStore.initialize(database.toString(), secret.toString());
         KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
+        Files.delete(database);
         assertThrows(IllegalStateException.class, () -> store.create("serviceA"));
-        assertNull(store.get("serviceA"));
+        assertFalse(store.isHealthy());
         assertTrue(Files.notExists(database));
     }
 
@@ -137,6 +226,7 @@ class KeyValueStoreTest {
         Path database = tempDir.resolve("protected.db");
         Path secret = tempDir.resolve("protected.key");
         MasterKeyTestSupport.provision(secret);
+        KeyValueStore.initialize(database.toString(), secret.toString());
         KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
         store.create("serviceA");
         byte[] original = Files.readAllBytes(database);
@@ -165,6 +255,7 @@ class KeyValueStoreTest {
         Path wrongSecret = tempDir.resolve("different.key");
         MasterKeyTestSupport.provision(originalSecret);
         MasterKeyTestSupport.provision(wrongSecret);
+        KeyValueStore.initialize(database.toString(), originalSecret.toString());
         KeyValueStore store = new KeyValueStore(database.toString(), originalSecret.toString());
         store.create("serviceA");
         byte[] original = Files.readAllBytes(database);
@@ -178,6 +269,7 @@ class KeyValueStoreTest {
         Path database = tempDir.resolve("loaded-once.db");
         Path secret = tempDir.resolve("loaded-once.key");
         MasterKeyTestSupport.provision(secret);
+        KeyValueStore.initialize(database.toString(), secret.toString());
         KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
 
         Files.delete(secret);
@@ -204,7 +296,9 @@ class KeyValueStoreTest {
     private KeyValueStore newStore(String name) throws Exception {
         Path secret = tempDir.resolve(name + ".key");
         MasterKeyTestSupport.provision(secret);
-        return new KeyValueStore(tempDir.resolve(name + ".db").toString(), secret.toString());
+        Path database = tempDir.resolve(name + ".db");
+        KeyValueStore.initialize(database.toString(), secret.toString());
+        return new KeyValueStore(database.toString(), secret.toString());
     }
 
     private KeyPair generatePair() throws GeneralSecurityException {

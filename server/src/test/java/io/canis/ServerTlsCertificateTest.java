@@ -51,6 +51,9 @@ class ServerTlsCertificateTest {
 
     private RunningServer startServer(TlsTestSupport tls) throws Exception {
         MasterKeyTestSupport.provision(tempDir.resolve("secret.key"));
+        KeyValueStore.initialize(
+                tempDir.resolve("db.dat").toString(),
+                tempDir.resolve("secret.key").toString());
         Server server = new Server(
                 tls.environmentTrustingCertificateAuthority(),
                 new KeyValueStore(

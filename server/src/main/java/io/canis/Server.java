@@ -58,6 +58,10 @@ public class Server {
     }
 
     public Server(Environment env, KeyValueStore store) {
+        if (env == null || store == null) {
+            throw new IllegalStateException("CANIS server configuration incomplete");
+        }
+        store.verifyConfiguration(env.secretKeyPath());
         this.port = env.port();
         this.serviceCredentials = env.serviceCredentials();
         this.store = store;
@@ -66,7 +70,7 @@ public class Server {
     }
 
     public void start() {
-
+        store.ensureHealthy();
         running = true;
         try (SSLServerSocket boundServerSocket =
                 (SSLServerSocket) tlsContext.getServerSocketFactory().createServerSocket()) {
@@ -125,6 +129,7 @@ public class Server {
 
     private void handleConnection(SSLSocket socket) {
         try {
+            store.ensureHealthy();
             socket.setSoTimeout(SOCKET_TIMEOUT_MS);
             TlsCipherPolicy.configure(socket);
             socket.setNeedClientAuth(true);
@@ -147,6 +152,14 @@ public class Server {
         } catch (TlsCipherPolicy.NoApprovedCipherSuiteException e) {
             logger.warn("TLS connection rejected: no approved TLS 1.3 cipher suite is enabled");
             closeQuietly(socket);
+        } catch (IllegalStateException e) {
+            logger.error("CANIS database unavailable; stopping TLS listener");
+            closeQuietly(socket);
+            stop();
+        } finally {
+            if (!store.isHealthy()) {
+                stop();
+            }
         }
     }
 
@@ -249,6 +262,14 @@ public class Server {
     }
 
     public static void main(String[] args) {
+        if (args.length == 1 && "--init-db".equals(args[0])) {
+            Environment env = loadEnvironment();
+            KeyValueStore.initialize("db.dat", env.secretKeyPath().toString());
+            return;
+        }
+        if (args.length != 0) {
+            throw new IllegalArgumentException("Usage: Server [--init-db]");
+        }
         new Server().start();
     }
 }

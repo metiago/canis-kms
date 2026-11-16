@@ -6,17 +6,21 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -31,49 +35,98 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KeyValueStore {
+public final class KeyValueStore {
 
     private static final Logger logger = LoggerFactory.getLogger(KeyValueStore.class);
     private static final byte[] STORE_MAGIC = "CANISDB1".getBytes(StandardCharsets.US_ASCII);
     private static final int MAX_ENTRIES = 100_000;
+    private static final int MAX_FIELD_BYTES = 1_000_000;
+    private static final int MAX_DATABASE_BYTES = 256 * 1024 * 1024;
     private Map<String, StoredKey> store;
-    private final String filePath;
+    private final Path filePath;
+    private final Path keyPath;
     private final SymmetricGenerator symmetricGenerator;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private byte[] expectedDigest;
+    private Object expectedFileKey;
+    private volatile boolean healthy = true;
 
     public KeyValueStore() {
         this("db.dat", System.getenv("CANIS_SECRET_KEY"));
     }
 
     public KeyValueStore(String filePath, String secretKeyPath) {
-        this.filePath = filePath;
         this.symmetricGenerator = new SymmetricGenerator(secretKeyPath);
+        if (filePath == null || filePath.isBlank()) {
+            throw new IllegalStateException("CANIS database path is not configured");
+        }
+        try {
+            this.filePath = Path.of(filePath).toAbsolutePath().normalize();
+        } catch (InvalidPathException e) {
+            throw new IllegalStateException("CANIS database path is invalid");
+        }
+        this.keyPath = Path.of(secretKeyPath).toAbsolutePath().normalize();
         this.store = new ConcurrentHashMap<>();
         loadFromFile();
+    }
+
+    /** Explicit, one-time initialization. Refuses to replace any existing database. */
+    public static void initialize(String filePath, String secretKeyPath) {
+        SymmetricGenerator cipher = new SymmetricGenerator(secretKeyPath);
+        Path database;
+        try {
+            database = Path.of(filePath).toAbsolutePath().normalize();
+        } catch (InvalidPathException | NullPointerException e) {
+            throw new IllegalStateException("CANIS database path is invalid");
+        }
+        try {
+            byte[] plain = new byte[STORE_MAGIC.length + Integer.BYTES];
+            System.arraycopy(STORE_MAGIC, 0, plain, 0, STORE_MAGIC.length);
+            byte[] encrypted = cipher.encrypt(plain);
+            try (FileChannel output = FileChannel.open(
+                    database, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
+                java.nio.ByteBuffer bytes = java.nio.ByteBuffer.wrap(encrypted);
+                while (bytes.hasRemaining()) {
+                    output.write(bytes);
+                }
+                output.force(true);
+            }
+            logger.info("CANIS database explicitly initialized");
+        } catch (Exception e) {
+            logger.error("CANIS database initialization rejected");
+            throw new IllegalStateException("Unable to initialize CANIS database");
+        }
+    }
+
+    /** Confirms that an injected store uses the configured key path and remains ready. */
+    public void verifyConfiguration(Path configuredKeyPath) {
+        if (configuredKeyPath == null
+                || !keyPath.equals(configuredKeyPath.toAbsolutePath().normalize())
+                || !symmetricGenerator.matchesKeyFile(configuredKeyPath.toString())) {
+            throw new IllegalStateException("CANIS database key configuration mismatch");
+        }
+        ensureHealthy();
+    }
+
+    public boolean isHealthy() {
+        return healthy;
     }
 
     private void loadFromFile() {
         lock.writeLock().lock();
         try {
-            File file = new File(filePath);
-            if (file.exists()) {
-                try (InputStream fis = new FileInputStream(file);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-                    byte[] buffer = new byte[1024];
-
-                    int bytesRead;
-                    while ((bytesRead = fis.read(buffer)) != -1) {
-                        baos.write(buffer, 0, bytesRead);
-                    }
-                    byte[] encryptedData = baos.toByteArray();
-                    byte[] decryptedData = symmetricGenerator.decrypt(encryptedData);
+            try {
+                byte[] encryptedData = readDatabase();
+                byte[] decryptedData = symmetricGenerator.decrypt(encryptedData);
+                try {
                     store = deserializeVersionedStore(decryptedData);
-                } catch (Exception e) {
-                    throw new IllegalStateException(
-                            "Unable to load the existing CANIS database. Verify that CANIS_SECRET_KEY points "
-                                    + "to the original valid key file; the database was left unchanged.");
+                } finally {
+                    Arrays.fill(decryptedData, (byte) 0);
                 }
+                remember(encryptedData);
+            } catch (Exception e) {
+                logger.error("CANIS database startup rejected: missing, unreadable, or invalid database");
+                throw new IllegalStateException("Unable to load CANIS database; recovery required");
             }
         } finally {
             lock.writeLock().unlock();
@@ -81,16 +134,98 @@ public class KeyValueStore {
     }
 
     private void saveToFile() {
+        Path temporary = null;
         try {
+            ensureHealthy();
             byte[] serializedData = serializeStore(store);
             byte[] encryptedData = symmetricGenerator.encrypt(serializedData);
-            try (OutputStream fos = new FileOutputStream(filePath)) {
-                fos.write(encryptedData);
+            temporary = Files.createTempFile(filePath.getParent(), ".canis-db-", ".tmp");
+            try (FileChannel output =
+                    FileChannel.open(temporary, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
+                java.nio.ByteBuffer bytes = java.nio.ByteBuffer.wrap(encryptedData);
+                while (bytes.hasRemaining()) {
+                    output.write(bytes);
+                }
+                output.force(true);
             }
+            ensureHealthy();
+            Files.move(temporary, filePath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            remember(encryptedData);
         } catch (Exception e) {
-            logger.error("CANIS database save failed");
-            throw new IllegalStateException("Unable to save CANIS database");
+            fail("save_failed");
+        } finally {
+            if (temporary != null) {
+                try {
+                    Files.deleteIfExists(temporary);
+                } catch (IOException e) {
+                    logger.warn("CANIS database temporary file cleanup failed");
+                }
+            }
         }
+    }
+
+    public void ensureHealthy() {
+        lock.readLock().lock();
+        try {
+            if (!healthy) {
+                throw new IllegalStateException("CANIS database unavailable; recovery required");
+            }
+            byte[] current = readDatabase();
+            if (!MessageDigest.isEqual(expectedDigest, digest(current))
+                    || (expectedFileKey != null && !expectedFileKey.equals(fileKey()))) {
+                fail("changed_database");
+            }
+        } catch (IOException | SecurityException e) {
+            fail("missing_or_unreadable_database");
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    private byte[] readDatabase() throws IOException {
+        BasicFileAttributes before =
+                Files.readAttributes(filePath, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        if (!before.isRegularFile() || before.size() == 0 || before.size() > MAX_DATABASE_BYTES) {
+            throw new IOException("Invalid database file type");
+        }
+        byte[] data;
+        try (var input = Files.newInputStream(filePath, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
+            data = input.readNBytes(MAX_DATABASE_BYTES + 1);
+        }
+        BasicFileAttributes after =
+                Files.readAttributes(filePath, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        if (!after.isRegularFile()
+                || data.length == 0
+                || data.length > MAX_DATABASE_BYTES
+                || after.size() != data.length
+                || (before.fileKey() != null && !before.fileKey().equals(after.fileKey()))) {
+            throw new IOException("Database changed while reading");
+        }
+        return data;
+    }
+
+    private Object fileKey() throws IOException {
+        return Files.readAttributes(filePath, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
+                .fileKey();
+    }
+
+    private void remember(byte[] encrypted) throws IOException {
+        expectedDigest = digest(encrypted);
+        expectedFileKey = fileKey();
+    }
+
+    private static byte[] digest(byte[] value) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(value);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Required database digest unavailable");
+        }
+    }
+
+    private void fail(String category) {
+        healthy = false;
+        logger.error("CANIS database entered recovery-required state: {}", category);
+        throw new IllegalStateException("CANIS database unavailable; recovery required");
     }
 
     /** Creates an entry only when the key is absent, without replacing existing key material. */
@@ -104,6 +239,7 @@ public class KeyValueStore {
                 Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded()));
         lock.writeLock().lock();
         try {
+            ensureHealthy();
             if (store.containsKey(key)) {
                 return false;
             }
@@ -123,6 +259,7 @@ public class KeyValueStore {
     public Entry get(String key) {
         lock.readLock().lock();
         try {
+            ensureHealthy();
             StoredKey value = store.get(key);
             return value == null ? null : value.metadata();
         } finally {
@@ -133,6 +270,7 @@ public class KeyValueStore {
     public void delete(String key) {
         lock.writeLock().lock();
         try {
+            ensureHealthy();
             StoredKey removed = store.remove(key);
             try {
                 saveToFile();
@@ -150,6 +288,7 @@ public class KeyValueStore {
     public List<Entry> list() throws IOException {
         lock.readLock().lock();
         try {
+            ensureHealthy();
             List<Entry> result = new ArrayList<>();
             for (StoredKey value : store.values()) {
                 result.add(value.metadata());
@@ -167,6 +306,7 @@ public class KeyValueStore {
         }
         lock.readLock().lock();
         try {
+            ensureHealthy();
             StoredKey value = store.get(key);
             if (value == null) {
                 throw new NoSuchElementException("Key not found");
@@ -226,7 +366,12 @@ public class KeyValueStore {
                 if (key == null || name == null || publicKey == null || privateKey == null) {
                     throw new IOException("Invalid CANIS store entry.");
                 }
-                result.put(key, new StoredKey(name, publicKey, privateKey));
+                if (result.putIfAbsent(key, new StoredKey(name, publicKey, privateKey)) != null) {
+                    throw new IOException("Duplicate CANIS store entry");
+                }
+            }
+            if (in.read() != -1) {
+                throw new IOException("Trailing CANIS store data");
             }
         }
         return result;
@@ -245,7 +390,7 @@ public class KeyValueStore {
 
     private String readString(DataInputStream in) throws IOException {
         int length = in.readInt();
-        if (length < 0) {
+        if (length < 0 || length > MAX_FIELD_BYTES || length > in.available()) {
             return null;
         }
         byte[] bytes = new byte[length];
