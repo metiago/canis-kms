@@ -1,0 +1,16 @@
+# JOSS-03 pre-manuscript claim-evidence matrix
+
+Created before any JOSS-03 change to `joss-papers/paper.md`. This matrix covers
+claims relevant to the installation and reviewer workflow; the broader prior
+audit remains in `joss05-claim-evidence.md`.
+
+| Claim | Evidence | Source File | Verification Status |
+| --- | --- | --- | --- |
+| The server and official client use TLS 1.3 with certificate validation, and the client checks the server host. | JSSE configuration and negative transport tests; prior Windows suite. | `server/src/main/java/io/canis/config/TlsContextFactory.java`; `client/src/main/java/io/canis/jpaw/client/SocketClient.java`; `client/src/test/java/io/canis/jpaw/client/SocketClientTest.java`; `docs/research/joss02-results.md` | Source and prior working-tree test verified; fixed release pending. |
+| File encryption occurs in the client and decryption needs a running key service to unwrap the data key. | Client file helpers and server decrypt operation. | `client/src/main/java/io/canis/jpaw/client/JpawClient.java`; `client/src/main/java/io/canis/jpaw/utils/EnvelopeCryptographer.java`; `server/src/main/java/io/canis/handlers/ClientHandler.java` | Source verified; outage consequences need a focused reviewer check. |
+| The current model grants admitted clients shared access to stored key operations. | Handler behavior and one synthetic credential-boundary test. | `server/src/main/java/io/canis/handlers/ClientHandler.java`; `server/src/test/java/io/canis/SharedTrustDomainResearchTest.java`; `docs/research/joss01-results.md` | One working-tree scenario verified; no per-key authorization or certificate-bound identity separation. |
+| Whole-file helpers buffer input in memory; no practical maximum file size or performance limit was measured. | `Files.readAllBytes` in both file helpers; no measurement artifact. | `client/src/main/java/io/canis/jpaw/utils/EnvelopeCryptographer.java`; `joss-papers/paper.md` | Source verified; no numerical size, memory, or performance conclusion. |
+| The database must be explicitly initialized and a matching externally supplied master-key file is required. | Startup path, key loader, existing tests and documentation. | `server/src/main/java/io/canis/Server.java`; `server/src/main/java/io/canis/crypto/MasterKeyLoader.java`; `docs/master-key.md`; `docs/research/joss02-results.md` | Source and prior working-tree tests verified; fixed release pending. |
+| A non-author can reproduce a producer-to-recipient example from a clean checkout. | No complete reviewer-run example or independent record yet. | `README.md`; `docs/client-package.md`; `server/src/test/java/io/canis/ServerEndToEndTest.java` | Unverified before JOSS-03 implementation. |
+| The software has demonstrated research use, adoption, or measured performance. | No supporting record found; manuscript disclaims these claims. | `docs/research/joss01-results.md`; `joss-papers/paper.md` | Unsupported; must not be added to the paper. |
+| Paper standards and related-tool citations identify primary sources. | Four bibliography entries and source comparison audited in JOSS-04. | `joss-papers/paper.bib`; `docs/research/joss04-results.md` | Previously verified against primary sources; recheck if citations change. |

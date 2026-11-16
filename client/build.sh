@@ -1,9 +1,7 @@
 #!/bin/bash
 
-export CANIS_SERVER_PORT=3307
-export CANIS_USERNAME=admin
-export CANIS_PASSWORD=123
+set -eu
 
+# The client build and unit tests provision their own test fixtures. Publishing
+# requires separate authorization and externally supplied Maven credentials.
 mvn clean install
-
-mvn deploy

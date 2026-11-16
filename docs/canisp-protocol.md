@@ -242,7 +242,9 @@ CANIS encrypted data must use the current `CANISGCM1`, `CANISHYB1`, and `CANISDB
 
 ## Audit Events
 
-CANIS emits structured audit log events through the `io.canis.audit` logger for authentication,
-key creation, key access, key deletion, decrypt success/failure, and rejected commands. Audit logs
+CANIS emits key-value formatted log messages through the `io.canis.audit` logger for authentication,
+key creation, key access, key deletion, decrypt success/failure, and rejected commands. Messages
 include identities, key names, remote addresses, and failure reasons. They do not include raw
-credentials, private keys, encrypted payloads, or decrypted payloads.
+credentials, private keys, encrypted payloads, or decrypted payloads. The messages do not have
+the event IDs, defined record schema, or integrity verification required by `AGENTS.md`, so they
+are not a tamper-evident audit trail.

@@ -26,9 +26,12 @@ Client package publishing steps are documented in
 [docs/client-package-deploy.md](docs/client-package-deploy.md).
 Client package usage and validation rules are documented in
 [docs/client-package.md](docs/client-package.md).
-Service-name validation follow-up work is tracked in
-[docs/service-name-validation-backlog.md](docs/service-name-validation-backlog.md).
-
+The [JOSS-01 research evaluation](docs/research/joss01-method.md) documents a reproducible
+synthetic-data test of the current shared trust boundary and its limitations.
+The [reviewer guide](docs/reviewer-guide.md) gives clean-checkout build steps, a
+reproducible producer-to-recipient TLS example, expected output, and operational limits.
+See [contribution guidance](CONTRIBUTING.md) for ordinary issues and support,
+and [security reporting](SECURITY.md) for suspected vulnerabilities.
 #### Key Features:
 
 1. **Socket Communication:**
@@ -58,10 +61,10 @@ Service-name validation follow-up work is tracked in
       format.
 
 4. **Persistence:**
-    - Data from the key-value store is periodically persisted to a `.dat` file, ensuring that
-      registered application information is not lost between server restarts.
-    - The persistence mechanism allows for easy recovery and access to previously registered
-      applications.
+    - Key creation and deletion persist an encrypted `.dat` database. Normal startup requires an
+      existing valid database; creating a new one requires the explicit `--init-db` command.
+    - Recovery requires the matching database and externally provisioned master-key file. A
+      database write race and crash-durability limits remain documented in the production backlog.
 
 5. **Command Handling:**
     - The server processes incoming CANISP commands from authenticated clients, allowing for
@@ -97,7 +100,11 @@ flowchart LR
 
 ### Testing & Running
 
-Before running the server or tests, export these environment variables
+For a long-running server and client, supply these settings from protected
+external configuration. The password values below are placeholders, not
+working credentials; automated tests generate their own fixtures and do not
+need this setup. Follow the [reviewer guide](docs/reviewer-guide.md) for an
+executable example.
 
 ```bash
 # server port
@@ -108,15 +115,13 @@ export CANIS_SERVER_HOST=localhost;
 export CANIS_SERVER_PORT=3307;
 # service username
 export CANIS_USERNAME=admin
-# service password
-export CANIS_PASSWORD=123;
+# service password: supply from protected external configuration
 # client PKCS#12 identity and trusted-server stores (separate from server TLS settings)
 export CANIS_CLIENT_TLS_KEYSTORE=/secure/path/client.p12;
 export CANIS_CLIENT_TLS_KEYSTORE_PASSWORD=...;
 export CANIS_CLIENT_TLS_TRUSTSTORE=/secure/path/servers.p12;
 export CANIS_CLIENT_TLS_TRUSTSTORE_PASSWORD=...;
-# optional comma-separated credentials for additional authenticated clients
-export CANIS_SERVICE_CREDENTIALS=serviceA:secret-a,serviceB:secret-b;
+# optional CANIS_SERVICE_CREDENTIALS: supply from protected external configuration
 # path to the externally provisioned database master-key file
 export CANIS_SECRET_KEY=/my/secret/location/secret.txt;
 # PKCS#12 server identity containing its certificate chain and private key
