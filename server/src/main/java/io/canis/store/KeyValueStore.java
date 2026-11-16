@@ -38,7 +38,7 @@ public class KeyValueStore {
     private static final int MAX_ENTRIES = 100_000;
     private Map<String, StoredKey> store;
     private final String filePath;
-    private final String secretKeyPath;
+    private final SymmetricGenerator symmetricGenerator;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public KeyValueStore() {
@@ -47,7 +47,7 @@ public class KeyValueStore {
 
     public KeyValueStore(String filePath, String secretKeyPath) {
         this.filePath = filePath;
-        this.secretKeyPath = secretKeyPath;
+        this.symmetricGenerator = new SymmetricGenerator(secretKeyPath);
         this.store = new ConcurrentHashMap<>();
         loadFromFile();
     }
@@ -67,7 +67,7 @@ public class KeyValueStore {
                         baos.write(buffer, 0, bytesRead);
                     }
                     byte[] encryptedData = baos.toByteArray();
-                    byte[] decryptedData = symmetricGenerator(false).decrypt(encryptedData);
+                    byte[] decryptedData = symmetricGenerator.decrypt(encryptedData);
                     store = deserializeVersionedStore(decryptedData);
                 } catch (Exception e) {
                     throw new IllegalStateException(
@@ -83,7 +83,7 @@ public class KeyValueStore {
     private void saveToFile() {
         try {
             byte[] serializedData = serializeStore(store);
-            byte[] encryptedData = symmetricGenerator().encrypt(serializedData);
+            byte[] encryptedData = symmetricGenerator.encrypt(serializedData);
             try (OutputStream fos = new FileOutputStream(filePath)) {
                 fos.write(encryptedData);
             }
@@ -251,15 +251,6 @@ public class KeyValueStore {
         byte[] bytes = new byte[length];
         in.readFully(bytes);
         return new String(bytes, StandardCharsets.UTF_8);
-    }
-
-    private SymmetricGenerator symmetricGenerator() throws NoSuchAlgorithmException, IOException {
-        return symmetricGenerator(true);
-    }
-
-    private SymmetricGenerator symmetricGenerator(boolean generateKeyIfMissing)
-            throws NoSuchAlgorithmException, IOException {
-        return new SymmetricGenerator(secretKeyPath, generateKeyIfMissing);
     }
 
     private static final class StoredKey {

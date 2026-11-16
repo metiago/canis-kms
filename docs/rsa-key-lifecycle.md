@@ -24,7 +24,9 @@ At startup, `KeyValueStore` reads an existing database, authenticates and decryp
 envelope, checks the `CANISDB1` marker, and reconstructs entries. A missing or wrong master key,
 corrupt encrypted data, or invalid store marker prevents loading. The loader does not currently
 parse each reconstructed RSA key or verify that its public and private parts match. If the database
-file is absent, it starts with an empty map, even if an older database was expected.
+file is absent, it starts with an empty map, even if an older database was expected. The master-key
+file is validated and loaded before this database check, so a missing or invalid master key also
+prevents startup when the database is absent. See [master-key requirements](master-key.md).
 
 The database and `CANIS_SECRET_KEY` file are both required for recovery. Back them up separately
 with access controls, restore the matching pair, and verify that a known encrypted file can be
@@ -55,7 +57,7 @@ no longer needed; rotation and revocation policy belong to Issue #9.
 | Finding | Effect | Follow-up |
 | --- | --- | --- |
 | `saveToFile` writes directly to the database file. Issue #6 now propagates write failure and rolls back the in-memory mutation. | An interrupted write can still damage the database file. | Make persistence atomic while preserving `CANISDB1` compatibility. |
-| A missing database starts as empty; a missing master key may be generated on a later save. | Loss of files can be mistaken for a new installation. | Require explicit initialization and fail safely on ambiguous state (Issues #7 and #8). |
+| A missing database starts as empty; a missing master key now prevents startup. | Database loss can still be mistaken for a new installation. | Require explicit database initialization and fail safely on ambiguous state (Issue #8). |
 | Server-side Java APIs previously exposed private-key strings through `Entry` and `AsymmetricGenerator`. | Issue #6 closes this export path for supported APIs: `Entry` contains public metadata, and the store performs key generation and decryption internally. | Keep the API boundary and output-path tests in place; review new serializers and logs. |
 | Private-key strings and historical encrypted database copies cannot be reliably erased by `|del`. | Logical deletion does not guarantee physical destruction. | Define retention, rotation, revocation, and backup policies (Issues #9 and #10). |
 

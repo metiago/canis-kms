@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import io.canis.MasterKeyTestSupport;
 import io.canis.Server;
 import io.canis.TlsTestSupport;
 import io.canis.store.KeyValueStore;
@@ -35,6 +36,7 @@ public class SocketTest {
     @BeforeAll
     static void serverStart() throws Exception {
         tls = new TlsTestSupport(tempDir);
+        MasterKeyTestSupport.provision(tempDir.resolve("secret.key"));
         server = new Server(
                 tls.environment(),
                 new KeyValueStore(

@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import io.canis.MasterKeyTestSupport;
 import io.canis.crypto.Cryptographer;
 import io.canis.crypto.SymmetricGenerator;
 import io.canis.net.BoundedLineReader;
@@ -79,6 +80,7 @@ public class ClientHandlerTest {
 
     @Test
     void testDecryptCommandUsesStoredPrivateKey() throws Exception {
+        MasterKeyTestSupport.provision(tempDir.resolve("secret.key"));
         KeyValueStore store = new KeyValueStore(
                 tempDir.resolve("db.dat").toString(),
                 tempDir.resolve("secret.key").toString());

@@ -1,6 +1,6 @@
 Read AGENTS.md.
 
-Analyze Issue #6 from the backlog.md file.
+Analyze Issue #7 from the backlog.md file.
 
 Produce:
 
