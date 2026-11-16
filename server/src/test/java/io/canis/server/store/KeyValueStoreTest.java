@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.canis.MasterKeyTestSupport;
 import io.canis.crypto.Cryptographer;
 import io.canis.crypto.SymmetricGenerator;
 import io.canis.store.Entry;
@@ -82,6 +83,7 @@ class KeyValueStoreTest {
     void legacyEncryptedDatabaseStillLoadsAndDecrypts() throws Exception {
         Path database = tempDir.resolve("legacy.db");
         Path secret = tempDir.resolve("legacy.key");
+        MasterKeyTestSupport.provision(secret);
         KeyPair pair = generatePair();
         String privateKey = Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded());
         byte[] legacy = legacyRecord(
@@ -107,6 +109,7 @@ class KeyValueStoreTest {
     void malformedStoredPrivateKeyNeverAppearsInException() throws Exception {
         Path database = tempDir.resolve("malformed.db");
         Path secret = tempDir.resolve("malformed.key");
+        MasterKeyTestSupport.provision(secret);
         String marker = "PRIVATE_MATERIAL_SENTINEL";
         Files.write(
                 database,
@@ -119,9 +122,10 @@ class KeyValueStoreTest {
     }
 
     @Test
-    void saveFailureDoesNotAcknowledgeOrRetainKey() {
+    void saveFailureDoesNotAcknowledgeOrRetainKey() throws Exception {
         Path database = tempDir.resolve("missing-parent").resolve("db.dat");
         Path secret = tempDir.resolve("save-failure.key");
+        MasterKeyTestSupport.provision(secret);
         KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
         assertThrows(IllegalStateException.class, () -> store.create("serviceA"));
         assertNull(store.get("serviceA"));
@@ -132,6 +136,7 @@ class KeyValueStoreTest {
     void missingOrWrongMasterKeyAndTamperingFailClosed() throws Exception {
         Path database = tempDir.resolve("protected.db");
         Path secret = tempDir.resolve("protected.key");
+        MasterKeyTestSupport.provision(secret);
         KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
         store.create("serviceA");
         byte[] original = Files.readAllBytes(database);
@@ -158,9 +163,10 @@ class KeyValueStoreTest {
         Path database = tempDir.resolve("wrong-key.db");
         Path originalSecret = tempDir.resolve("original.key");
         Path wrongSecret = tempDir.resolve("different.key");
+        MasterKeyTestSupport.provision(originalSecret);
+        MasterKeyTestSupport.provision(wrongSecret);
         KeyValueStore store = new KeyValueStore(database.toString(), originalSecret.toString());
         store.create("serviceA");
-        new SymmetricGenerator(wrongSecret.toString());
         byte[] original = Files.readAllBytes(database);
 
         assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), wrongSecret.toString()));
@@ -168,9 +174,25 @@ class KeyValueStoreTest {
     }
 
     @Test
+    void runningStoreUsesLoadedKeyWithoutRecreatingDeletedKeyFile() throws Exception {
+        Path database = tempDir.resolve("loaded-once.db");
+        Path secret = tempDir.resolve("loaded-once.key");
+        MasterKeyTestSupport.provision(secret);
+        KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
+
+        Files.delete(secret);
+        assertTrue(store.create("serviceA"));
+        assertFalse(Files.exists(secret));
+        byte[] saved = Files.readAllBytes(database);
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+        assertArrayEquals(saved, Files.readAllBytes(database));
+    }
+
+    @Test
     void invalidDecryptedStoreMarkerFailsClosed() throws Exception {
         Path database = tempDir.resolve("invalid-marker.db");
         Path secret = tempDir.resolve("invalid-marker.key");
+        MasterKeyTestSupport.provision(secret);
         byte[] invalid = new SymmetricGenerator(secret.toString())
                 .encrypt("invalid store marker".getBytes(StandardCharsets.UTF_8));
         Files.write(database, invalid);
@@ -179,10 +201,10 @@ class KeyValueStoreTest {
         assertArrayEquals(invalid, Files.readAllBytes(database));
     }
 
-    private KeyValueStore newStore(String name) {
-        return new KeyValueStore(
-                tempDir.resolve(name + ".db").toString(),
-                tempDir.resolve(name + ".key").toString());
+    private KeyValueStore newStore(String name) throws Exception {
+        Path secret = tempDir.resolve(name + ".key");
+        MasterKeyTestSupport.provision(secret);
+        return new KeyValueStore(tempDir.resolve(name + ".db").toString(), secret.toString());
     }
 
     private KeyPair generatePair() throws GeneralSecurityException {

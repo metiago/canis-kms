@@ -34,6 +34,7 @@ class ServerTlsSecurityTest {
     @BeforeEach
     void start() throws Exception {
         tls = new TlsTestSupport(tempDir);
+        MasterKeyTestSupport.provision(tempDir.resolve("secret.key"));
         server = new Server(
                 tls.environment(),
                 new KeyValueStore(

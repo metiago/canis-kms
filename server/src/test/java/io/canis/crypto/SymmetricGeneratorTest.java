@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.canis.MasterKeyTestSupport;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ public class SymmetricGeneratorTest {
     @Test
     void testEncryptUsesRandomNonceAndDecrypts() throws Exception {
         Path secretKeyPath = tempDir.resolve("secret.key");
+        MasterKeyTestSupport.provision(secretKeyPath);
         SymmetricGenerator generator = new SymmetricGenerator(secretKeyPath.toString());
         byte[] plaintext = "sensitive database payload".getBytes(StandardCharsets.UTF_8);
 
@@ -30,10 +33,10 @@ public class SymmetricGeneratorTest {
     }
 
     @Test
-    void testDoesNotGenerateMissingKeyWhenGenerationIsDisabled() {
+    void testDoesNotGenerateMissingKey() {
         Path secretKeyPath = tempDir.resolve("missing.key");
 
-        assertThrows(java.io.IOException.class, () -> new SymmetricGenerator(secretKeyPath.toString(), false));
-        assertFalse(java.nio.file.Files.exists(secretKeyPath));
+        assertThrows(IllegalStateException.class, () -> new SymmetricGenerator(secretKeyPath.toString()));
+        assertFalse(Files.exists(secretKeyPath));
     }
 }

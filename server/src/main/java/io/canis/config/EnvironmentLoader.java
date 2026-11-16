@@ -16,23 +16,23 @@ public final class EnvironmentLoader {
     static Environment loadEnvironment(Map<String, String> environment) {
         String username = require(environment, "CANIS_USERNAME");
         String password = require(environment, "CANIS_PASSWORD");
-        require(environment, "CANIS_SECRET_KEY");
+        Path secretKeyPath = parsePath(require(environment, "CANIS_SECRET_KEY"), "master key");
         int port = parsePort(require(environment, "CANIS_PORT"));
         Map<String, String> serviceCredentials = loadServiceCredentials(environment, username, password);
 
         TlsConfiguration tls = new TlsConfiguration(
-                parsePath(require(environment, "CANIS_TLS_KEYSTORE")),
+                parsePath(require(environment, "CANIS_TLS_KEYSTORE"), "TLS store"),
                 require(environment, "CANIS_TLS_KEYSTORE_PASSWORD"),
-                parsePath(require(environment, "CANIS_TLS_TRUSTSTORE")),
+                parsePath(require(environment, "CANIS_TLS_TRUSTSTORE"), "TLS store"),
                 require(environment, "CANIS_TLS_TRUSTSTORE_PASSWORD"));
-        return new Environment(password, username, port, serviceCredentials, tls);
+        return new Environment(password, username, port, serviceCredentials, secretKeyPath, tls);
     }
 
-    private static Path parsePath(String value) {
+    private static Path parsePath(String value, String label) {
         try {
             return Path.of(value);
         } catch (InvalidPathException e) {
-            throw new IllegalStateException("Invalid TLS store path", e);
+            throw new IllegalStateException("Invalid " + label + " path");
         }
     }
 

@@ -153,6 +153,13 @@ class ServerEndToEndTest {
     }
 
     private Server startServer(Path databasePath, Path secretKeyPath) {
+        if (java.nio.file.Files.notExists(secretKeyPath)) {
+            try {
+                MasterKeyTestSupport.provision(secretKeyPath);
+            } catch (Exception e) {
+                throw new IllegalStateException("Unable to provision test master key", e);
+            }
+        }
         KeyValueStore store = new KeyValueStore(databasePath.toString(), secretKeyPath.toString());
         Server server = new Server(tls.environment(), store);
         Thread serverThread = new Thread(server::start);

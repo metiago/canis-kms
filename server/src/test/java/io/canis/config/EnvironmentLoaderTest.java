@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +19,7 @@ public class EnvironmentLoaderTest {
         assertEquals("admin", environment.username());
         assertEquals("123", environment.password());
         assertEquals(3307, environment.port());
+        assertEquals(Path.of("secret.txt"), environment.secretKeyPath());
         assertEquals("123", environment.serviceCredentials().get("admin"));
     }
 
@@ -50,6 +52,18 @@ public class EnvironmentLoaderTest {
         environment.remove("CANIS_SECRET_KEY");
 
         assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+    }
+
+    @Test
+    void testLoadEnvironmentRejectsInvalidMasterKeyPathWithoutEchoingIt() {
+        Map<String, String> environment = validEnvironment();
+        String invalid = "secret" + (char) 0 + "path";
+        environment.put("CANIS_SECRET_KEY", invalid);
+
+        IllegalStateException failure =
+                assertThrows(IllegalStateException.class, () -> EnvironmentLoader.loadEnvironment(environment));
+        assertFalse(failure.toString().contains(invalid));
+        assertEquals("Invalid master key path", failure.getMessage());
     }
 
     @Test

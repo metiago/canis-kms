@@ -73,6 +73,7 @@ public final class TlsTestSupport {
                 "admin",
                 0,
                 Map.of("admin", "123"),
+                directory.resolve("secret.key"),
                 new TlsConfiguration(serverIdentity, password, serverTrust, password));
     }
 
@@ -98,6 +99,7 @@ public final class TlsTestSupport {
                 original.username(),
                 original.port(),
                 original.serviceCredentials(),
+                original.secretKeyPath(),
                 new TlsConfiguration(serverIdentity, password, certificateAuthorityTrust, password));
     }
 

@@ -2,10 +2,12 @@ package io.canis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.canis.models.LoginCredentials;
 import io.canis.store.KeyValueStore;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -56,6 +58,7 @@ public class ServerTest {
 
     @Test
     void testStopClosesServerLoop() throws Exception {
+        MasterKeyTestSupport.provision(tempDir.resolve("secret.key"));
         Server server = new Server(
                 new TlsTestSupport(tempDir).environment(),
                 new KeyValueStore(
@@ -74,5 +77,21 @@ public class ServerTest {
         serverThread.join(2000);
 
         assertFalse(serverThread.isAlive());
+    }
+
+    @Test
+    void masterKeyIsRequiredBeforeServerConstructionAndBinding() throws Exception {
+        TlsTestSupport tls = new TlsTestSupport(tempDir);
+        Path database = tempDir.resolve("fresh.db");
+        Path key = tls.environment().secretKeyPath();
+
+        assertThrows(IllegalStateException.class, () -> new Server(tls.environment(), database));
+        assertFalse(Files.exists(key));
+        assertFalse(Files.exists(database));
+
+        MasterKeyTestSupport.provision(key);
+        Files.writeString(key, "invalid base64!");
+        assertThrows(IllegalStateException.class, () -> new Server(tls.environment(), database));
+        assertFalse(Files.exists(database));
     }
 }

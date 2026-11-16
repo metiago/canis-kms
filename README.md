@@ -117,7 +117,7 @@ export CANIS_CLIENT_TLS_TRUSTSTORE=/secure/path/servers.p12;
 export CANIS_CLIENT_TLS_TRUSTSTORE_PASSWORD=...;
 # optional comma-separated credentials for additional authenticated clients
 export CANIS_SERVICE_CREDENTIALS=serviceA:secret-a,serviceB:secret-b;
-# secret file name
+# path to the externally provisioned database master-key file
 export CANIS_SECRET_KEY=/my/secret/location/secret.txt;
 # PKCS#12 server identity containing its certificate chain and private key
 export CANIS_TLS_KEYSTORE=/my/secret/location/server.p12;
@@ -141,6 +141,11 @@ The server fails startup if TLS material is missing or invalid. It accepts TLS 1
 requires a trusted client certificate before CANISP login. Protect both PKCS#12 files and their
 passwords with operating-system access controls; do not commit them or include them in images.
 The server certificate must identify the DNS name clients use. Rotate certificates before expiry.
+
+The database master key must already exist when the server starts. CANIS validates its format and
+filesystem permissions before listening and never generates a replacement during normal operation.
+See [database master-key requirements](docs/master-key.md) for provisioning, permissions, and
+recovery. Keep the key and encrypted database backed up as a matching pair.
 
 Both endpoints allow only the TLS 1.3 suites `TLS_AES_128_GCM_SHA256`,
 `TLS_AES_256_GCM_SHA384`, and `TLS_CHACHA20_POLY1305_SHA256`. Each endpoint enables only

@@ -163,20 +163,55 @@ identified after implementation, together with decrypt authorization.
 
 ## Issue #7 - Protect CANIS_SECRET_KEY
 
+**Status:** Implemented and tested; review follow-up remains open for the public server construction path.
+
 ### Objetivo
 
 Fortalecer proteção da chave mestra.
 
 ### Tarefas
 
-- [ ] Verificar permissões
-- [ ] Validar existência no startup
-- [ ] Validar formato
-- [ ] Documentar requisitos
+- [x] Verificar permissões
+- [x] Validar existência no startup
+- [x] Validar formato
+- [x] Documentar requisitos
 
 ### Critérios de Aceitação
 
-- [ ] Aplicação não inicia sem chave válida
+- [ ] Aplicação não inicia sem chave válida em todos os caminhos públicos de inicialização
+
+**Evidence:** `mvn spotless:apply` and `mvn -q test` passed (143 tests, no failures or errors;
+five existing client integration skips and two platform skips on Windows). `MasterKeyLoaderTest`
+covers valid legacy and longer AES keys, missing and malformed files, symlinks where supported,
+and unsafe POSIX permissions or Windows ACLs.
+`ServerTest` verifies missing or malformed keys stop the production-style constructor before
+`start` is called. `KeyValueStoreTest` verifies existing database compatibility, wrong-key and
+tampering rejection, and that a running store never recreates a missing key file.
+
+**Operational and compatibility impact:** Operators must provision a protected Base64 AES key
+file before starting CANIS, including for an empty database. The key is loaded once per process;
+changing the file requires a restart. Existing `CANISDB1` and `CANISGCM1` formats are unchanged.
+See [master-key requirements](docs/master-key.md). A missing database can still start empty;
+Issue #8 covers that remaining ambiguity.
+
+**Review findings (2026-11-16):**
+
+- **Acceptance gap:** `Server(Environment, KeyValueStore)` is public and does not validate
+  `Environment.secretKeyPath` or require a non-null, matching, validated store. A caller can bind
+  the TLS listener with an invalid configured key. Make the invariant hold for every supported
+  construction path and add a negative startup test before checking this acceptance criterion.
+- **Permission boundary:** The loader checks the key file and its immediate directory; it relies
+  on operators to protect higher ancestor directories. Review path replacement resistance and
+  decide whether code should validate the full path or use a secure open strategy.
+- **Runtime key loss:** The store caches the key. If its file disappears after startup, writes can
+  still succeed, but a restart will fail. Decide whether to detect and alert on key-file loss.
+- **Coverage gap:** POSIX permission and symlink tests were skipped on the Windows verification
+  host. Run them on a POSIX CI host and add cases for owner mismatch, inherited Windows ACLs, and
+  captured logs that must not contain key-file content or paths.
+
+**Related existing risk:** A missing database still starts empty; Issue #8 owns explicit database
+initialization and safe recovery behavior. Cross-service decrypt authorization remains with Issue
+#36. Existing `CANISDB1`/`CANISGCM1` formats remain compatible.
 
 ---
 

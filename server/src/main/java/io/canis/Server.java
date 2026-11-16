@@ -21,6 +21,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -49,7 +50,11 @@ public class Server {
     private volatile ServerSocket serverSocket;
 
     public Server() {
-        this(loadEnvironment(), new KeyValueStore());
+        this(loadEnvironment(), Path.of("db.dat"));
+    }
+
+    Server(Environment env, Path databasePath) {
+        this(env, new KeyValueStore(databasePath.toString(), env.secretKeyPath().toString()));
     }
 
     public Server(Environment env, KeyValueStore store) {
