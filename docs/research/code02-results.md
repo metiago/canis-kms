@@ -13,6 +13,46 @@ and `-Xms128m -Xmx512m` for the three Java processes. No CPU model, RAM total,
 filesystem type, selected TLS suite, or calibrated peak RSS was captured; these remain
 required for an Issue #32 measurement series.
 
+## Separate source-archive build on 2026-11-17
+
+The author reported `mvn --batch-mode --no-transfer-progress clean verify` exiting with
+`BUILD SUCCESS` at `2026-11-17T20:03:21-03:00` after 5 min 36 s in a separately extracted
+`canis-kms-master` directory. Read-only inspection of that directory found 27 Surefire XML
+suites with 158 tests, zero failures, zero errors, and eight skips. The packaged server jar
+SHA-256 was `8A076928B80B2FD26EFF3373AD9D320EF5BC0C39ACEBEF25679485639DF61EC8`.
+`Code02Harness.java` SHA-256 was
+`A4CF649F29B1A23BF9B0AC8910335AEE5299369D85644D5C0CE1DEADC8C31B3D`, matching
+the source inspected for the local runs above. This verifies the build and executed tests for
+that extracted tree. It has no `.git` directory, so its exact Git revision and dirty-tree
+state cannot be established there; the harness's current revision collection also requires
+Git metadata. The author reports running a build in Fedora WSL, but the Surefire XML currently
+present in this archive records `os.name=Windows 11`, Oracle Java 21.0.7, and skips for both
+`rejectsUnsafePosixFileAndDirectoryPermissions` and `rejectsSymbolicLink`. These files cannot
+verify the reported Fedora run; a Fedora report or `JOSS03_POSIX_COVERAGE=PASS` output is still
+needed. No separate-process harness run was reported for this tree.
+
+## GitHub Windows CI failure and local fixture correction on 2026-11-17
+
+The author reported that the Ubuntu Actions build passed, while the Windows job failed at
+`2026-11-17T22:38:50Z`. The Windows server test summary was 95 tests, one failure, 38
+errors, and one skip. The listed errors were `Invalid CANIS_SECRET_KEY configuration
+(unsafe_permissions)` across master-key, store, TLS, and end-to-end tests; the separate
+failure was not identified in the supplied excerpt. The job's commit and complete reports
+were not supplied, so this is a reported CI failure, not a fixed-revision pass.
+
+Inspection identified a Windows test-fixture assumption: `MasterKeyTestSupport` granted
+access to the file owner's principal rather than the account running the tests. The fixture
+helper now assigns the current process account as owner and ACL principal, gives only that
+account inheritable directory access for later synthetic TLS files, and restricts the key
+file before writing generated key bytes. Production key validation was not changed. A new
+Windows test provisions a key below a directory with a broad inherited ACL and verifies
+that the key and its immediate directory have no broad access.
+
+The corrected working tree passed `mvn --batch-mode --no-transfer-progress clean verify`
+on local Windows 11 at `2026-11-17T20:47:47-03:00`: 28 Surefire suites, 159 tests, zero
+failures, zero errors, and eight skips. This local result does not establish that the
+GitHub Windows runner now passes; a CI rerun on the committed correction is required.
+
 ## Commands and observed outcomes
 
 Executed from the repository root:

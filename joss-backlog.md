@@ -68,6 +68,17 @@ Before each implementation issue, inspect existing code, identify affected files
 [local Windows execution record](docs/research/code02-results.md) show a separate-process
 synthetic exchange and negative cases. Two failed certificate-classification attempts are
 retained. Clean-checkout and POSIX reproduction are still unverified, so this gate remains open.
+The author also reported a successful [separate source-archive Maven build](docs/research/code02-results.md#separate-source-archive-build-on-2026-11-17)
+with 158 tests and eight skips. The author reports a Fedora WSL build, but the available
+Surefire XML identifies Windows 11 and skips the POSIX permission and symlink cases; retain
+Fedora-specific evidence before counting a POSIX pass. The extracted archive lacks `.git`,
+and no process-harness run was reported for it; this does not close the clean-checkout gate.
+The author later reported a passing Ubuntu Actions build but a Windows Actions failure
+with 38 `unsafe_permissions` errors in server tests. A test-fixture ACL correction and
+new Windows regression test passed a local Windows `clean verify` run (159 tests, zero
+failures or errors, eight skips); the [result record](docs/research/code02-results.md#github-windows-ci-failure-and-local-fixture-correction-on-2026-11-17)
+does not count this as a CI pass. Rerun the committed correction on both Actions runners
+and retain their reports before closing the CI or POSIX gates.
 
 ## CODE-03 — Decide the supported file-size boundary from measurements (conditional)
 
