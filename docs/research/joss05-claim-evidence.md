@@ -1,5 +1,9 @@
 # JOSS-05 pre-edit claim-evidence matrix
 
+**Historical snapshot:** The database-write and stored-RSA limitations below describe the
+pre-CODE-01 working tree. The [later CODE-01 evidence](../code01-integrity.md) records local
+implementation and tests; a fixed-revision release check remains open.
+
 Created on 2026-11-16 **before editing `joss-papers/paper.md` for JOSS-05**.
 The baseline is HEAD `b8a48ba4f136dfb7a895dd9465f0fef701c5bd81`
 plus the pre-existing dirty working tree. "Source checked" means inspected in this

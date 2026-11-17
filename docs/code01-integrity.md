@@ -1,11 +1,13 @@
 # CODE-01 integrity gate: local candidate evidence
 
-This is a local CODE-01 candidate, not a tagged or clean-checkout research release. The Git HEAD
-at verification was `0e9c889e49b2928c2c9cd84fadaf0368d7c41c91`, with unrelated research and
-backlog work already modified or untracked. The packaged server jar built from this working tree
-had SHA-256 `2DFEEC556095482E9FD40A65875F93A9BC33DB31DC4A58E4996B85C43C12B146`.
-The jar is under `server/target/` and is not a published artifact. A release decision still needs
-a committed candidate and a rerun against that exact revision.
+This records local CODE-01 verification before the changes were committed. The Git HEAD at
+verification was `0e9c889e49b2928c2c9cd84fadaf0368d7c41c91`, with related and unrelated
+work modified or untracked. The changes were subsequently committed as
+`6f0099ad8112fe4c582da39d4305a5bc5a6eb987` (`fix: close CODE-01 integrity gaps`). The
+packaged server jar built before that commit had SHA-256
+`2DFEEC556095482E9FD40A65875F93A9BC33DB31DC4A58E4996B85C43C12B146`. The jar is under
+`server/target/` and is not a published artifact. The exact commit has not yet been rerun on a
+clean checkout or POSIX CI, so this is not a fixed-revision research-release result.
 
 ## Gap analysis and implemented plan
 

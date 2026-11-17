@@ -1,5 +1,9 @@
 # JOSS-04 pre-edit claim-evidence matrix
 
+**Historical snapshot:** The database-write and stored-RSA limitations below describe the
+pre-CODE-01 working tree. The [later CODE-01 evidence](../code01-integrity.md) records local
+implementation and tests; a fixed-revision release check remains open.
+
 Created before changing `joss-papers/paper.md` for JOSS-04 on 2026-11-16. The
 manuscript body is assessed as it stands; this issue proposes only a bibliography
 path edit, not new research or software claims. "Existing test record" refers to

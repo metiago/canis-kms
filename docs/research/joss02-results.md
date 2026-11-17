@@ -1,5 +1,11 @@
 # JOSS-02 working-tree verification results
 
+**Later CODE-01 update:** This report records an earlier working tree. The [CODE-01 local
+candidate evidence](../code01-integrity.md) records subsequent master-key, database-write, and
+stored-key validation changes with tests. Those changes have since been committed, but the exact
+revision has not been rerun as a clean research release. The observations below remain historical
+and the JOSS-02 release gate remains open.
+
 ## Snapshot and commands
 
 This is verification of a **dirty local working tree**, not a tagged or public candidate release.

@@ -1,5 +1,10 @@
 # JOSS-02 claim-evidence matrix
 
+**Historical snapshot:** The database-write and stored-RSA findings below describe the earlier
+JOSS-02 working tree. See the [later CODE-01 evidence](../code01-integrity.md) for the local
+implementation and its remaining release limits. This matrix has not been rerun against a fixed
+candidate revision.
+
 This matrix was created before editing `joss-papers/paper.md` for JOSS-02 and updated after the
 working-tree verification recorded in [joss02-results.md](joss02-results.md). "Source verified"
 means the cited implementation or test was inspected; "working-tree test passed" means the

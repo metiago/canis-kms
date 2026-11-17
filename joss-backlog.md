@@ -47,11 +47,13 @@ Before each implementation issue, inspect existing code, identify affected files
 
 ## CODE-01 — Resolve integrity prerequisites for a fixed research build (P0)
 
-- [ ] Complete the research-release security parts of app Issues #7 and #8: verify every supported master-key startup path, reject malformed stored records, and prevent silent database recreation during writes. Record any remaining work outside the study's claims.
-- [ ] Complete the private-key exposure and stored-key validation parts of app Issue #36. Keep the shared-access policy explicit; per-key denial belongs to a different trust model.
-- [ ] Test valid `CANISDB1` restart and existing file envelopes, invalid certificates and credentials, database tampering, and failure paths without leaking secrets.
+- [x] Implement and verify the research-release security parts of app Issues #7 and #8 on the local Windows candidate: supported master-key construction paths reject invalid configuration, malformed stored records fail closed, and a write cannot silently recreate a missing database. Record limits outside the study's claims in the [CODE-01 integrity evidence](docs/code01-integrity.md).
+- [x] Implement the private-key exposure and stored-key validation parts of app Issue #36 on the same candidate. The [CODE-01 evidence](docs/code01-integrity.md) records the shared-access policy and tests; per-key denial belongs to a different trust model.
+- [x] Run local tests for valid `CANISDB1` restart and existing file envelopes, invalid certificates and credentials, database tampering, and failure paths without leaking secrets. See the [CODE-01 acceptance matrix](docs/code01-integrity.md#acceptance-evidence).
+- [x] Commit a candidate revision: `6f0099ad8112fe4c582da39d4305a5bc5a6eb987` contains the CODE-01 implementation. The [local evidence](docs/code01-integrity.md) predates that commit.
+- [ ] Rerun the security, compatibility, and packaged-startup checks against the exact committed revision. Run the skipped POSIX permission and symlink cases on POSIX CI and retain sanitized results before closing this gate.
 
-**Acceptance:** A fixed build fails safely on invalid key material or database state, preserves valid existing storage and envelopes, and has an explicit list of remaining operational limits.
+**Acceptance — local candidate verified, fixed-revision gate open:** The hashed local jar and Windows tests support failure-safe behavior for the tested invalid key material and database states, compatibility with valid storage and envelopes, and an [explicit operational-limit list](docs/code01-integrity.md#operational-and-compatibility-limits). The tests predate the commit and POSIX evidence is pending, so this is not a research-release decision.
 
 ## CODE-02 — Add an isolated, repeatable asynchronous exchange harness (P0)
 
@@ -69,37 +71,42 @@ Before each implementation issue, inspect existing code, identify affected files
 
 **Acceptance:** The chosen workload either fits a documented resource bound or has a tested, compatible implementation that does.
 
-+## Product security prerequisites — Issues #7, #8, and #36
+## Product security prerequisites — Issues #7, #8, and #36
 
 These detailed product findings are required for the research-release decision in CODE-01.
 
 ### Issue #7 - Protect CANIS_SECRET_KEY
 
+**CODE-01 status:** The local Windows constructor and master-key tests pass; the remaining platform and path-control checks below stay open. See [CODE-01 evidence](docs/code01-integrity.md).
+
 #### Pending work
 
-- [ ] Reconcile the earlier public-constructor finding with the current `Server.verifyConfiguration` path; verify that every supported server construction path rejects a missing, malformed, or mismatched master key and store before listening.
-- [ ] Review ancestor-directory permissions and path-replacement resistance; define the required operator controls or a secure-open approach.
-- [ ] Decide whether runtime loss of the cached master-key file must be detected and alerted before restart.
-- [ ] Run POSIX permission and symlink tests on POSIX CI; add owner-mismatch, inherited Windows ACL, and sanitized-log cases.
+- [x] Reconcile the earlier public-constructor finding with `Server.verifyConfiguration`; `ServerTest` now covers missing, malformed, mismatched, and changed master-key configurations before binding.
+- [x] Review ancestor-directory permissions and path-replacement resistance; [master-key operations](docs/master-key.md#operational-limits-for-the-code-01-build) require trusted ancestor control and state the remaining race limit.
+- [x] Record the decision for runtime loss of the cached master-key file: the running process does not alert automatically, so operators must monitor the file and detect loss before restart. See [master-key operations](docs/master-key.md#operational-limits-for-the-code-01-build).
+- [x] Add a sanitized master-key log assertion in `MasterKeyLoaderTest`.
+- [ ] Run POSIX permission and symlink tests on POSIX CI; add owner-mismatch and inherited Windows ACL cases.
 
 #### Acceptance criteria
 
-- [ ] No supported server construction path starts with an invalid master-key configuration.
+- [x] No supported server construction path starts with an invalid master-key configuration in the tested Windows paths; [constructor tests and packaged smoke evidence](docs/code01-integrity.md#acceptance-evidence) support this. POSIX and ACL coverage remain open above.
 
 ### Issue #8 - Prevent Silent Database Recreation
 
+**CODE-01 status:** Local Windows validation and write-path tests pass; filesystem crash durability and platform checks remain release limits. See [CODE-01 evidence](docs/code01-integrity.md).
+
 #### Pending work
 
-- [ ] Reject authenticated database records with invalid RSA fields or malformed UTF-8 without rewriting the database; coordinate stored-key validation with Issue #36.
-- [ ] Close the check-to-move race in `KeyValueStore.saveToFile` so a missing destination cannot be silently recreated.
-- [ ] Add deterministic tests for deletion between check and move, interrupted or unsupported atomic moves, a symlinked database path, and storage-failure log sanitization.
-- [ ] Exercise the packaged `--init-db` command end to end and confirm normal startup never treats a missing database as a new installation.
-- [ ] Review idle-time database-loss detection, directory metadata durability after replacement, and the cost of reading and hashing large databases on supported filesystems.
+- [x] Reject authenticated database records with invalid RSA fields or malformed UTF-8 without rewriting the database; [storage tests](docs/code01-integrity.md#acceptance-evidence) coordinate this with Issue #36.
+- [x] Close the check-to-move recreation path in `KeyValueStore.saveToFile` by moving the verified old database to recovery before installing the staged file. The [operational limits](docs/code01-integrity.md#operational-and-compatibility-limits) describe the two-move interruption window.
+- [x] Add deterministic tests for deletion after verification, interrupted and unsupported atomic moves, symlink rejection, and storage-failure log sanitization. The symlink case was skipped on this Windows host and remains in the POSIX CI gate.
+- [x] Exercise the packaged `--init-db` command end to end: the first call created a database, the second failed without changing its hash, and normal startup rejected a missing database. See [packaged smoke evidence](docs/code01-integrity.md#acceptance-evidence).
+- [x] Review idle-time database-loss detection, directory metadata durability, and the cost of reading and hashing large databases; [master-key operations](docs/master-key.md#operational-limits-for-the-code-01-build) state the unresolved deployment limits.
 
 #### Acceptance criteria
 
-- [ ] Corrupted or malformed stored records fail safely.
-- [ ] No write path silently recreates a missing cryptographic database.
+- [x] Corrupted or malformed stored records fail safely in the [local storage tests](docs/code01-integrity.md#acceptance-evidence).
+- [x] No tested write path silently recreates a missing cryptographic database; [deletion-boundary and recovery tests](docs/code01-integrity.md#acceptance-evidence) support this under the documented trusted-directory assumption. Cross-filesystem crash behavior remains open.
 
 ### Issue #36 - Close Private-Key Exposure Review Findings
 
