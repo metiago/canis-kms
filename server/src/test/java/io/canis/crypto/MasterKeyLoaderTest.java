@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.canis.MasterKeyTestSupport;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +26,7 @@ import java.util.Base64;
 import java.util.EnumSet;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 
 class MasterKeyLoaderTest {
     @TempDir
@@ -61,8 +65,21 @@ class MasterKeyLoaderTest {
         Path key = tempDir.resolve("master.key");
         MasterKeyTestSupport.provision(key);
         Files.writeString(key, "SECRET_SENTINEL_NOT_BASE64!", StandardCharsets.US_ASCII);
-        IllegalStateException malformed = assertFailure(key.toString(), "invalid_format");
+        Logger logger = (Logger) LoggerFactory.getLogger(MasterKeyLoader.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        IllegalStateException malformed;
+        try {
+            malformed = assertFailure(key.toString(), "invalid_format");
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
         assertFalse(malformed.toString().contains("SECRET_SENTINEL"));
+        assertFalse(appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .anyMatch(message -> message.contains("SECRET_SENTINEL") || message.contains(key.toString())));
 
         Files.writeString(key, Base64.getEncoder().encodeToString(new byte[15]), StandardCharsets.US_ASCII);
         assertFailure(key.toString(), "invalid_format");

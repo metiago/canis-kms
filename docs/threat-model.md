@@ -24,6 +24,9 @@ key operations on behalf of authenticated clients.
 - Clients authenticate at connection setup with configured CANIS credentials.
 - CANIS uses an authenticated shared-access model: any authenticated client can request decrypt
   operations with stored keys.
+- A compromised authenticated service can request decryption under every stored key name. This is
+  the cross-service blast radius of the current trust domain. Decrypt audit events record the
+  requesting credential identity and selected key name, without key material.
 - Private keys are never returned to clients. CANIS performs RSA-OAEP unwrap/decrypt operations on
   the server and returns only decrypted payloads such as file data keys.
 - Future policy support may add per-key restrictions, but the default model is shared access for

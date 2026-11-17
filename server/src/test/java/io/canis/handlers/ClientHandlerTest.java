@@ -100,6 +100,10 @@ public class ClientHandlerTest {
 
         String command = "|decrypt serviceA " + Base64.getEncoder().encodeToString(encrypted);
         ByteArrayOutputStream response = new ByteArrayOutputStream();
+        Logger auditLogger = (Logger) LoggerFactory.getLogger("io.canis.audit");
+        ListAppender<ILoggingEvent> auditAppender = new ListAppender<>();
+        auditAppender.start();
+        auditLogger.addAppender(auditAppender);
         ClientHandler handler = new ClientHandler(
                 socket,
                 new BufferedReader(new StringReader(command)),
@@ -107,12 +111,23 @@ public class ClientHandlerTest {
                 store,
                 "serviceB");
 
-        handler.run();
+        try {
+            handler.run();
+        } finally {
+            auditLogger.detachAppender(auditAppender);
+            auditAppender.stop();
+        }
 
         String message = readResponse(response.toByteArray());
         String decryptedBase64 = message.replace("|s>", "");
 
         assertArrayEquals(plaintext, Base64.getDecoder().decode(decryptedBase64));
+        assertTrue(auditAppender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .anyMatch(event -> event.contains("event=decrypt_success identity=serviceB key=serviceA")));
+        assertFalse(auditAppender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .anyMatch(event -> event.contains(privateKey)));
         assertFalse(message.contains(privateKey));
         assertFalse(runCommand("|get serviceA", store).contains(privateKey));
         assertFalse(runCommand("|get-public serviceA", store).contains(privateKey));

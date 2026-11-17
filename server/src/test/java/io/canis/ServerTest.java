@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.canis.config.Environment;
 import io.canis.models.LoginCredentials;
 import io.canis.store.KeyValueStore;
 import java.nio.file.Files;
@@ -122,5 +123,28 @@ public class ServerTest {
         Files.delete(key);
         assertThrows(IllegalStateException.class, () -> new Server(tls.environment(), store));
         assertTrue(Files.exists(database));
+    }
+
+    @Test
+    void bothServerConstructionPathsRejectMismatchedOrChangedMasterKeys() throws Exception {
+        TlsTestSupport tls = new TlsTestSupport(tempDir);
+        Environment base = tls.environment();
+        Path database = tempDir.resolve("configured.db");
+        Path key = base.secretKeyPath();
+        Path otherKey = tempDir.resolve("other.key");
+        MasterKeyTestSupport.provision(key);
+        MasterKeyTestSupport.provision(otherKey);
+        KeyValueStore.initialize(database.toString(), key.toString());
+        byte[] original = Files.readAllBytes(database);
+        KeyValueStore loaded = new KeyValueStore(database.toString(), key.toString());
+        Environment mismatched = new Environment(
+                base.password(), base.username(), base.port(), base.serviceCredentials(), otherKey, base.tls());
+
+        assertThrows(IllegalStateException.class, () -> new Server(mismatched, loaded));
+        assertThrows(IllegalStateException.class, () -> new Server(mismatched, database));
+        Files.writeString(key, "invalid-base64!");
+        assertThrows(IllegalStateException.class, () -> new Server(base, loaded));
+        assertThrows(IllegalStateException.class, () -> new Server(base, database));
+        assertArrayEquals(original, Files.readAllBytes(database));
     }
 }

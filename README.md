@@ -1,5 +1,8 @@
 ## CANIS - KMS
 
+See the [documentation index](docs/README.md) for guides and research evidence, and the
+[unified backlog](joss-backlog.md) for every open task and phase checkpoint.
+
 **CANIS** is a custom-built Key Management System (KMS) designed to manage public and private keys
 for applications through the official Java client. The client and server communicate through an
 internal Redis-inspired protocol called **CANISP (Canis Protocol)**. CANISP is not RESP-compatible
