@@ -12,6 +12,7 @@ The documents here describe current behavior, operational setup, tests, and reco
 
 - [Threat model](threat-model.md): trust boundaries and current shared-access policy.
 - [Master key](master-key.md): external key provisioning and database recovery requirements.
+- [CODE-01 integrity evidence](code01-integrity.md): local acceptance mapping, test results, and release limits.
 - [Private-key exposure](private-key-exposure.md): review of the private-key boundary.
 - [RSA key lifecycle](rsa-key-lifecycle.md): key generation and lifecycle limits.
 - [TLS security tests](tls-security-tests.md): transport test coverage.

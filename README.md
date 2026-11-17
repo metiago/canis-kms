@@ -66,8 +66,10 @@ and [security reporting](SECURITY.md) for suspected vulnerabilities.
 4. **Persistence:**
     - Key creation and deletion persist an encrypted `.dat` database. Normal startup requires an
       existing valid database; creating a new one requires the explicit `--init-db` command.
-    - Recovery requires the matching database and externally provisioned master-key file. A
-      database write race and crash-durability limits remain documented in the production backlog.
+    - Recovery requires the matching database and externally provisioned master-key file. Writes
+      retain the verified old database in a recovery path before installing the new file; an
+      interrupted two-move sequence and filesystem crash durability remain operational limits.
+      See the [CODE-01 integrity evidence](docs/code01-integrity.md).
 
 5. **Command Handling:**
     - The server processes incoming CANISP commands from authenticated clients, allowing for
