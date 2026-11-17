@@ -2,16 +2,19 @@ package io.canis.store;
 
 import io.canis.crypto.Cryptographer;
 import io.canis.crypto.SymmetricGenerator;
+import io.canis.protocol.ServiceNameValidator;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -23,7 +26,12 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -44,6 +52,7 @@ public final class KeyValueStore {
     private static final int MAX_DATABASE_BYTES = 256 * 1024 * 1024;
     private Map<String, StoredKey> store;
     private final Path filePath;
+    private final Path recoveryPath;
     private final Path keyPath;
     private final SymmetricGenerator symmetricGenerator;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -65,6 +74,7 @@ public final class KeyValueStore {
         } catch (InvalidPathException e) {
             throw new IllegalStateException("CANIS database path is invalid");
         }
+        this.recoveryPath = this.filePath.resolveSibling(this.filePath.getFileName() + ".canis-recovery");
         this.keyPath = Path.of(secretKeyPath).toAbsolutePath().normalize();
         this.store = new ConcurrentHashMap<>();
         loadFromFile();
@@ -80,6 +90,7 @@ public final class KeyValueStore {
             throw new IllegalStateException("CANIS database path is invalid");
         }
         try {
+            requireNoRecoveryFile(database.resolveSibling(database.getFileName() + ".canis-recovery"));
             byte[] plain = new byte[STORE_MAGIC.length + Integer.BYTES];
             System.arraycopy(STORE_MAGIC, 0, plain, 0, STORE_MAGIC.length);
             byte[] encrypted = cipher.encrypt(plain);
@@ -135,6 +146,8 @@ public final class KeyValueStore {
 
     private void saveToFile() {
         Path temporary = null;
+        boolean oldDatabaseMoved = false;
+        boolean recoveryReserved = false;
         try {
             ensureHealthy();
             byte[] serializedData = serializeStore(store);
@@ -149,9 +162,21 @@ public final class KeyValueStore {
                 output.force(true);
             }
             ensureHealthy();
-            Files.move(temporary, filePath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            Files.createFile(recoveryPath);
+            recoveryReserved = true;
+            moveExistingDatabase(filePath, recoveryPath);
+            oldDatabaseMoved = true;
+            Files.move(temporary, filePath, StandardCopyOption.ATOMIC_MOVE);
             remember(encryptedData);
+            Files.delete(recoveryPath);
         } catch (Exception e) {
+            if (recoveryReserved && !oldDatabaseMoved) {
+                try {
+                    Files.deleteIfExists(recoveryPath);
+                } catch (IOException cleanupFailure) {
+                    logger.warn("CANIS database recovery reservation cleanup failed");
+                }
+            }
             fail("save_failed");
         } finally {
             if (temporary != null) {
@@ -162,6 +187,10 @@ public final class KeyValueStore {
                 }
             }
         }
+    }
+
+    static void moveExistingDatabase(Path database, Path recovery) throws IOException {
+        Files.move(database, recovery, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
     public void ensureHealthy() {
@@ -183,6 +212,7 @@ public final class KeyValueStore {
     }
 
     private byte[] readDatabase() throws IOException {
+        requireNoRecoveryFile(recoveryPath);
         BasicFileAttributes before =
                 Files.readAttributes(filePath, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
         if (!before.isRegularFile() || before.size() == 0 || before.size() > MAX_DATABASE_BYTES) {
@@ -202,6 +232,15 @@ public final class KeyValueStore {
             throw new IOException("Database changed while reading");
         }
         return data;
+    }
+
+    private static void requireNoRecoveryFile(Path recovery) throws IOException {
+        try {
+            Files.readAttributes(recovery, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            throw new IOException("Database recovery required");
+        } catch (NoSuchFileException expected) {
+            // A confirmed absent recovery file is the only state that permits normal operation.
+        }
     }
 
     private Object fileKey() throws IOException {
@@ -363,9 +402,15 @@ public final class KeyValueStore {
                 String name = readString(in);
                 String publicKey = readString(in);
                 String privateKey = readString(in);
-                if (key == null || name == null || publicKey == null || privateKey == null) {
+                if (key == null
+                        || name == null
+                        || publicKey == null
+                        || privateKey == null
+                        || !key.equals(name)
+                        || !ServiceNameValidator.isValid(name)) {
                     throw new IOException("Invalid CANIS store entry.");
                 }
+                validateKeyPair(publicKey, privateKey);
                 if (result.putIfAbsent(key, new StoredKey(name, publicKey, privateKey)) != null) {
                     throw new IOException("Duplicate CANIS store entry");
                 }
@@ -395,7 +440,49 @@ public final class KeyValueStore {
         }
         byte[] bytes = new byte[length];
         in.readFully(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
+        return StandardCharsets.UTF_8
+                .newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(java.nio.ByteBuffer.wrap(bytes))
+                .toString();
+    }
+
+    private static void validateKeyPair(String publicEncoding, String privateEncoding) throws IOException {
+        byte[] publicBytes = null;
+        byte[] privateBytes = null;
+        try {
+            publicBytes = Base64.getDecoder().decode(publicEncoding);
+            privateBytes = Base64.getDecoder().decode(privateEncoding);
+            KeyFactory factory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = factory.generatePublic(new X509EncodedKeySpec(publicBytes));
+            PrivateKey privateKey = factory.generatePrivate(new PKCS8EncodedKeySpec(privateBytes));
+            if (!(publicKey instanceof RSAPublicKey rsaPublic)
+                    || !(privateKey instanceof RSAPrivateKey rsaPrivate)
+                    || !rsaPublic.getModulus().equals(rsaPrivate.getModulus())
+                    || !Arrays.equals(publicBytes, publicKey.getEncoded())
+                    || !Arrays.equals(privateBytes, privateKey.getEncoded())) {
+                throw new IOException("Invalid CANIS store RSA key pair");
+            }
+            Signature proof = Signature.getInstance("SHA256withRSA");
+            proof.initSign(privateKey);
+            proof.update(STORE_MAGIC);
+            byte[] signature = proof.sign();
+            proof.initVerify(publicKey);
+            proof.update(STORE_MAGIC);
+            if (!proof.verify(signature)) {
+                throw new IOException("Invalid CANIS store RSA key pair");
+            }
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
+            throw new IOException("Invalid CANIS store RSA key pair");
+        } finally {
+            if (publicBytes != null) {
+                Arrays.fill(publicBytes, (byte) 0);
+            }
+            if (privateBytes != null) {
+                Arrays.fill(privateBytes, (byte) 0);
+            }
+        }
     }
 
     private static final class StoredKey {

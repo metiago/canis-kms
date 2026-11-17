@@ -7,7 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.canis.MasterKeyTestSupport;
 import io.canis.crypto.Cryptographer;
 import io.canis.crypto.SymmetricGenerator;
@@ -27,9 +31,11 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 
 class KeyValueStoreTest {
 
@@ -193,7 +199,7 @@ class KeyValueStoreTest {
     }
 
     @Test
-    void malformedStoredPrivateKeyNeverAppearsInException() throws Exception {
+    void malformedStoredPrivateKeyIsRejectedBeforeServingAndNeverAppearsInException() throws Exception {
         Path database = tempDir.resolve("malformed.db");
         Path secret = tempDir.resolve("malformed.key");
         MasterKeyTestSupport.provision(secret);
@@ -201,24 +207,136 @@ class KeyValueStoreTest {
         Files.write(
                 database,
                 new SymmetricGenerator(secret.toString()).encrypt(legacyRecord("serviceA", "public", marker)));
-        KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
-        GeneralSecurityException failure =
-                assertThrows(GeneralSecurityException.class, () -> store.decrypt("serviceA", new byte[] {1, 2, 3}));
+        byte[] original = Files.readAllBytes(database);
+        Logger logger = (Logger) LoggerFactory.getLogger(KeyValueStore.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        IllegalStateException failure;
+        try {
+            failure = assertThrows(
+                    IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
         assertFalse(failure.toString().contains(marker));
         assertNull(failure.getCause());
+        assertFalse(appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .anyMatch(message -> message.contains(marker)));
+        assertArrayEquals(original, Files.readAllBytes(database));
+    }
+
+    @Test
+    void privateEncodingInPublicFieldAndMismatchedPairFailBeforeMetadataExposure() throws Exception {
+        Path database = tempDir.resolve("invalid-pair.db");
+        Path secret = tempDir.resolve("invalid-pair.key");
+        MasterKeyTestSupport.provision(secret);
+        KeyPair first = generatePair();
+        KeyPair second = generatePair();
+        String publicKey = Base64.getEncoder().encodeToString(first.getPublic().getEncoded());
+        String privateKey =
+                Base64.getEncoder().encodeToString(first.getPrivate().getEncoded());
+        String otherPrivateKey =
+                Base64.getEncoder().encodeToString(second.getPrivate().getEncoded());
+        for (byte[] record : List.of(
+                legacyRecord("serviceA", privateKey, privateKey),
+                legacyRecord("serviceA", publicKey, otherPrivateKey),
+                legacyRecord("serviceA", publicKey, "not-base64"))) {
+            byte[] encrypted = new SymmetricGenerator(secret.toString()).encrypt(record);
+            Files.write(database, encrypted);
+            IllegalStateException failure = assertThrows(
+                    IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+            assertFalse(failure.toString().contains(privateKey));
+            assertFalse(failure.toString().contains(otherPrivateKey));
+            assertArrayEquals(encrypted, Files.readAllBytes(database));
+        }
+    }
+
+    @Test
+    void malformedUtf8AndMismatchedRecordNameFailWithoutRewrite() throws Exception {
+        Path database = tempDir.resolve("invalid-legacy.db");
+        Path secret = tempDir.resolve("invalid-legacy.key");
+        MasterKeyTestSupport.provision(secret);
+        KeyPair pair = generatePair();
+        String publicKey = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
+        String privateKey = Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded());
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
+            out.write(STORE_MAGIC);
+            out.writeInt(1);
+            out.writeInt(1);
+            out.writeByte(0xff);
+            writeString(out, "serviceA");
+            writeString(out, publicKey);
+            writeString(out, privateKey);
+        }
+        for (byte[] record : List.of(bytes.toByteArray(), mismatchedNameRecord(publicKey, privateKey))) {
+            byte[] encrypted = new SymmetricGenerator(secret.toString()).encrypt(record);
+            Files.write(database, encrypted);
+            assertThrows(IllegalStateException.class, () -> new KeyValueStore(database.toString(), secret.toString()));
+            assertArrayEquals(encrypted, Files.readAllBytes(database));
+        }
+    }
+
+    private byte[] mismatchedNameRecord(String publicKey, String privateKey) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
+            out.write(STORE_MAGIC);
+            out.writeInt(1);
+            writeString(out, "serviceA");
+            writeString(out, "serviceB");
+            writeString(out, publicKey);
+            writeString(out, privateKey);
+        }
+        return bytes.toByteArray();
     }
 
     @Test
     void saveFailureDoesNotAcknowledgeOrRetainKey() throws Exception {
-        Path database = tempDir.resolve("save-failure.db");
-        Path secret = tempDir.resolve("save-failure.key");
+        Path database = tempDir.resolve("PRIVATE_MATERIAL_SENTINEL-save-failure.db");
+        Path secret = tempDir.resolve("PRIVATE_MATERIAL_SENTINEL-save-failure.key");
         MasterKeyTestSupport.provision(secret);
         KeyValueStore.initialize(database.toString(), secret.toString());
         KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
         Files.delete(database);
-        assertThrows(IllegalStateException.class, () -> store.create("serviceA"));
+        Logger logger = (Logger) LoggerFactory.getLogger(KeyValueStore.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            assertThrows(IllegalStateException.class, () -> store.create("serviceA"));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+        assertTrue(appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .anyMatch(message -> message.contains("recovery-required")));
+        assertFalse(appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .anyMatch(message -> message.contains("PRIVATE_MATERIAL_SENTINEL")));
         assertFalse(store.isHealthy());
         assertTrue(Files.notExists(database));
+    }
+
+    @Test
+    void symlinkedDatabaseIsRejectedWithoutChangingItsTarget() throws Exception {
+        Path database = tempDir.resolve("real.db");
+        Path link = tempDir.resolve("linked.db");
+        Path secret = tempDir.resolve("master.key");
+        MasterKeyTestSupport.provision(secret);
+        KeyValueStore.initialize(database.toString(), secret.toString());
+        byte[] original = Files.readAllBytes(database);
+        try {
+            Files.createSymbolicLink(link, database);
+        } catch (IOException | UnsupportedOperationException | SecurityException e) {
+            assumeTrue(false, "Symbolic links cannot be created on this platform");
+        }
+
+        assertThrows(IllegalStateException.class, () -> new KeyValueStore(link.toString(), secret.toString()));
+        assertArrayEquals(original, Files.readAllBytes(database));
     }
 
     @Test

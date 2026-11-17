@@ -57,8 +57,14 @@ If startup reports that database recovery is required, stop and investigate the 
 directory, storage access, and protected backups. Restore the original database and its matching
 master key, then start CANIS normally. Do not initialize an empty replacement for a lost database.
 If a database disappears or changes while the server runs, operations fail closed and the server
-stops accepting connections. Database writes stage encrypted data in the same directory and require
-an atomic replacement; a filesystem without atomic move support rejects the write. The encrypted
+stops accepting connections. Database writes stage encrypted data in the same directory, then
+atomically move the verified old database to `db.dat.canis-recovery` before moving the new encrypted
+file into place. A missing old database cannot be silently recreated by a write. A failed or
+interrupted replacement may leave the recovery file and temporarily no `db.dat`; startup refuses
+to run while that file exists. Inspect both files before restoring the verified old database, and
+do not use `--init-db` for recovery. Both moves require atomic move support, but the two-move
+sequence is not a single atomic transaction; protect the directory from concurrent replacement and
+keep tested backups. Directory metadata durability still depends on the filesystem. The encrypted
 database must be at most 256 MiB so a damaged or hostile file cannot force unbounded startup reads.
 
 Back up the database and its matching key separately with restricted access. If the key is lost,
@@ -66,3 +72,19 @@ restore the original key from a protected backup. If startup rejects a key, inve
 failure category (`missing_file`, `unsafe_permissions`, `invalid_format`, or `unreadable_file`) and
 correct the cause. CANIS does not print the key or file contents. Do not create a replacement key
 for an existing database.
+
+## Operational limits for the CODE-01 build
+
+- The master key is cached after startup. Loss or replacement of its file during operation is not
+  detected until the next startup or explicit store configuration check. Monitor the file and its
+  protected backups externally; a file change is not a rotation operation.
+- Database loss while the server is idle is detected on the next connection or store operation.
+  Monitor the database directory and server availability externally.
+- Each store operation reads and hashes the encrypted database to check for unexpected change. The
+  256 MiB file limit bounds memory use but can add substantial latency for large databases; no
+  supported throughput or database-size performance claim has been measured.
+- A trusted operator must protect every ancestor directory from replacement, not only the key
+  file's immediate parent. A process that controls the directory can race path-based checks.
+- The two-move recovery sequence is not a single atomic transaction. Filesystem-specific crash
+  durability, recovery after an interrupted move, and POSIX permission behavior require separate
+  deployment validation.

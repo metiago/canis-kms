@@ -20,8 +20,11 @@ configured value, preventing a startup exception from printing a password.
 
 ## Operational and compatibility impact
 
-The encrypted `CANISDB1` record layout and `CANISGCM1` encryption remain unchanged. Existing
-databases can be loaded and rewritten without migration. CANISP command names and response formats
+The encrypted `CANISDB1` record layout and `CANISGCM1` encryption remain unchanged. Existing valid
+databases can be loaded and rewritten without migration. Startup rejects malformed UTF-8, invalid
+service names, malformed RSA encodings, and public/private fields that do not form a matching pair;
+it does not rewrite the rejected database. Operators must restore a valid database from backup.
+CANISP command names and response formats
 remain unchanged, so the official client needs no update. Server-side callers of the former
 `Entry` private-key methods, `KeyValueStore.set` or `create(String, Entry)`, and
 `AsymmetricGenerator` must migrate to the narrow store operations. A database write failure is
@@ -42,8 +45,9 @@ Java key objects and immutable strings cannot be reliably erased from memory. Ea
 database copies may remain in backups or snapshots. Any authenticated CANIS client can currently
 request `|decrypt` with any stored service key; per-service authorization remains to be designed.
 The master-key and explicit database initialization rules are covered in Issues #7 and #8. Database
-writes now use atomic replacement; crash durability still needs platform-specific validation.
+writes use two atomic moves with a recovery file; the sequence is not one atomic transaction, and
+crash durability still needs platform-specific validation.
 Structured audit schema and integrity verification, and key rotation remain separate follow-up
-work. Loaded RSA public and private components are not yet checked for a matching pair;
-that integrity check would make malformed but authenticated legacy records fail at startup.
+work. The client artifact's unused `Entry` metadata type now contains only the name and public key
+and is not Java-serializable; callers that used its removed private-key component must update.
 Changes to serialization or logging need renewed private-key exposure tests.
