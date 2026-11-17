@@ -1,0 +1,2 @@
+ordinal,size,decrypt_ns,outcome,failure_category
+0,4096,0,failed,io_or_authentication_failure
