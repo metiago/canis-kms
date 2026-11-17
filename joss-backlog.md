@@ -64,6 +64,11 @@ Before each implementation issue, inspect existing code, identify affected files
 
 **Acceptance:** A clean checkout can run producer and consumer at different times and reproduce the expected output with no undocumented setup or secret-bearing artifact.
 
+**Current CODE-02 evidence:** The [research-only harness method](docs/research/code02-method.md) and
+[local Windows execution record](docs/research/code02-results.md) show a separate-process
+synthetic exchange and negative cases. Two failed certificate-classification attempts are
+retained. Clean-checkout and POSIX reproduction are still unverified, so this gate remains open.
+
 ## CODE-03 — Decide the supported file-size boundary from measurements (conditional)
 
 - [ ] First measure the existing `Files.readAllBytes` behavior and record a bounded supported workload. Do not silently describe large-file support before it is tested.

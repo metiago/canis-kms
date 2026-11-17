@@ -1,0 +1,2 @@
+ordinal,size,claimed_utc,finished_utc,decrypt_ns,outcome,failure_category
+0,4096,2026-11-17T22:28:12.103745700Z,2026-11-17T22:28:12.106367900Z,0,failed,io_or_authentication_failure

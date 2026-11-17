@@ -33,6 +33,8 @@ The [JOSS-01 research evaluation](docs/research/joss01-method.md) documents a re
 synthetic-data test of the current shared trust boundary and its limitations.
 The [reviewer guide](docs/reviewer-guide.md) gives clean-checkout build steps, a
 reproducible producer-to-recipient TLS example, expected output, and operational limits.
+The separate-process [CODE-02 research harness](docs/research/code02-method.md) documents
+an isolated asynchronous exchange with synthetic fixtures and sanitized results.
 See [contribution guidance](CONTRIBUTING.md) for ordinary issues and support,
 and [security reporting](SECURITY.md) for suspected vulnerabilities.
 #### Key Features:

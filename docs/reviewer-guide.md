@@ -72,6 +72,11 @@ directory after an interrupted run before deleting it; `mvn clean` removes
 generated Maven outputs. See [the method](research/joss03-method.md) and
 [the recorded result](research/joss03-results.md).
 
+For a producer, delayed consumer, and packaged CANIS server in three separate
+processes, use the [CODE-02 research harness](research/code02-method.md). Its
+temporary server database and shared directory are isolated from this focused
+JUnit example, and its result files contain only sanitized metadata.
+
 ## External configuration for a long-running server
 
 The demo's self-signed TLS identities are short-lived test fixtures. For a
