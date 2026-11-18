@@ -9,6 +9,7 @@ verification.
 | --- | --- | --- | --- | --- |
 | CODE-01 integrity prerequisites | [Gap analysis and plan](../code01-integrity.md#gap-analysis-and-implemented-plan) | [Local candidate results](../code01-integrity.md#acceptance-evidence) | [Limits and compatibility](../code01-integrity.md#operational-and-compatibility-limits) | Maven commands and packaged smoke outcome in the [evidence record](../code01-integrity.md); fixed-revision rerun pending |
 | CODE-02 asynchronous process harness | [Method and commands](code02-method.md) | [Local execution record](code02-results.md) | Security and platform limits in the method | [Windows](run-code02.ps1), [POSIX](run-code02.sh) |
+| CODE-03 whole-file memory preflight | [Prespecified method](code03-method.md) | [Windows result and boundary](code03-results.md), [run rows](code03-runs.csv), [file rows](code03-files.csv) | Size and platform limits in the result | [Windows runner](run-code03.ps1), [exporter](export-code03.ps1) |
 | Issue #31 representative workload and baselines | [Protocol](issue31-protocol.md) | Planned under Issues #32–35 | — | [CODE-02 harness](code02-method.md) exists; fixed-revision study execution pending |
 | JOSS-01 shared trust boundary | [Method](joss01-method.md) | [Results](joss01-results.md) | — | [Windows](run-joss01.ps1), [POSIX](run-joss01.sh) |
 | JOSS-02 release boundary | [Method](joss02-method.md) | [Results](joss02-results.md) | [Matrix](joss02-claim-evidence.md) | [Windows](run-joss02.ps1), [POSIX](run-joss02.sh) |

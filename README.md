@@ -35,6 +35,8 @@ The [reviewer guide](docs/reviewer-guide.md) gives clean-checkout build steps, a
 reproducible producer-to-recipient TLS example, expected output, and operational limits.
 The separate-process [CODE-02 research harness](docs/research/code02-method.md) documents
 an isolated asynchronous exchange with synthetic fixtures and sanitized results.
+The [CODE-03 memory preflight](docs/research/code03-results.md) records a bounded Windows
+workload result for the current whole-file client and the planned synthetic study.
 See [contribution guidance](CONTRIBUTING.md) for ordinary issues and support,
 and [security reporting](SECURITY.md) for suspected vulnerabilities.
 #### Key Features:

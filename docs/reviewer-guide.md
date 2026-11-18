@@ -122,10 +122,13 @@ When the key service is unavailable, a client cannot fetch a public key or
 unwrap a file data key through the official workflow. A file already encrypted
 remains on disk; the example verifies only that a new connection fails after
 server shutdown. The client reads whole plaintext/envelope files into memory
-and constructs additional byte arrays during processing. There is no measured
-safe maximum file size, memory bound, throughput, or availability target.
-Avoid large files until the actual workload has been assessed. The encrypted
-database loader imposes a 256 MiB input cap; that is not a supported file-size
+and constructs additional byte arrays during processing. There is no general
+safe maximum file size, throughput, or availability target. The
+[CODE-03 Windows preflight](research/code03-results.md) verified the planned
+synthetic study's 4 MiB maximum file size with four consumer workers and a
+512 MiB heap per process; it does not establish support for larger files or
+different hosts. Avoid larger files until the actual workload has been assessed.
+The encrypted database loader imposes a 256 MiB input cap; that is not a supported file-size
 limit for client envelopes.
 
 Supported in the current working tree: TLS 1.3 client/server transport,
