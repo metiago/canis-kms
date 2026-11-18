@@ -432,7 +432,7 @@ public final class Code02Harness {
         }
     }
 
-    private static byte[] payload(int repetition, int ordinal, int length) throws Exception {
+    static byte[] payload(int repetition, int ordinal, int length) throws Exception {
         byte[] result = new byte[length];
         byte[] prefix = "CANIS-I31-v1".getBytes(StandardCharsets.US_ASCII);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -447,7 +447,7 @@ public final class Code02Harness {
         return result;
     }
 
-    private static void provisionMasterKey(Path path) throws Exception {
+    static void provisionMasterKey(Path path) throws Exception {
         KeyGenerator generator = KeyGenerator.getInstance("AES");
         generator.init(128);
         byte[] raw = generator.generateKey().getEncoded();
@@ -458,7 +458,15 @@ public final class Code02Harness {
     }
 
     private static void provisionTls(Path directory, String password) throws Exception {
-        for (String name : List.of("server", "producer", "recipient", "untrusted")) {
+        provisionTls(directory, password, List.of("producer", "recipient"));
+    }
+
+    static void provisionTls(Path directory, String password, List<String> trustedClients) throws Exception {
+        List<String> identities = new ArrayList<>(trustedClients);
+        identities.add("untrusted");
+        for (String name : List.of("server", "producer", "recipient", "producer-a", "producer-b",
+                "recipient-a", "recipient-b", "observer", "untrusted")) {
+            if (!name.equals("server") && !identities.contains(name)) continue;
             String commonName = name.equals("server") ? "localhost" : name;
             keytool(directory, password, "-genkeypair", "-alias", name, "-keyalg", "RSA", "-keysize", "2048",
                     "-validity", "2", "-dname", "CN=" + commonName, "-ext", "SAN=dns:localhost",
@@ -469,19 +477,20 @@ public final class Code02Harness {
                     "-keystore", directory.resolve(name + ".p12").toString(), "-storetype", "PKCS12",
                     "-storepass:env", "CODE02_STORE_PASSWORD", "-file", directory.resolve(name + ".cer").toString());
         }
-        for (String name : List.of("producer", "recipient")) {
+        for (String name : trustedClients) {
             keytool(directory, password, "-importcert", "-alias", name, "-file", directory.resolve(name + ".cer").toString(),
                     "-keystore", directory.resolve("server-trust.p12").toString(), "-storetype", "PKCS12",
                     "-storepass:env", "CODE02_STORE_PASSWORD", "-noprompt");
         }
-        for (String name : List.of("producer", "recipient", "untrusted")) {
+        for (String name : identities) {
             keytool(directory, password, "-importcert", "-alias", "server", "-file", directory.resolve("server.cer").toString(),
                     "-keystore", directory.resolve(name + "-trust.p12").toString(), "-storetype", "PKCS12",
                     "-storepass:env", "CODE02_STORE_PASSWORD", "-noprompt");
         }
-        for (String name : List.of("server-trust", "producer-trust", "recipient-trust", "untrusted-trust")) {
+        for (String name : List.of("server-trust")) {
             restrict(directory.resolve(name + ".p12"), false);
         }
+        for (String name : identities) restrict(directory.resolve(name + "-trust.p12"), false);
     }
 
     private static void keytool(Path directory, String password, String... arguments) throws Exception {
@@ -498,12 +507,12 @@ public final class Code02Harness {
         }
     }
 
-    private static String javaExecutable(String name) {
+    static String javaExecutable(String name) {
         boolean windows = System.getProperty("os.name").startsWith("Windows");
         return Path.of(System.getProperty("java.home"), "bin", name + (windows ? ".exe" : "")).toString();
     }
 
-    private static Map<String, String> clientEnvironment(Path privateDir, int port, String storePassword,
+    static Map<String, String> clientEnvironment(Path privateDir, int port, String storePassword,
             String identity, String password) {
         return Map.of("CANIS_SERVER_HOST", "localhost", "CANIS_SERVER_PORT", Integer.toString(port),
                 "CANIS_USERNAME", identity, "CANIS_PASSWORD", password,
@@ -513,14 +522,14 @@ public final class Code02Harness {
                 "CANIS_CLIENT_TLS_TRUSTSTORE_PASSWORD", storePassword);
     }
 
-    private static io.canis.jpaw.pojo.Environment clientConfiguration(Map<String, String> env) {
+    static io.canis.jpaw.pojo.Environment clientConfiguration(Map<String, String> env) {
         return new io.canis.jpaw.pojo.Environment("localhost", Integer.parseInt(env.get("CANIS_SERVER_PORT")),
                 env.get("CANIS_USERNAME"), env.get("CANIS_PASSWORD"), new io.canis.jpaw.config.TlsConfiguration(
                         Path.of(env.get("CANIS_CLIENT_TLS_KEYSTORE")), env.get("CANIS_CLIENT_TLS_KEYSTORE_PASSWORD"),
                         Path.of(env.get("CANIS_CLIENT_TLS_TRUSTSTORE")), env.get("CANIS_CLIENT_TLS_TRUSTSTORE_PASSWORD")));
     }
 
-    private static void awaitServer(Map<String, String> env) throws Exception {
+    static void awaitServer(Map<String, String> env) throws Exception {
         for (int i = 0; i < 100; i++) {
             try (JpawClient client = new JpawClient(clientConfiguration(env))) {
                 if ("OK".equals(client.health())) return;
@@ -529,7 +538,7 @@ public final class Code02Harness {
         throw new IOException("TLS server did not become ready");
     }
 
-    private static Process start(List<String> command, Path directory, Map<String, String> env, Path log) throws IOException {
+    static Process start(List<String> command, Path directory, Map<String, String> env, Path log) throws IOException {
         ProcessBuilder builder = new ProcessBuilder(command).directory(directory.toFile()).redirectErrorStream(true)
                 .redirectOutput(log.toFile());
         builder.environment().keySet().removeIf(key -> key.startsWith("CANIS_") || key.startsWith("CODE02_"));
@@ -537,7 +546,7 @@ public final class Code02Harness {
         return builder.start();
     }
 
-    private static List<String> serverCommandWithInit(List<String> command) {
+    static List<String> serverCommandWithInit(List<String> command) {
         List<String> result = new ArrayList<>(command);
         result.add("--init-db");
         return result;
@@ -550,7 +559,7 @@ public final class Code02Harness {
         return result;
     }
 
-    private static Path secureDirectory(Path path) throws IOException {
+    static Path secureDirectory(Path path) throws IOException {
         Files.createDirectory(path);
         restrict(path, true);
         return path.toRealPath();
@@ -572,7 +581,7 @@ public final class Code02Harness {
         acl.setAcl(List.of(owner));
     }
 
-    private static Path safeChild(Path parent, String name) throws IOException {
+    static Path safeChild(Path parent, String name) throws IOException {
         Path child = parent.resolve(name).normalize();
         if (!child.getParent().equals(parent) || Files.isSymbolicLink(child)) {
             throw new IOException("Unsafe research fixture path");
@@ -644,7 +653,7 @@ public final class Code02Harness {
         }
     }
 
-    private static int countTlsRejections(Path log) throws IOException {
+    static int countTlsRejections(Path log) throws IOException {
         if (!Files.isRegularFile(log)) return 0;
         String text = Files.readString(log, StandardCharsets.UTF_8);
         String marker = "TLS handshake or connection failed";
@@ -667,7 +676,7 @@ public final class Code02Harness {
         return Long.parseLong(Files.readString(path).trim());
     }
 
-    private static void deleteRunRoot(Path root, String runId) throws IOException {
+    static void deleteRunRoot(Path root, String runId) throws IOException {
         if (!Files.isDirectory(root) || Files.isSymbolicLink(root)
                 || !Files.readString(root.resolve(".code02-run")).equals(runId)
                 || !root.toRealPath().startsWith(Path.of(System.getProperty("java.io.tmpdir")).toRealPath())) {
@@ -722,11 +731,11 @@ public final class Code02Harness {
     }
 
     private static String nullable(Instant time) { return time == null ? "null" : "\"" + time + "\""; }
-    private static String json(String value) { return value.replace("\\", "\\\\").replace("\"", "\\\""); }
-    private static String randomHex(int bytes) {
+    static String json(String value) { return value.replace("\\", "\\\\").replace("\"", "\\\""); }
+    static String randomHex(int bytes) {
         byte[] random = new byte[bytes]; RANDOM.nextBytes(random); return HexFormat.of().formatHex(random);
     }
-    private static String category(Exception error) {
+    static String category(Exception error) {
         for (Throwable cause = error; cause != null; cause = cause.getCause()) {
             if (cause instanceof javax.crypto.AEADBadTagException) return "authentication_tag_rejected";
             if (cause instanceof javax.net.ssl.SSLHandshakeException) return "tls_certificate_rejected";
@@ -744,7 +753,7 @@ public final class Code02Harness {
         if (error instanceof IOException) return "io_or_authentication_failure";
         return "research_run_failure";
     }
-    private static String commandOutput(Path cwd, String... command) throws Exception {
+    static String commandOutput(Path cwd, String... command) throws Exception {
         Process p = new ProcessBuilder(command).directory(cwd.toFile()).start();
         String output = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         if (p.waitFor() != 0) throw new IOException("Source revision unavailable");

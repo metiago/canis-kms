@@ -212,11 +212,11 @@ The original research Issues #31–35 retain their numbers. Predefine questions,
 
 ## Issue #33 — Demonstrate delayed multi-service exchange (P0)
 
-- [ ] Use separate producer, consumer, and server processes with a shared encrypted-file directory; verify byte equality after a documented delay and after a clean server restart.
-- [ ] Exercise multiple credential identities and, if claiming certificate-level separation, distinct client certificates. Confirm the documented shared-access behavior, invalid-credential rejection, and file tamper rejection without treating permitted cross-service decryption as unauthorized.
-- [ ] Record envelope publication/consumption ordering, duplicate and incomplete-file handling, and what happens if a file is present before its consumer starts.
+- [x] Use separate producer, consumer, and server processes with a shared encrypted-file directory; verify byte equality after a documented delay and after a clean server restart. The test uses a controlled stop between operations; graceful shutdown behavior was not measured. [Method](docs/research/issue33-method.md) and [Windows observations](docs/research/issue33-results.md).
+- [x] Exercise multiple credential identities and distinct generated client certificates. Confirm the documented shared-access behavior, invalid-credential rejection, and file tamper rejection without treating permitted cross-service decryption as unauthorized. [Scenario D and E evidence](docs/research/issue33-results.md#actual-scenario-observations).
+- [x] Record envelope publication/consumption ordering, duplicate and incomplete-file handling, and what happens if a file is present before its consumer starts. [Scenario A and event records](docs/research/issue33-results.md#actual-scenario-observations).
 
-**Acceptance:** A reviewer can rerun the proof of concept and observe the predefined success and rejection outcomes.
+**Acceptance — local functional evidence recorded:** The [Issue #33 method](docs/research/issue33-method.md) gives reviewer commands and the [result record](docs/research/issue33-results.md) links five passing Windows scenarios, sanitized CSV/JSON evidence, an artifact verifier, and an acceptance matrix. The source tree was dirty during execution; fixed-revision and POSIX reproduction remain open as broader study gates, and no performance or availability claim follows.
 
 ## Issue #34 — Evaluate outages and faults (P0)
 

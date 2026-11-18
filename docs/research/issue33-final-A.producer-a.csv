@@ -1,0 +1,3 @@
+identity,key_name,file_ordinal,size_bytes,started_utc,finished_utc,outcome,failure_category,input_sha256,envelope_sha256
+producer-a,recipient-a,0,4096,2026-11-18T15:23:15.844498700Z,2026-11-18T15:23:15.916470Z,published,none,d5b00e2ca0bcd5a8a39986dff98d52d3dec07d06e1e9b47037c9696f8aac6499,c3bf82e625db852ea51e15110e996b1a830bd3c3ee137d263654242c65fe6ff5
+producer-a,recipient-a,1,262144,2026-11-18T15:23:15.916470Z,2026-11-18T15:23:15.984937Z,published,none,478b8626bee38c4242218fcc1ec40f678b277a5f148c0e67424fcd4c417c431a,b80194f25a134de7d6af672a5cddc4ab1aaaec9b9221ffc30fb587eae1bdd478
