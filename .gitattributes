@@ -1,0 +1,5 @@
+docs/research/issue34-artifacts/** text eol=lf
+docs/research/issue34-pilot/** text eol=lf
+docs/research/issue34-artifacts.sha256 text eol=lf
+docs/research/issue34-pilot-artifacts.sha256 text eol=lf
+docs/research/run-issue34.sh text eol=lf

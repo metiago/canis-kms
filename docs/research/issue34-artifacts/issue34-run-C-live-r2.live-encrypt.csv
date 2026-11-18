@@ -1,0 +1,2 @@
+identity,key_name,file_ordinal,size_bytes,started_utc,finished_utc,outcome,failure_category,input_sha256,envelope_sha256
+live-encrypt,recipient-a,1,262144,2026-11-18T17:19:40.807405500Z,2026-11-18T17:19:40.813955700Z,failed,io_or_authentication_failure,,

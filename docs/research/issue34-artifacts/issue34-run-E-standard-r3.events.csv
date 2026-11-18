@@ -1,0 +1,11 @@
+phase,time_utc,operation,process_exit,outcome,failure_category,output_present,log_marker
+setup,2026-11-18T17:26:05.383732300Z,init-db,0,initialized,none,false,none
+baseline,2026-11-18T17:26:07.968451300Z,startup,-1,ready,none,false,tls_listener_started
+baseline,2026-11-18T17:26:10.202670600Z,encrypt,0,published,none,false,none
+baseline,2026-11-18T17:26:11.959012Z,decrypt,0,verified,none,true,none
+fault,2026-11-18T17:26:12.012656400Z,flip-database-final-byte,-1,injected,none,false,none
+faulted_restart,2026-11-18T17:26:13.384086900Z,startup,1,rejected,none,false,database_startup_rejected
+faulted_restart,2026-11-18T17:26:14.535722100Z,encrypt,1,failed,io_or_authentication_failure,false,none
+faulted_restart,2026-11-18T17:26:15.937531900Z,decrypt,1,failed,io_or_authentication_failure,false,none
+recovery,2026-11-18T17:26:17.907934Z,startup,-1,ready,none,false,tls_listener_started
+recovery,2026-11-18T17:26:19.657999800Z,decrypt,0,verified,none,true,none

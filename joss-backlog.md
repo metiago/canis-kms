@@ -226,6 +226,14 @@ The original research Issues #31–35 retain their numbers. Predefine questions,
 
 **Acceptance:** Fault results have exact inputs, expected outcomes, observed outcomes, and documented limits; no test can touch a real deployment.
 
+**Partial Issue #34 evidence (2026-11-18):** The [controlled fault method](docs/research/issue34-method.md)
+and [Windows results](docs/research/issue34-results.md) cover three synthetic repetitions each
+of master-key loss and replacement, database corruption while running and stopped, audit-line
+modification and deletion, and restore/restart after corruption. The 159 final JSON/CSV artifacts
+and SHA-256 manifest are linked there. This does not close the full Issue #34 outage, key-deletion,
+envelope, and admission matrix. The source tree was dirty, POSIX reproduction is unverified, and
+internal fault-detection latency was not measured.
+
 ## Issue #35 — Publish reproducible study results (P0)
 
 - [ ] Publish methods, actual results, analysis, negative results, discussion, and limitations under `docs/research/`; separate observed behavior from inferred implications.

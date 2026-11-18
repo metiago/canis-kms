@@ -131,8 +131,8 @@ def main():
         manifest = args.write_manifest.resolve()
         require(not manifest.exists(), "manifest already exists")
         require(manifest.parent == directory.parent, "manifest must be next to artifact directory")
-        manifest.write_text("".join(f"{digest(path)}  {directory.name}/{path.name}\n"
-                                    for path in files), encoding="ascii")
+        manifest.write_bytes("".join(f"{digest(path)}  {directory.name}/{path.name}\n"
+                                     for path in files).encode("ascii"))
     print(f"ISSUE34_EVIDENCE=passed cases={len(CASES)} repetitions=3 artifacts={len(files)}")
 
 

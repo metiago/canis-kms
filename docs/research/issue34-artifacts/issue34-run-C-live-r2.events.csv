@@ -1,0 +1,14 @@
+phase,time_utc,operation,process_exit,outcome,failure_category,output_present,log_marker
+setup,2026-11-18T17:19:31.865824900Z,init-db,0,initialized,none,false,none
+baseline,2026-11-18T17:19:34.502045200Z,startup,-1,ready,none,false,tls_listener_started
+baseline,2026-11-18T17:19:37.201370700Z,encrypt,0,published,none,false,none
+baseline,2026-11-18T17:19:39.265919100Z,decrypt,0,verified,none,true,none
+fault,2026-11-18T17:19:39.313759600Z,flip-database-final-byte,-1,injected,none,false,none
+live,2026-11-18T17:19:40.875516200Z,encrypt,1,failed,io_or_authentication_failure,false,none
+live,2026-11-18T17:19:42.297524100Z,decrypt,1,failed,io_or_authentication_failure,false,none
+live,2026-11-18T17:19:42.299579300Z,server-log,-1,observed,none,false,changed_database
+faulted_restart,2026-11-18T17:19:43.743487500Z,startup,1,rejected,none,false,database_startup_rejected
+faulted_restart,2026-11-18T17:19:45.253980200Z,encrypt,1,failed,io_or_authentication_failure,false,none
+faulted_restart,2026-11-18T17:19:46.770812900Z,decrypt,1,failed,io_or_authentication_failure,false,none
+recovery,2026-11-18T17:19:48.900652400Z,startup,-1,ready,none,false,tls_listener_started
+recovery,2026-11-18T17:19:50.836491300Z,decrypt,0,verified,none,true,none
