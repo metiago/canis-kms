@@ -28,8 +28,9 @@ state cannot be established there; the harness's current revision collection als
 Git metadata. The author reports running a build in Fedora WSL, but the Surefire XML currently
 present in this archive records `os.name=Windows 11`, Oracle Java 21.0.7, and skips for both
 `rejectsUnsafePosixFileAndDirectoryPermissions` and `rejectsSymbolicLink`. These files cannot
-verify the reported Fedora run; a Fedora report or `JOSS03_POSIX_COVERAGE=PASS` output is still
-needed. No separate-process harness run was reported for this tree.
+verify the reported Fedora run. The later [Ubuntu CI run](#ubuntu-ci-reproduction-on-2026-11-17)
+provides POSIX evidence for the committed harness. No separate-process harness run was reported
+for this extracted tree.
 
 ## GitHub Windows CI failure and local fixture correction on 2026-11-17
 
@@ -50,8 +51,9 @@ that the key and its immediate directory have no broad access.
 
 The corrected working tree passed `mvn --batch-mode --no-transfer-progress clean verify`
 on local Windows 11 at `2026-11-17T20:47:47-03:00`: 28 Surefire suites, 159 tests, zero
-failures, zero errors, and eight skips. This local result does not establish that the
-GitHub Windows runner now passes; a CI rerun on the committed correction is required.
+failures, zero errors, and eight skips. This local result alone did not establish that the
+GitHub Windows runner passed; the later [CI rerun](#ubuntu-ci-reproduction-on-2026-11-17)
+passed on both platforms.
 
 ## Commands and observed outcomes
 
@@ -137,14 +139,44 @@ directory. The existing TLS, storage, and file-compatibility suite passed as cou
 | Repeatable setup, teardown, and fixture cleanup | Windows wrapper and method; no normal-run `canis-code02-*` root remained | Windows local run verified; POSIX and clean checkout unverified |
 | Failure injection isolated from production persistence | New temporary root and dedicated server working directory; failed fixture roots retained | Local path review and executed faults verified; hostile path-race behavior not established |
 
-**CODE-02 remains open.** Two invalid-certificate validation attempts failed before the
-final check passed. A fresh clean checkout containing the implementation, a POSIX execution,
-and independent reproduction have not been recorded. CODE-01's exact-revision/POSIX gate and
-CODE-03's largest-size memory preflight also remain prerequisites before Issues #32–35 use
-these runs as study evidence.
+At the time of these local runs, CODE-02 remained open. Two invalid-certificate validation
+attempts failed before the final check passed. Clean-checkout and POSIX reproduction were then
+unverified. The later [Ubuntu CI result](#ubuntu-ci-reproduction-on-2026-11-17) closes those
+CODE-02 reproduction requirements. CODE-01's fixed-revision release gate and CODE-03's
+largest-size memory preflight remain prerequisites before Issues #32–35 use these runs as
+study evidence.
 
 Operational impact is limited to a new research command and temporary local processes. Risks
 include the server's current wildcard bind, dependence on same-filesystem atomic rename and
 Windows ACL privileges, whole-file memory allocation, and limited client error categories.
 Future work for Issues #32–35 is the protocol's warm-up, baselines, repetitions, precise
 component timings, peak RSS/heap sampling, outage/restart series, and analysis artifacts.
+
+## Ubuntu CI reproduction on 2026-11-17
+
+The [GitHub Actions run](https://github.com/metiago/canis-kms/actions/runs/44204796541)
+completed successfully at commit `23a65838dc21bd02f0f4f9297dd222595cc88c97`.
+Both [Ubuntu](https://github.com/metiago/canis-kms/actions/runs/44204796541/job/134467866501)
+and [Windows](https://github.com/metiago/canis-kms/actions/runs/44204796541/job/134467866129)
+build/test jobs passed. The Ubuntu job passed checkout, Java 21 setup, `mvn clean verify`, the
+POSIX security coverage gate, `Reproduce CODE-02 asynchronous exchange`, and
+`Upload CODE-02 evidence`. The reproduction step invoked the documented
+`sh docs/research/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000`
+command, adding only `--output server/target/code02-ci.json`. The workflow writes the
+wrapper's exit status and exits with that same status, so a successful step means the harness
+reported a passing normal exchange and zero exit status. The harness defines normal success
+as one authenticated byte match after delayed consumer startup and fixture cleanup.
+
+The Actions artifact listing shows `code02-evidence-ubuntu-latest` (artifact ID
+`14381849411`, 2368 bytes, seven-day retention). The workflow selects the wrapper console
+log, exit-status text, JSON result, and producer/consumer CSV records from `server/target/`.
+It does not select the private temporary fixture root or raw server/worker logs. The artifact
+download endpoint returned `401 Requires authentication` in this review, so the archive's
+individual files and JSON fields were not independently inspected. Job-step success and the
+published artifact listing are the observed CI evidence; details of the exchange outcome
+follow from the committed wrapper and harness exit behavior.
+
+This successful Ubuntu execution is both a clean-checkout and POSIX CODE-02 reproduction.
+The earlier Windows negative runs remain the evidence for tamper, incomplete publication,
+invalid credentials, and invalid certificates. This CI smoke run does not establish a
+production release, the Issue #32 measured workload, or CODE-03's memory bound.
