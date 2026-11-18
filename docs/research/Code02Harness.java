@@ -83,8 +83,8 @@ public final class Code02Harness {
                     || intervalMs < 0 || intervalMs > 60000 || repetition < 1 || repetition > 5) {
                 throw new IllegalArgumentException("Invalid research scenario or workload");
             }
-            if (size == 0 && files != 100) {
-                throw new IllegalArgumentException("Issue 31 size schedule requires 100 files");
+            if (size == 0 && files != 100 && files != 20) {
+                throw new IllegalArgumentException("Issue 31 size schedule requires 20 warm-up or 100 measured files");
             }
             if (!scenario.equals("normal") && files != 1) {
                 throw new IllegalArgumentException("Fault scenarios use one file");
@@ -316,7 +316,7 @@ public final class Code02Harness {
                     StringBuilder csv = new StringBuilder(
                             "ordinal,size,planned_start_utc,actual_start_utc,published_utc,encrypt_ns,outcome\n");
                     for (int i = 0; i < files; i++) {
-                        int fileSize = sizeFor(repetition, i, size);
+                        int fileSize = sizeFor(repetition, i, size, files);
                         long due = scheduleNanos + TimeUnit.MILLISECONDS.toNanos(intervalMs * i);
                         while (System.nanoTime() < due) Thread.sleep(1);
                         Instant actualStart = Instant.now();
@@ -358,7 +358,7 @@ public final class Code02Harness {
                             try {
                                 for (int i = assignedWorker; i < files; i += concurrency) {
                                     rows[i] = consumeFile(client, connectionFailure, shared, privateDir,
-                                            runId, repetition, i, sizeFor(repetition, i, size));
+                                            runId, repetition, i, sizeFor(repetition, i, size, files));
                                 }
                             } finally { if (client != null) client.close(); }
                             return null;
@@ -384,12 +384,15 @@ public final class Code02Harness {
         }
     }
 
-    private static int sizeFor(int repetition, int ordinal, int configuredSize) {
+    private static int sizeFor(int repetition, int ordinal, int configuredSize, int files) {
         if (configuredSize != 0) return configuredSize;
-        int[] sizes = new int[100];
-        Arrays.fill(sizes, 0, 50, 4096);
-        Arrays.fill(sizes, 50, 85, 256 * 1024);
-        Arrays.fill(sizes, 85, 100, 4 * 1024 * 1024);
+        int count = files;
+        int[] sizes = new int[count];
+        int small = count == 20 ? 10 : 50;
+        int medium = count == 20 ? 17 : 85;
+        Arrays.fill(sizes, 0, small, 4096);
+        Arrays.fill(sizes, small, medium, 256 * 1024);
+        Arrays.fill(sizes, medium, count, 4 * 1024 * 1024);
         SplittableRandom random = new SplittableRandom(31000L + repetition);
         for (int i = sizes.length - 1; i > 0; i--) {
             int j = random.nextInt(i + 1);
@@ -397,6 +400,7 @@ public final class Code02Harness {
         }
         return sizes[ordinal];
     }
+
 
     private static String consumeFile(JpawClient client, String connectionFailure, Path shared, Path privateDir,
             String runId, int repetition, int ordinal, int size) throws Exception {
@@ -753,7 +757,7 @@ public final class Code02Harness {
         }
         int small = 0, medium = 0, large = 0;
         for (int i = 0; i < 100; i++) {
-            int size = sizeFor(1, i, 0);
+            int size = sizeFor(1, i, 0, 100);
             if (size == 4096) small++;
             else if (size == 256 * 1024) medium++;
             else if (size == 4 * 1024 * 1024) large++;
