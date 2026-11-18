@@ -4,6 +4,7 @@
 import argparse
 import csv
 import json
+import math
 import statistics
 from collections import defaultdict
 from datetime import datetime
@@ -36,6 +37,14 @@ def spread(values):
         "maximum": max(values),
         "sample_sd": statistics.stdev(values) if len(values) > 1 else None,
     }
+
+
+def nearest_rank(values, fraction):
+    if not values:
+        return None
+    ordered = sorted(values)
+    rank = max(1, math.ceil(fraction * len(ordered)))
+    return ordered[rank - 1]
 
 
 def write_csv(path, rows, fields):
@@ -164,6 +173,8 @@ def main():
         "warmup_runs": sum(run["warmup"] for run in runs),
         "measured_pairs": sum(pair["paired"] for pair in pairs),
         "groups": [],
+        "size_groups": [],
+        "paired_groups": [],
     }
     for (delay, workers, mode), group in sorted(grouped.items()):
         valid = [run for run in group if run["status"] == "passed"]
@@ -179,6 +190,37 @@ def main():
                                            if run["producer_peak_working_set_bytes"] is not None]),
             "consumer_peak_bytes": spread([run["consumer_peak_working_set_bytes"] for run in valid
                                            if run["consumer_peak_working_set_bytes"] is not None]),
+        })
+    file_groups = defaultdict(list)
+    for file in files:
+        if not file["warmup"] and file["consumer_outcome"] == "verified":
+            file_groups[(file["delay_ms"], file["workers"], file["mode"], int(file["size_bytes"]))].append(file)
+    for (delay, workers, mode, size), group in sorted(file_groups.items()):
+        e2e = [file["end_to_end_ms"] for file in group]
+        processing = [file["processing_ms"] for file in group]
+        summary["size_groups"].append({
+            "delay_ms": delay, "workers": workers, "mode": mode, "size_bytes": size,
+            "verified_samples": len(group),
+            "end_to_end_p50_ms": nearest_rank(e2e, 0.50),
+            "end_to_end_p95_ms": nearest_rank(e2e, 0.95),
+            "processing_p50_ms": nearest_rank(processing, 0.50),
+            "processing_p95_ms": nearest_rank(processing, 0.95),
+        })
+    paired_groups = defaultdict(list)
+    for pair in pairs:
+        if pair["paired"]:
+            paired_groups[(pair["delay_ms"], pair["workers"])].append(pair)
+    for (delay, workers), group in sorted(paired_groups.items()):
+        summary["paired_groups"].append({
+            "delay_ms": delay, "workers": workers, "pairs": len(group),
+            "latency_difference_ms": spread([pair["latency_difference_ms"] for pair in group]),
+            "throughput_difference_files_s": spread([pair["throughput_difference_files_s"] for pair in group]),
+            "server_memory_difference_bytes": spread([pair["server_memory_difference_bytes"] for pair in group
+                                                      if pair["server_memory_difference_bytes"] is not None]),
+            "producer_memory_difference_bytes": spread([pair["producer_memory_difference_bytes"] for pair in group
+                                                        if pair["producer_memory_difference_bytes"] is not None]),
+            "consumer_memory_difference_bytes": spread([pair["consumer_memory_difference_bytes"] for pair in group
+                                                        if pair["consumer_memory_difference_bytes"] is not None]),
         })
     (directory / "analysis-summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(f"ISSUE32_ANALYSIS=recorded measured_runs={summary['measured_runs']} "
