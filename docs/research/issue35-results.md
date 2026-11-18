@@ -2,6 +2,8 @@
 
 **Evidence cut:** repository records dated 2026-11-16 to 2026-11-18. **Type:** retrospective synthesis; no Issue #35 experiment or new measurement. [Synthesis method](issue35-method.md). The source studies used different revisions and hosts or source states. Their counts are presented separately and are never pooled into a reliability estimate.
 
+The later [JOSS-02 audit](joss02-audit.md) and [release-boundary matrix](joss02-release-boundary.md#claim-by-claim-release-boundary) review the subsequently revised manuscript. This Issue #35 synthesis and its original claim matrix retain their historical evidence cut.
+
 ## 1. Executive summary
 
 The [prespecified research question](issue31-protocol.md#research-question-and-operational-motivation) asks how correctness, resource use, and availability change when Java services exchange encrypted files asynchronously with CANIS under its documented shared-trust model. The measured workload is synthetic: 100 files per normal run, with 50 × 4 KiB, 35 × 256 KiB, and 15 × 4 MiB; planned 500 ms producer starts; a 0 or 60 s consumer-start delay after first complete publication; and one or four consumer workers. These settings exercise a bounded exchange pattern. They are not measured properties of the historical deployment or an operational service-level target.

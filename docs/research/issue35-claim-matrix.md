@@ -1,10 +1,10 @@
 # Issue #35 manuscript claim traceability
 
-This matrix covers every material assertion in [paper.md](../../joss-papers/paper.md), including implementation, research, limitations, historical context, and disclosure. Closely linked clauses in one manuscript sentence share a row. No experiment or measurement was added for this mapping.
+This matrix covers every material assertion in the Issue #35 version of [paper.md](../../joss-papers/paper.md), including implementation, research, limitations, historical context, and disclosure. Closely linked clauses in one manuscript sentence share a row. The later JOSS-02 manuscript revision and its new claims are mapped in the [current release-boundary matrix](joss02-release-boundary.md#claim-by-claim-release-boundary). No experiment or measurement was added for the Issue #35 mapping.
 
 ## Revision key and evidence boundary
 
-`A` is the fixed **repository evidence-artifact revision** `221df74231891f0910bd8a2f59ec392d3ae67376`. Each source document linked below, except the newly drafted Issue #35 files, is tracked at `A` and can be read with `git show A:<path>`. This fixes the text and retained artifacts being cited; it does **not** make a dirty-tree experiment a clean fixed-revision execution. The revised paper and this matrix are working-tree files until committed. The table's run codes preserve the source records' execution states:
+`A` is the fixed **repository evidence-artifact revision** `221df74231891f0910bd8a2f59ec392d3ae67376`. Each source document linked below, except the newly drafted Issue #35 files, is tracked at `A` and can be read with `git show A:<path>`. This fixes the text and retained artifacts being cited; it does **not** make a dirty-tree experiment a clean fixed-revision execution. At the time of this Issue #35 mapping, the revised paper and this matrix were working-tree files. Both were subsequently committed by `5632a8fa563f01a1c03f5a1632cff80165c6c543`; the JOSS-02 paper revision is a later working-tree draft. The table's run codes preserve the source records' execution states:
 
 | Run code | Recorded execution revision and qualification |
 | --- | --- |
@@ -126,4 +126,4 @@ The [JOSS-01 historical record](joss01-results.md#historical-operational-evidenc
 
 ## Acceptance boundary
 
-The mapping supplies a fixed repository artifact and a reproduction or inspection route for each manuscript assertion. It does **not** establish that dirty-tree studies were executed on a fixed candidate, that the historical letter is a public artifact, or that author metadata and disclosures are approved. Those distinct [Issue #35 and JOSS gates](../../joss-backlog.md#issue-35--publish-reproducible-study-results-p0) remain open.
+For the Issue #35 manuscript version, the mapping supplies a fixed repository artifact and a reproduction or inspection route for each assertion. The [JOSS-02 release boundary](joss02-release-boundary.md#claim-by-claim-release-boundary) covers the later wording. Neither mapping establishes that dirty-tree studies were executed on a fixed candidate, that the historical letter is a public artifact, or that author metadata and disclosures are approved. Those distinct [Issue #35 and JOSS gates](../../joss-backlog.md#issue-35--publish-reproducible-study-results-p0) remain open.
