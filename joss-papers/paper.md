@@ -6,10 +6,10 @@ tags:
   - distributed systems
   - file encryption
 authors:
-  - name: 'REPLACE WITH AUTHOR NAME'
+  - name: 'Tiago Souza'
     affiliation: 1
 affiliations:
-  - name: 'REPLACE WITH INSTITUTION AND COUNTRY'
+  - name: 'Independent Researcher, Brazil'
     index: 1
 bibliography: paper.bib
 ---
@@ -48,10 +48,10 @@ The measurements used one Windows loopback host and synthetic fixtures; Issue #3
 
 # AI usage disclosure
 
-The current draft records OpenAI ChatGPT (GPT-6) assistance with repository review, manuscript drafting, research scripts, and evidence audits. Human authors must confirm the full history of generative AI use, validate the technical claims, and approve the final submission. [Earlier AI-use record](../docs/research/joss05-claim-evidence.md).
+OpenAI ChatGPT (GPT-5 and GPT-6 family models, as available during project work) was used for repository review, manuscript drafting and editing, research-method refinement, and experiment planning. OpenAI Codex assisted with code review, research harness development, experiment implementation, documentation generation, and artifact traceability. Microsoft Copilot assisted with manuscript, documentation, and backlog review, and research audits. Exact historical model or version identifiers for Codex and Microsoft Copilot cannot be reliably determined from the available records. Where exact historical identifiers could not be reconstructed, this disclosure records the tools and known scope of use without inferring or guessing unavailable versions. The author reviewed, edited, and validated all AI-assisted code, documentation, experimental protocols, results descriptions, technical claims, and manuscript content. All software-design, research-design, and publication decisions were made by the human author. The author takes full responsibility for the final software, documentation, experiments, and submission.
 
 # Acknowledgements
 
-Author names, affiliations, and any financial or institutional support must be completed by the authors before submission. No funding information was established from the repository materials reviewed for this draft.
+The author reports no funding or institutional support, has no acknowledgements, and declares no conflicts of interest.
 
 # References
