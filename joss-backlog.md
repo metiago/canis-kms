@@ -57,22 +57,22 @@ Before each implementation issue, inspect existing code, identify affected files
 
 ## CODE-02 — Add an isolated, repeatable asynchronous exchange harness (P0)
 
-- [ ] Implement a documented producer, delayed consumer, and CANIS server run as separate processes against a temporary shared directory. Use externally supplied TLS and master-key fixtures; never place private keys or plaintext in shared storage.
-- [ ] Publish complete encrypted envelopes atomically; have the consumer ignore incomplete files and record byte-equality results only after authenticated decryption. Keep the research harness outside the production protocol path.
-- [ ] Emit sanitized, machine-readable run metadata: revision, runtime, scenario, file size, concurrency, timing, memory, outcome, and failure category. Define a stable run ID without logging keys or plaintext.
-- [ ] Include repeatable setup, teardown, and fixture cleanup on supported platforms. Ensure failure injection cannot alter a real database or deployment.
+- [x] Implement a documented producer, delayed consumer, and CANIS server run as separate processes against a temporary shared directory. Use externally supplied TLS and master-key fixtures; never place private keys or plaintext in shared storage. See the [method](docs/research/code02-method.md#process-and-fixture-layout) and [CI result](docs/research/code02-results.md#ubuntu-ci-reproduction-on-2026-11-17).
+- [x] Publish complete encrypted envelopes atomically; have the consumer ignore incomplete files and record byte-equality results only after authenticated decryption. Keep the research harness outside the production protocol path. See the [normal and negative runs](docs/research/code02-results.md#commands-and-observed-outcomes) and [Ubuntu CI run](docs/research/code02-results.md#ubuntu-ci-reproduction-on-2026-11-17).
+- [x] Emit sanitized, machine-readable run metadata: revision, runtime, scenario, file size, concurrency, timing, memory, outcome, and failure category. Define a stable run ID without logging keys or plaintext. See the [result format](docs/research/code02-method.md#results-cleanup-and-limits) and [CI artifact](docs/research/code02-results.md#ubuntu-ci-reproduction-on-2026-11-17).
+- [x] Include repeatable setup, teardown, and fixture cleanup on supported platforms. Ensure failure injection cannot alter a real database or deployment. See the [Windows negative runs](docs/research/code02-results.md#commands-and-observed-outcomes), [isolation method](docs/research/code02-method.md#process-and-fixture-layout), and [Ubuntu CI run](docs/research/code02-results.md#ubuntu-ci-reproduction-on-2026-11-17).
 
-**Acceptance:** A clean checkout can run producer and consumer at different times and reproduce the expected output with no undocumented setup or secret-bearing artifact.
+**Acceptance — satisfied for CODE-02:** A clean Ubuntu checkout ran the documented POSIX wrapper, with separate producer and delayed consumer processes, and the CI job and evidence upload passed. No separate manual reproduction is required. This is a functional smoke result, not a fixed research-release or performance result.
 
 **Current CODE-02 evidence:** The [research-only harness method](docs/research/code02-method.md) and
 [local Windows execution record](docs/research/code02-results.md) show a separate-process
 synthetic exchange and negative cases. Two failed certificate-classification attempts are
-retained. Clean-checkout and POSIX reproduction are still unverified, so this gate remains open.
+retained. Those local runs did not establish clean-checkout or POSIX reproduction.
 The author also reported a successful [separate source-archive Maven build](docs/research/code02-results.md#separate-source-archive-build-on-2026-11-17)
 with 158 tests and eight skips. The author reports a Fedora WSL build, but the available
-Surefire XML identifies Windows 11 and skips the POSIX permission and symlink cases; retain
-Fedora-specific evidence before counting a POSIX pass. The extracted archive lacks `.git`,
-and no process-harness run was reported for it; this does not close the clean-checkout gate.
+Surefire XML identifies Windows 11 and skips the POSIX permission and symlink cases; those
+files cannot establish the reported Fedora run. The extracted archive lacks `.git`,
+and no process-harness run was reported for it; that older evidence did not close the clean-checkout gate.
 The earlier Windows Actions failure with 38 `unsafe_permissions` errors and the local
 test-fixture ACL correction are recorded in the [result record](docs/research/code02-results.md#github-windows-ci-failure-and-local-fixture-correction-on-2026-11-17).
 At commit `e94c93bd5fdd62588b2d3413c1819523f9d8a864`, the
@@ -83,17 +83,26 @@ also passed at this revision. The [committed workflow](.github/workflows/ci.yml)
 has no CODE-02 harness step, and neither job lists one. Maven does not invoke the separate-process
 `run-code02` wrapper. Therefore this CI run establishes a clean-checkout build and POSIX security
 test coverage, but neither clean-checkout nor POSIX reproduction of the CODE-02 exchange.
-No separate local run is required once a successful Ubuntu CI job actually executes the
-documented CODE-02 wrapper and retains its sanitized result.
+At commit `23a65838dc21bd02f0f4f9297dd222595cc88c97`,
+[CI run 44204796541](https://github.com/metiago/canis-kms/actions/runs/44204796541)
+completed successfully on Ubuntu and Windows. The [Ubuntu job](https://github.com/metiago/canis-kms/actions/runs/44204796541/job/134467866501)
+passed checkout, Java setup, Maven verification, the POSIX security gate, the documented
+`sh docs/research/run-code02.sh` normal run, and the CODE-02 evidence upload. The
+`code02-evidence-ubuntu-latest` artifact (ID `14381849411`, 2368 bytes) was published. The
+[workflow](.github/workflows/ci.yml) selects the wrapper log, exit-status text, JSON, and
+producer/consumer CSV paths; its archive contents were not independently downloaded
+because the artifact endpoint requires authentication. The successful wrapper step is the
+reproduction gate. The [CI result record](docs/research/code02-results.md#ubuntu-ci-reproduction-on-2026-11-17)
+records the evidence and limits. No separate local run is required.
 
 | CODE-02 requirement | Evidence | Status |
 | --- | --- | --- |
-| Separate server, producer, and delayed consumer in an isolated temporary run | [Windows execution record](docs/research/code02-results.md#commands-and-observed-outcomes) and [method](docs/research/code02-method.md#process-and-fixture-layout) | Locally verified on Windows; CI harness execution pending |
-| Atomic encrypted publication, incomplete-file handling, and authenticated byte comparison | [Normal and negative run records](docs/research/code02-results.md#commands-and-observed-outcomes) | Locally verified on Windows; CI harness execution pending |
-| Sanitized machine-readable metadata and stable run ID | [Local acceptance matrix](docs/research/code02-results.md#security-compatibility-and-acceptance) | Locally verified on Windows |
-| Repeatable setup, teardown, and isolated failure fixtures on supported platforms | [Windows run](docs/research/code02-results.md#security-compatibility-and-acceptance) and [POSIX wrapper](docs/research/run-code02.sh) | Windows verified; POSIX wrapper execution pending |
-| Clean-checkout CODE-02 reproduction | [Ubuntu CI job](https://github.com/metiago/canis-kms/actions/runs/44202807123/job/134460973098) checks out and builds the repository, but has no CODE-02 step | Open |
-| POSIX CODE-02 reproduction | The same Ubuntu job passes the POSIX security gate, but has no CODE-02 step | Open |
+| Separate server, producer, and delayed consumer in an isolated temporary run | [Windows execution record](docs/research/code02-results.md#commands-and-observed-outcomes), [method](docs/research/code02-method.md#process-and-fixture-layout), and [Ubuntu CI job](https://github.com/metiago/canis-kms/actions/runs/44204796541/job/134467866501) | Complete |
+| Atomic encrypted publication, incomplete-file handling, and authenticated byte comparison | [Normal and negative run records](docs/research/code02-results.md#commands-and-observed-outcomes) and successful Ubuntu normal run | Complete for CODE-02 smoke workload |
+| Sanitized machine-readable metadata and stable run ID | [Local acceptance matrix](docs/research/code02-results.md#security-compatibility-and-acceptance) and [CI artifact listing](docs/research/code02-results.md#ubuntu-ci-reproduction-on-2026-11-17) | Complete for CODE-02 |
+| Repeatable setup, teardown, and isolated failure fixtures on supported platforms | [Windows run](docs/research/code02-results.md#security-compatibility-and-acceptance), [POSIX wrapper](docs/research/run-code02.sh), and successful Ubuntu CI job | Complete for CODE-02 |
+| Clean-checkout CODE-02 reproduction | Ubuntu job checked out commit `23a6583` and completed the documented wrapper successfully | Complete |
+| POSIX CODE-02 reproduction | Same Ubuntu job completed the documented `sh` wrapper on `ubuntu-latest` | Complete |
 
 ## CODE-03 — Decide the supported file-size boundary from measurements (conditional)
 
