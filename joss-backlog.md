@@ -204,11 +204,11 @@ The original research Issues #31–35 retain their numbers. Predefine questions,
 
 ## Issue #32 — Measure normal-operation performance and resource bounds (P0)
 
-- [ ] Run repeated file exchanges across the predefined file sizes, concurrent clients, and processing delays. Report total and component latency, throughput, peak client/server memory, failure counts, and run-to-run variation.
-- [ ] Attribute network and key-service costs separately from local file encryption/decryption where the harness permits. Record the whole-file memory limit and complete CODE-03 if the target workload exceeds it.
-- [ ] Keep any alternative transport or KMS comparison in an isolated research harness; supported CANIS client/server traffic remains TLS 1.3 only.
+- [x] Run repeated file exchanges across the predefined file sizes, consumer worker counts, and processing delays. The [method](docs/research/issue32-method.md) and [Windows results](docs/research/issue32-results.md) report total and component latency, throughput, observed client/server process memory, failure counts, and five-run variation for 40 measured runs.
+- [x] Separate public-key fetch and unwrap request intervals from local envelope encryption/decryption intervals where the research worker exposes those boundaries. Request intervals combine client, loopback transport, and server work; pure network or server-only time was not isolated. The study stayed within CODE-03's 4 MiB/four-worker/512 MiB preflight and makes no general maximum-file-size claim.
+- [x] Keep the non-TLS comparison in a loopback-only research harness compiled outside product artifacts; supported client/server traffic remains TLS 1.3 only.
 
-**Acceptance:** Raw sanitized observations and analysis code reproduce every reported figure or table, including failed runs.
+**Acceptance — bounded Windows characterization recorded:** The [Issue #32 result](docs/research/issue32-results.md) links 438 sanitized artifacts, an [artifact manifest](docs/research/issue32-artifacts.sha256), [analysis code](docs/research/analyze-issue32.py), and a [verifier](docs/research/verify-issue32.py). The final fixed-revision series recorded 20 matched A/B pairs, 4,000/4,000 measured byte-verified files, and zero measured file failures. Its paired differences describe this synthetic loopback workload only; the research transport is not a product feature, and no capacity, security-strength, or production-performance claim follows.
 
 ## Issue #33 — Demonstrate delayed multi-service exchange (P0)
 

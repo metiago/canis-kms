@@ -131,14 +131,20 @@ The Windows campaign command from repository root is:
 
 ```powershell
 mvn --batch-mode --no-transfer-progress clean verify
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/research/run-issue32.ps1
-python docs/research/analyze-issue32.py docs/research/issue32-artifacts
-python docs/research/verify-issue32.py docs/research/issue32-artifacts
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/research/run-issue32.ps1 -Scope campaign -OutputDirectory server/target/issue32-new-series -ExportDirectory docs/research/issue32-new-artifacts
+python docs/research/analyze-issue32.py docs/research/issue32-new-artifacts
+python docs/research/verify-issue32.py docs/research/issue32-new-artifacts --scope campaign
 ```
+
+**Post-execution command correction:** The original prespecified command
+omitted the runner's explicit new output and export directories. This text
+supplies the required arguments for a fresh reproduction. It does not amend
+the workload, matrix, instrumentation, failure criteria, or interpretation.
 
 The runner refuses existing final artifact names, executes all warm-ups and
 measured pairs in the prespecified order, and exports sanitized JSON/CSV into
-`docs/research/issue32-artifacts/` only after each attempt ends. Its summary
+the chosen `-ExportDirectory` only after each attempt ends. The recorded final
+series used `docs/research/issue32-artifacts/`. Its summary
 marker reports recorded runs, not a performance pass. The analysis script
 recomputes per-run and paired metrics from raw CSV/JSON. The verifier checks
 the matrix, fixture counts, hashes, record relationships, and banned secret
