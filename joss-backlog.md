@@ -289,12 +289,12 @@ Current [JOSS submission criteria](https://joss.readthedocs.io/en/latest/submitt
 
 ## JOSS-06 — Authors, funding, acknowledgements, and AI use (P1)
 
-- [ ] Confirm all authors, affiliations, and substantive contributions; replace manuscript placeholders.
-- [ ] Confirm funding, institutional support, acknowledgements, and any conflicts with the authors.
-- [ ] Document actual AI tools, versions, and use across code, documentation, and paper; obtain human review, validation, and author approval.
+- [x] Confirm all authors, affiliations, and substantive contributions; replace manuscript placeholders. The author-approved values and contribution list are recorded in the [JOSS-06 audit](docs/research/joss06-audit.md#author-and-contribution-record) and `paper.md` YAML.
+- [x] Confirm funding, institutional support, acknowledgements, and any conflicts with the authors. The author-approved negative disclosures are recorded in the [JOSS-06 audit](docs/research/joss06-audit.md#funding-support-acknowledgements-and-conflicts) and manuscript acknowledgements.
+- [x] Document actual AI tools, versions, and use across code, documentation, and paper; obtain human review, validation, and author approval. The [JOSS-06 audit](docs/research/joss06-audit.md#ai-use-inventory-and-human-review) records three tools, their individual uses, ChatGPT model families, the author-confirmed limit on reconstructing Codex and Microsoft Copilot versions, and human review and editing.
 - [ ] Set the actual submission date only when submitting.
 
-**Acceptance:** Metadata and disclosures are complete, accurate, and author-approved.
+**Acceptance — complete for candidate preparation:** Author, affiliation, contribution, funding, support, acknowledgement, conflict, per-tool AI use, and human review and editing facts are supplied and recorded. The unavailable exact historical Codex and Microsoft Copilot identifiers are explicitly disclosed. The actual submission date is deferred until submission. See the [JOSS-06 acceptance review](docs/research/joss06-audit.md#acceptance-review).
 
 ## JOSS-07 — Independent review and submission snapshot (P1)
 
@@ -358,19 +358,19 @@ completed checks from the former submission-readiness checklist are retained her
 
 ### Submission check 4 — Complete author, funding, and AI disclosures
 
-- [ ] Confirm the complete author list and each author's substantive contribution to the software and manuscript.
+- [x] Confirm the complete author list and each author's substantive contribution to the software and manuscript. See the [JOSS-06 author and contribution record](docs/research/joss06-audit.md#author-and-contribution-record).
 
-- [ ] Replace YAML name and affiliation placeholders with author-approved metadata and valid JOSS formatting.
+- [x] Replace YAML name and affiliation placeholders with author-approved metadata and valid JOSS formatting. See the [paper YAML](joss-papers/paper.md) and [JOSS-06 audit](docs/research/joss06-audit.md#author-and-contribution-record); final rendering remains part of the candidate manuscript build.
 
-- [ ] Ask all authors to confirm funding, institutional support, and acknowledgements; state these accurately.
+- [x] Ask all authors to confirm funding, institutional support, and acknowledgements; state these accurately. The sole author supplied [negative disclosures](docs/research/joss06-audit.md#funding-support-acknowledgements-and-conflicts), including conflicts of interest.
 
-- [ ] Record generative AI tools and versions used in software, documentation, and manuscript work, with the scope of each use.
+- [x] Record generative AI tools and versions used in software, documentation, and manuscript work, with the scope of each use. The [JOSS-06 audit](docs/research/joss06-audit.md#ai-use-inventory-and-human-review) records each tool's use, ChatGPT model families, and the author-confirmed historical version limit for Codex and Microsoft Copilot.
 
-- [ ] Have human authors review, edit, and validate AI-assisted content, including technical claims, and confirm primary design decisions were made by the human team.
+- [x] Have human authors review, edit, and validate AI-assisted content, including technical claims, and confirm primary design decisions were made by the human team. The sole author's [validation and decision statement](docs/research/joss06-audit.md#ai-use-inventory-and-human-review) covers these requirements.
 
-- [ ] Replace the current draft disclosure with an accurate final statement and obtain author approval.
+- [x] Replace the current draft disclosure with an accurate final statement and obtain author approval. The author-supplied tool names, scope, historical version limit, and responsibility statement are in `paper.md` and the [JOSS-06 audit](docs/research/joss06-audit.md#ai-use-inventory-and-human-review).
 
-**Done when:** No placeholders or unresolved disclosure questions remain, and all authors approve the metadata, acknowledgements, and AI statement.
+**Done for candidate preparation:** The author-approved metadata and disclosures are complete, including the explicit historical version limit. Record the actual submission date only when submitting.
 
 ### Submission check 5 — Prepare and validate the submission snapshot
 
