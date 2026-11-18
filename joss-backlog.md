@@ -106,10 +106,10 @@ records the evidence and limits. No separate local run is required.
 
 ## CODE-03 — Decide the supported file-size boundary from measurements (conditional)
 
-- [ ] First measure the existing `Files.readAllBytes` behavior and record a bounded supported workload. Do not silently describe large-file support before it is tested.
-- [ ] If the target workload exceeds the measured memory bound, implement bounded or streaming client-side envelope processing with explicit authentication-before-release behavior, compatible envelope reading, and tests for tampering, interrupted output, and large files. Otherwise document the measured limit and defer streaming.
+- [x] Measure the existing `Files.readAllBytes` behavior and record a bounded supported workload. The [CODE-03 Windows preflight](docs/research/code03-results.md) verified 4 KiB, 256 KiB, 1 MiB, and 4 MiB in two four-file runs each with four consumer workers; it does not claim larger-file support.
+- [x] The planned synthetic workload fits the observed bound on this host: one supplementary 100-file run verified the Issue #31 size mix, 500 ms arrivals, 60 s delay, and four workers. [CODE-03 results](docs/research/code03-results.md) document the limit and defer streaming. The conditional bounded-processing branch was not triggered.
 
-**Acceptance:** The chosen workload either fits a documented resource bound or has a tested, compatible implementation that does.
+**Acceptance — local preflight complete:** The chosen workload fits the [documented Windows resource bound](docs/research/code03-results.md) for this implementation and configuration. Fixed-revision and full Issue #32 study measurements remain open; this does not establish a general maximum file size.
 
 ## Product security prerequisites — Issues #7, #8, and #36
 
@@ -200,7 +200,7 @@ The original research Issues #31–35 retain their numbers. Predefine questions,
 - [x] Specify testable outcomes for correctness, resource use, and availability, with thresholds if claiming operational suitability. Define the baseline (for example, local AES-GCM cost plus CANIS key fetch/unwrap cost) and what each comparison can establish. Compare with another KMS only if making a comparative claim. [Prespecified protocol](docs/research/issue31-protocol.md); no operational-suitability or comparative KMS claim is planned.
 - [x] Record fixture generation, environment, JDK/Maven versions, warm-up, repetitions, measurement tools, and analysis plan before measuring. Avoid secrets and customer data in published fixtures. [Prespecified protocol](docs/research/issue31-protocol.md).
 
-**Acceptance — protocol recorded:** The [Issue #31 protocol](docs/research/issue31-protocol.md) fixes the synthetic workload, controls, analysis, and interpretation before the Issue #32–35 results are known. Execution awaits CODE-01/CODE-02 and the CODE-03 memory preflight; this status does not assert a measured result.
+**Acceptance — protocol recorded:** The [Issue #31 protocol](docs/research/issue31-protocol.md) fixes the synthetic workload, controls, analysis, and interpretation before the Issue #32–35 results are known. CODE-02 and the local [CODE-03 memory preflight](docs/research/code03-results.md) are complete. The CODE-01 fixed-revision release gate and the full Issue #32–35 execution remain open; this status does not assert a study result.
 
 ## Issue #32 — Measure normal-operation performance and resource bounds (P0)
 
