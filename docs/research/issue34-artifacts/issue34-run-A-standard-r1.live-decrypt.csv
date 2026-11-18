@@ -1,0 +1,2 @@
+identity,key_name,file_ordinal,size_bytes,started_utc,finished_utc,outcome,failure_category,input_sha256,envelope_sha256
+live-decrypt,recipient-a,0,4096,2026-11-18T17:13:44.272683300Z,2026-11-18T17:13:44.377440800Z,verified,none,d5b00e2ca0bcd5a8a39986dff98d52d3dec07d06e1e9b47037c9696f8aac6499,41a2d87a768eaa502ac818263bf7166e70f9cbe3e6a4f1ed58f96481c3c301ac

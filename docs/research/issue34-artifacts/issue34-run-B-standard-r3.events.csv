@@ -1,0 +1,14 @@
+phase,time_utc,operation,process_exit,outcome,failure_category,output_present,log_marker
+setup,2026-11-18T17:23:14.208455200Z,init-db,0,initialized,none,false,none
+baseline,2026-11-18T17:23:16.766725500Z,startup,-1,ready,none,false,tls_listener_started
+baseline,2026-11-18T17:23:18.989462700Z,encrypt,0,published,none,false,none
+baseline,2026-11-18T17:23:20.908529700Z,decrypt,0,verified,none,true,none
+fault,2026-11-18T17:23:21.001586400Z,replace-master,-1,injected,none,false,none
+live,2026-11-18T17:23:22.809606Z,encrypt,0,published,none,false,none
+live,2026-11-18T17:23:24.447910600Z,decrypt,0,verified,none,true,none
+live,2026-11-18T17:23:24.450490800Z,server-log,-1,observed,none,false,tls_listener_started
+faulted_restart,2026-11-18T17:23:25.896559200Z,startup,1,rejected,none,false,database_startup_rejected
+faulted_restart,2026-11-18T17:23:27.133591Z,encrypt,1,failed,io_or_authentication_failure,false,none
+faulted_restart,2026-11-18T17:23:28.597473500Z,decrypt,1,failed,io_or_authentication_failure,false,none
+recovery,2026-11-18T17:23:30.554045200Z,startup,-1,ready,none,false,tls_listener_started
+recovery,2026-11-18T17:23:32.233756500Z,decrypt,0,verified,none,true,none
