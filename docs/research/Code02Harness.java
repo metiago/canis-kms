@@ -565,7 +565,7 @@ public final class Code02Harness {
         return path.toRealPath();
     }
 
-    private static void restrict(Path path, boolean directory) throws IOException {
+    static void restrict(Path path, boolean directory) throws IOException {
         PosixFileAttributeView posix = Files.getFileAttributeView(path, PosixFileAttributeView.class);
         if (posix != null) {
             Files.setPosixFilePermissions(path, directory
