@@ -1,0 +1,7 @@
+event,identity,key_name,file_ordinal,time_utc,detail
+database_initialized,server,,,2026-11-18T15:28:28.987664800Z,new_fixture
+server_ready,server,,,2026-11-18T15:28:30.903048500Z,first_process
+keys_created,server,recipient-a,,2026-11-18T15:28:31.177549700Z,
+all_published,producer-a,,,2026-11-18T15:28:32.602671900Z,1
+consumer_started,recipient-a,recipient-a,,2026-11-18T15:28:33.555290500Z,
+tag_copy_tampered,fixture,recipient-a,1,2026-11-18T15:28:35.075560Z,original_preserved
