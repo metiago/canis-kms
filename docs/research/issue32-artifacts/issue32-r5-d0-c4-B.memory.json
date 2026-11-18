@@ -1,0 +1,18 @@
+﻿{
+    "schema":  "issue32-os-memory-v1",
+    "run_id":  "issue32-r5-d0-c4-B",
+    "pair_sample_count":  934,
+    "pair_max_sample_gap_ms":  180,
+    "server_pid":  11116,
+    "server_peak_working_set_bytes":  102731776,
+    "server_sampled_working_set_peak_bytes":  99115008,
+    "server_sample_count":  376,
+    "producer_pid":  24192,
+    "producer_peak_working_set_bytes":  165359616,
+    "producer_sampled_working_set_peak_bytes":  165355520,
+    "producer_sample_count":  366,
+    "consumer_pid":  22400,
+    "consumer_peak_working_set_bytes":  171802624,
+    "consumer_sampled_working_set_peak_bytes":  171798528,
+    "consumer_sample_count":  359
+}

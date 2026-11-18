@@ -1,0 +1,7 @@
+run_id,role,pid
+issue32-r4-d0-c1-B,server,21400
+issue32-r4-d0-c1-B,producer,24072
+issue32-r4-d0-c1-B,consumer,30704
+issue32-r4-d0-c1-A,server,26344
+issue32-r4-d0-c1-A,producer,28412
+issue32-r4-d0-c1-A,consumer,19644

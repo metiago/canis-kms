@@ -69,6 +69,8 @@ def collect(directory):
             memory = read_json(directory / f"{run_id}.memory.json")
             producer = {int(row["ordinal"]): row for row in read_csv(directory / f"{run_id}.producer.csv")}
             consumer = {int(row["ordinal"]): row for row in read_csv(directory / f"{run_id}.consumer.csv")}
+            producer_connections = read_csv(directory / f"{run_id}.producer-connections.csv")
+            consumer_connections = read_csv(directory / f"{run_id}.consumer-connections.csv")
             latencies = []
             processing = []
             verified_bytes = 0
@@ -113,6 +115,12 @@ def collect(directory):
                 })
             complete = raw["status"] == "passed" and raw["successful_files"] == raw["planned_files"]
             interval = (last_finish - first_planned).total_seconds() if complete and first_planned and last_finish else None
+            run_files = [row for row in files if row["run_id"] == run_id]
+            def file_median(field):
+                return median([row[field] for row in run_files if row[field] is not None])
+            def connection_median(connection_rows):
+                return median([int(row["connect_login_ns"]) / 1_000_000 for row in connection_rows
+                               if row["outcome"] == "connected"])
             run = {
                 "run_id": run_id, "pair_id": pair_id, "mode": mode,
                 "warmup": raw["warmup"], "repetition": raw["repetition"],
@@ -121,6 +129,12 @@ def collect(directory):
                 "planned_files": raw["planned_files"], "successful_files": raw["successful_files"],
                 "failed_files": raw["failed_files"], "run_duration_ms": raw["run_duration_ms"],
                 "median_e2e_ms": median(latencies), "median_processing_ms": median(processing),
+                "median_fetch_ms": file_median("fetch_ms"),
+                "median_local_envelope_ms": file_median("local_envelope_ms"),
+                "median_unwrap_ms": file_median("unwrap_ms"),
+                "median_local_decrypt_verify_ms": file_median("local_decrypt_verify_ms"),
+                "producer_connect_login_ms": connection_median(producer_connections),
+                "consumer_connect_login_median_ms": connection_median(consumer_connections),
                 "throughput_files_s": raw["successful_files"] / interval if interval and interval > 0 else None,
                 "throughput_mib_s": verified_bytes / 1048576 / interval if interval and interval > 0 else None,
                 "server_peak_working_set_bytes": memory.get("server_peak_working_set_bytes"),
@@ -143,7 +157,14 @@ def collect(directory):
             "pair_id": pair_id, "repetition": a["repetition"], "delay_ms": a["delay_ms"],
             "workers": a["workers"], "warmup": a["warmup"], "paired": paired,
             "latency_difference_ms": a["median_e2e_ms"] - b["median_e2e_ms"] if paired else None,
+            "fetch_difference_ms": a["median_fetch_ms"] - b["median_fetch_ms"] if paired else None,
+            "unwrap_difference_ms": a["median_unwrap_ms"] - b["median_unwrap_ms"] if paired else None,
+            "producer_connect_difference_ms": a["producer_connect_login_ms"] - b["producer_connect_login_ms"]
+            if paired else None,
+            "consumer_connect_difference_ms": a["consumer_connect_login_median_ms"]
+            - b["consumer_connect_login_median_ms"] if paired else None,
             "throughput_difference_files_s": a["throughput_files_s"] - b["throughput_files_s"] if paired else None,
+            "throughput_difference_mib_s": a["throughput_mib_s"] - b["throughput_mib_s"] if paired else None,
             "server_memory_difference_bytes": a["server_peak_working_set_bytes"] - b["server_peak_working_set_bytes"]
             if paired and a["server_peak_working_set_bytes"] is not None and b["server_peak_working_set_bytes"] is not None else None,
             "producer_memory_difference_bytes": a["producer_peak_working_set_bytes"] - b["producer_peak_working_set_bytes"]
@@ -183,7 +204,18 @@ def main():
             "runs": len(group), "successful_files": sum(run["successful_files"] for run in group),
             "failed_files": sum(run["failed_files"] for run in group),
             "latency_ms": spread([run["median_e2e_ms"] for run in valid if run["median_e2e_ms"] is not None]),
+            "fetch_ms": spread([run["median_fetch_ms"] for run in valid if run["median_fetch_ms"] is not None]),
+            "unwrap_ms": spread([run["median_unwrap_ms"] for run in valid if run["median_unwrap_ms"] is not None]),
+            "local_envelope_ms": spread([run["median_local_envelope_ms"] for run in valid
+                                         if run["median_local_envelope_ms"] is not None]),
+            "local_decrypt_verify_ms": spread([run["median_local_decrypt_verify_ms"] for run in valid
+                                               if run["median_local_decrypt_verify_ms"] is not None]),
+            "producer_connect_login_ms": spread([run["producer_connect_login_ms"] for run in valid
+                                                 if run["producer_connect_login_ms"] is not None]),
+            "consumer_connect_login_ms": spread([run["consumer_connect_login_median_ms"] for run in valid
+                                                 if run["consumer_connect_login_median_ms"] is not None]),
             "throughput_files_s": spread([run["throughput_files_s"] for run in valid if run["throughput_files_s"] is not None]),
+            "throughput_mib_s": spread([run["throughput_mib_s"] for run in valid if run["throughput_mib_s"] is not None]),
             "server_peak_bytes": spread([run["server_peak_working_set_bytes"] for run in valid
                                          if run["server_peak_working_set_bytes"] is not None]),
             "producer_peak_bytes": spread([run["producer_peak_working_set_bytes"] for run in valid
@@ -214,7 +246,12 @@ def main():
         summary["paired_groups"].append({
             "delay_ms": delay, "workers": workers, "pairs": len(group),
             "latency_difference_ms": spread([pair["latency_difference_ms"] for pair in group]),
+            "fetch_difference_ms": spread([pair["fetch_difference_ms"] for pair in group]),
+            "unwrap_difference_ms": spread([pair["unwrap_difference_ms"] for pair in group]),
+            "producer_connect_difference_ms": spread([pair["producer_connect_difference_ms"] for pair in group]),
+            "consumer_connect_difference_ms": spread([pair["consumer_connect_difference_ms"] for pair in group]),
             "throughput_difference_files_s": spread([pair["throughput_difference_files_s"] for pair in group]),
+            "throughput_difference_mib_s": spread([pair["throughput_difference_mib_s"] for pair in group]),
             "server_memory_difference_bytes": spread([pair["server_memory_difference_bytes"] for pair in group
                                                       if pair["server_memory_difference_bytes"] is not None]),
             "producer_memory_difference_bytes": spread([pair["producer_memory_difference_bytes"] for pair in group
