@@ -75,7 +75,11 @@ generated Maven outputs. See [the method](research/joss03-method.md) and
 For a producer, delayed consumer, and packaged CANIS server in three separate
 processes, use the [CODE-02 research harness](research/code02-method.md). Its
 temporary server database and shared directory are isolated from this focused
-JUnit example, and its result files contain only sanitized metadata.
+JUnit example, and its result files contain only sanitized metadata. On POSIX,
+run `sh docs/research/run-code02.sh --scenario normal --files 1 --size 4096
+--delay-ms 1000` from the repository root; the Ubuntu CI job uses this same
+wrapper and workload. A passing run prints `CODE02_RESULT=passed
+scenario=normal verified=1/1` and writes sanitized JSON and CSV records.
 
 ## External configuration for a long-running server
 

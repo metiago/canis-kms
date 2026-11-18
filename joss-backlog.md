@@ -73,12 +73,27 @@ with 158 tests and eight skips. The author reports a Fedora WSL build, but the a
 Surefire XML identifies Windows 11 and skips the POSIX permission and symlink cases; retain
 Fedora-specific evidence before counting a POSIX pass. The extracted archive lacks `.git`,
 and no process-harness run was reported for it; this does not close the clean-checkout gate.
-The author later reported a passing Ubuntu Actions build but a Windows Actions failure
-with 38 `unsafe_permissions` errors in server tests. A test-fixture ACL correction and
-new Windows regression test passed a local Windows `clean verify` run (159 tests, zero
-failures or errors, eight skips); the [result record](docs/research/code02-results.md#github-windows-ci-failure-and-local-fixture-correction-on-2026-11-17)
-does not count this as a CI pass. Rerun the committed correction on both Actions runners
-and retain their reports before closing the CI or POSIX gates.
+The earlier Windows Actions failure with 38 `unsafe_permissions` errors and the local
+test-fixture ACL correction are recorded in the [result record](docs/research/code02-results.md#github-windows-ci-failure-and-local-fixture-correction-on-2026-11-17).
+At commit `e94c93bd5fdd62588b2d3413c1819523f9d8a864`, the
+[Ubuntu CI job](https://github.com/metiago/canis-kms/actions/runs/44202807123/job/134460973098)
+passed repository checkout, Java 21 setup, `mvn clean verify`, and the POSIX permission/symlink
+coverage gate. The [Windows job](https://github.com/metiago/canis-kms/actions/runs/44202807123/job/134460972632)
+also passed at this revision. The [committed workflow](.github/workflows/ci.yml)
+has no CODE-02 harness step, and neither job lists one. Maven does not invoke the separate-process
+`run-code02` wrapper. Therefore this CI run establishes a clean-checkout build and POSIX security
+test coverage, but neither clean-checkout nor POSIX reproduction of the CODE-02 exchange.
+No separate local run is required once a successful Ubuntu CI job actually executes the
+documented CODE-02 wrapper and retains its sanitized result.
+
+| CODE-02 requirement | Evidence | Status |
+| --- | --- | --- |
+| Separate server, producer, and delayed consumer in an isolated temporary run | [Windows execution record](docs/research/code02-results.md#commands-and-observed-outcomes) and [method](docs/research/code02-method.md#process-and-fixture-layout) | Locally verified on Windows; CI harness execution pending |
+| Atomic encrypted publication, incomplete-file handling, and authenticated byte comparison | [Normal and negative run records](docs/research/code02-results.md#commands-and-observed-outcomes) | Locally verified on Windows; CI harness execution pending |
+| Sanitized machine-readable metadata and stable run ID | [Local acceptance matrix](docs/research/code02-results.md#security-compatibility-and-acceptance) | Locally verified on Windows |
+| Repeatable setup, teardown, and isolated failure fixtures on supported platforms | [Windows run](docs/research/code02-results.md#security-compatibility-and-acceptance) and [POSIX wrapper](docs/research/run-code02.sh) | Windows verified; POSIX wrapper execution pending |
+| Clean-checkout CODE-02 reproduction | [Ubuntu CI job](https://github.com/metiago/canis-kms/actions/runs/44202807123/job/134460973098) checks out and builds the repository, but has no CODE-02 step | Open |
+| POSIX CODE-02 reproduction | The same Ubuntu job passes the POSIX security gate, but has no CODE-02 step | Open |
 
 ## CODE-03 — Decide the supported file-size boundary from measurements (conditional)
 

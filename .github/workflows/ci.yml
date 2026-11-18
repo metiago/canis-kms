@@ -45,6 +45,30 @@ jobs:
         if: runner.os == 'Linux'
         run: java docs/research/VerifyPosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
 
+      - name: Reproduce CODE-02 asynchronous exchange
+        if: runner.os == 'Linux'
+        run: |
+          set +e
+          sh docs/research/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000 --output server/target/code02-ci.json > server/target/code02-ci.log 2>&1
+          status=$?
+          printf 'exit_status=%s\n' "$status" > server/target/code02-ci.exit-status.txt
+          cat server/target/code02-ci.log
+          exit "$status"
+
+      - name: Upload CODE-02 evidence
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: code02-evidence-ubuntu-latest
+          path: |
+            server/target/code02-ci.log
+            server/target/code02-ci.exit-status.txt
+            server/target/code02-ci.json
+            server/target/code02-ci.producer.csv
+            server/target/code02-ci.consumer.csv
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4

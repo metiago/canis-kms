@@ -26,6 +26,14 @@ prints `CODE02_RESULT=passed scenario=normal verified=1/1` on success and exits 
 the run JSON plus `*.producer.csv` and `*.consumer.csv` sanitized file records next to it.
 Use different output names for separate runs. Do not publish raw JVM or server logs.
 
+The Ubuntu CI job uses the same POSIX wrapper and normal scenario from this section, with
+`--output server/target/code02-ci.json`. It uploads `code02-evidence-ubuntu-latest` containing
+the sanitized JSON and producer/consumer CSVs, the wrapper's console log, and an
+`exit_status` text file. The job fails when the wrapper exits nonzero. Its artifact selection
+does not include the private temporary run root, generated TLS stores, master key, plaintext,
+or raw server/worker logs. CI artifacts are retained for seven days; cite the job and download
+the artifact while available when recording a reproduction result.
+
 The negative smoke cases use one file and require exit 0 only when the expected operation
 fails closed, no recovered output is released, and the shared-directory invariant holds:
 
