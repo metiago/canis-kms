@@ -53,6 +53,8 @@ try {
         sampler = 'Windows Get-Process WorkingSet64 and PeakWorkingSet64 approximately every 100 ms'
         clock = 'System.nanoTime in workers; UTC wall clock across processes'
         tls = 'TLS 1.3 mTLS, existing JSSE cipher policy; measured negotiated suite not observed'
+        inbound_firewall_profiles = $null
+        java_firewall_program_filter_count = $null
     }
     try {
         $processor = Get-CimInstance Win32_Processor | Select-Object -First 1
@@ -64,6 +66,15 @@ try {
         if ($null -ne $drive) { $environment.filesystem = $drive.FileSystem }
     } catch {
         # Missing host metadata remains null rather than an inferred value.
+    }
+    try {
+        $environment.inbound_firewall_profiles = @(Get-NetFirewallProfile -PolicyStore ActiveStore |
+            Select-Object Name,Enabled,DefaultInboundAction)
+        $environment.java_firewall_program_filter_count = @(
+            Get-NetFirewallApplicationFilter | Where-Object { $_.Program -match 'java(w)?\.exe' }
+        ).Count
+    } catch {
+        # Firewall state is evidence only when the host permits a read-only query.
     }
     $environment | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $output 'environment.json') -Encoding UTF8
 
@@ -222,7 +233,7 @@ try {
         }
         New-Item -ItemType Directory -Path $export | Out-Null
         foreach ($file in Get-ChildItem -LiteralPath $output -File) {
-            if ($file.Extension -in @('.csv', '.json') -or $file.Name -match '\.heap\.txt$') {
+            if ($file.Extension -in @('.csv', '.json') -or $file.Name -match '-heap\.txt$') {
                 Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $export $file.Name)
             }
         }

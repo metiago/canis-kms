@@ -208,7 +208,15 @@ public final class Issue32Harness {
                 try { Code02Harness.deleteRunRoot(root, prefix); }
                 catch (IOException e) { allPassed = false; setupFailure = "fixture_cleanup_failed"; }
             }
-            if (!allPassed) System.err.println("ISSUE32_PRIVATE_EVIDENCE=" + root);
+            if (!allPassed) {
+                String record = "{\n  \"schema\": \"issue32-pair-failure-v1\",\n"
+                        + "  \"pair_id\": \"" + prefix + "\",\n"
+                        + "  \"failure_category\": \"" + setupFailure + "\",\n"
+                        + "  \"private_fixture_retained\": true\n}\n";
+                Files.writeString(output.resolve(prefix + ".pair-failure.json"), record, StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE_NEW);
+                System.err.println("ISSUE32_PRIVATE_EVIDENCE=" + root);
+            }
         }
         System.out.println("ISSUE32_PAIR=" + (allPassed ? "passed" : "failed") + " id=" + prefix
                 + " files=" + files + " order=" + order + " category=" + setupFailure);

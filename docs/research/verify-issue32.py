@@ -29,6 +29,8 @@ def verify(directory, scope):
     require(len(schedule) == expected_pairs, "unexpected pair count")
     environment = record(directory / "environment.json")
     require(environment["schema"] == "issue32-environment-v1", "environment schema")
+    if scope == "campaign":
+        require(environment["dirty_tree"] is False, "campaign source tree was dirty")
     source_revisions = set()
     jar_hashes = set()
     measured = Counter()
@@ -69,10 +71,19 @@ def verify(directory, scope):
             producer_connections = rows(directory / f"{run_id}.producer-connections.csv")
             consumer_connections = rows(directory / f"{run_id}.consumer-connections.csv")
             require(run["schema"] == "issue32-run-v1" and run["run_id"] == run_id, "run identity")
+            if scope == "campaign":
+                require(run["dirty_tree"] is False, "run source tree was dirty")
             require(run["mode"] == mode and run["repetition"] == repetition
                     and run["delay_ms"] == delay and run["workers"] == workers
                     and run["warmup"] == warmup and run["planned_files"] == count, "setting mismatch")
             require(run["status"] == "passed" and run["failure_category"] == "none", "run failure")
+            if mode == "A":
+                require(run["tls_probe_protocol"] == "TLSv1.3" and run["tls_probe_suite"] in (
+                    "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"),
+                    "TLS preflight probe")
+            else:
+                require(run["tls_probe_protocol"] == "not_applicable"
+                        and run["tls_probe_suite"] == "not_applicable", "plain fixture probe")
             require(run["successful_files"] == count and run["failed_files"] == 0, "verified count")
             require(run["producer_exit_code"] == 0 and run["consumer_exit_code"] == 0, "worker exit")
             require(run["run_duration_ms"] > 0, "duration")
