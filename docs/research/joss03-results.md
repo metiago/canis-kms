@@ -120,3 +120,58 @@ The JOSS-03 acceptance criterion remains open until a non-author follows the
 published README on a fixed revision and reproduces the workflow and tests.
 No research adoption, comparative advantage, performance metric, or
 production security-strength conclusion follows from this result.
+
+## Independent non-author review on 2026-11-19
+
+This section records a non-author execution in a clean, separate Windows
+checkout at commit
+`e302964d6ed9208be43849191da9c8f2f302c76b`. The path supplied to the
+reviewer used `canis-reviewer`, while the existing checkout directory was
+`canis-reviwer`; the reviewer recorded the mismatch and used the existing
+checkout. `git status --short` was empty before and after execution. Java 21,
+`javac`, `keytool`, and Maven 3.9.12 were available.
+
+The documented `mvn --batch-mode --no-transfer-progress clean verify` exited 0
+with `BUILD SUCCESS`: client 60 tests, zero failures/errors, five skips; server
+99 tests, zero failures/errors, three skips. The reviewer ran the PowerShell
+JOSS-03 demo separately; it exited 0 and printed both the byte-match and
+post-stop connection-rejection markers. Its Surefire XML reported one test,
+zero failures/errors/skips.
+
+Following the guide's linked [CODE-02 method](code02-method.md), the reviewer
+ran the Windows normal wrapper with one 4096-byte file and a 1000 ms delay.
+It exited 0, reported `CODE02_RESULT=passed scenario=normal verified=1/1`,
+and produced sanitized JSON and producer/consumer CSV records. The JSON
+recorded `outcome=passed`, `verified_files=1`, and distinct server, producer,
+and consumer process IDs (28380, 10992, and 22532). The producer CSV recorded
+`published`; the consumer CSV recorded `verified,none`. The two documented
+negative wrappers also exited 0. Their JSON records reported `outcome=passed`
+and `verified_files=0`; the consumer CSVs recorded failure categories
+`credentials_rejected` and `io_or_authentication_failure`, respectively.
+The observed result files were named
+`code02-2026-11-19T16-37-30.084291500Z-b1772c25.json` (normal),
+`code02-2026-11-19T16-38-19.777096900Z-ec15cadc.json` (invalid credentials),
+and `code02-2026-11-19T16-38-59.533428400Z-b426fe1b.json` (invalid
+certificate), each under `server/target/` in the review checkout. Their
+producer and consumer CSVs shared the same basenames. The normal JSON recorded
+`dirty_tree=false` and the reviewed commit; both negative JSON records did too.
+
+The reviewer inspected `.github/workflows/ci.yml` and checked the public
+[GitHub Actions run](https://github.com/metiago/canis-kms/actions/runs/44434664908)
+for the reviewed commit. The [Windows job](https://github.com/metiago/canis-kms/actions/runs/44434664908/job/135260393886)
+and [Ubuntu job](https://github.com/metiago/canis-kms/actions/runs/44434664908/job/135260394233)
+both had `completed/success` conclusions. The Ubuntu workflow requires the
+POSIX permission/symlink coverage command and CODE-02 normal wrapper; the
+successful job supports those gates, although the reviewer did not run the
+POSIX command locally or download CI logs and artifacts.
+
+**Acceptance review:** The non-author completed the guide's clean-checkout
+tests and separate-process synthetic proof of concept without an undocumented
+tutorial command. This supersedes the historical working-tree-only conclusion
+above for the reviewer workflow. The review did not execute a long-running
+server with operator-provisioned TLS and master-key files, verify a stable
+private vulnerability-reporting route, or establish six months of active
+public development. The reviewed commit is later than the tagged
+`v0.1.0-rc.1` candidate, so it is not independent reproduction of that exact
+tag. JOSS-03 remains open on those checklist gaps; the JOSS-07 and broader
+submission gates remain separate.
