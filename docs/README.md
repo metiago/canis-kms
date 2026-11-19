@@ -1,6 +1,7 @@
 # CANIS documentation
 
-Use the [unified backlog](../joss-backlog.md) for every open task and phase checkpoint.
+Use the [JOSS publication backlog](../joss-backlog.md) for submission work and the
+[product backlog](../app-prod-grade-backlog.md) for later engineering work.
 The documents here describe current behavior, operational setup, tests, and recorded evidence.
 
 ## Start here
