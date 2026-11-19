@@ -28,10 +28,10 @@
 ## Existing evidence and its boundary
 
 - [JOSS-01 method](docs/research/joss01-method.md) and [results](docs/research/joss01-results.md): the focused synthetic shared-trust boundary test passed again on 2026-11-17 at `0e9c889e49b2928c2c9cd84fadaf0368d7c41c91` (one test, zero failures, errors, or skips). It confirmed recovery by `recipient` and `observer` and rejection of an altered password. This is narrow developer research use of CANIS as the artifact under study. The JOSS-01 record describes a dated TOTVS recommendation letter reporting production use of a predecessor; the authors identify this repository as its open-source continuation. Subsequent Issues #31–35 produced bounded research records; the original local controls and service-outage series remain unexecuted.
-- [JOSS-02 claim audit](docs/research/joss02-claim-evidence.md) and [results](docs/research/joss02-results.md): working-tree TLS, file workflow, and security-claim checks. Production Issues #7, #8, and #36 still need a release decision.
+- [JOSS-02 fixed candidate](docs/research/joss02-candidate-release.md), [validation](docs/research/joss02-validation.md), [final claim audit](docs/research/joss02-final-claim-audit.md), and [release boundary](docs/research/joss02-release-boundary-final.md): the committed paper and code passed a Windows full-suite run and four selected smokes. App Issues #7, #8, and #36 are explicitly scoped for this research candidate; broader product work remains.
 - [JOSS-03 reviewer guide](docs/reviewer-guide.md), [method](docs/research/joss03-method.md), and [results](docs/research/joss03-results.md): a synthetic producer-to-recipient demonstration and Windows tests. Independent checkout, published CI, and POSIX execution are unverified.
 - [JOSS-04 results](docs/research/joss04-results.md) and [bibliography](joss-papers/paper.bib): four verified bibliography entries. [JOSS-05 results](docs/research/joss05-results.md) and [draft PDF](docs/research/joss05-draft.pdf): an adapted Windows build with rendered references, not the canonical build with final metadata.
-- Some earlier JOSS records above were produced on working trees and committed in `0648976`; the 2026-11-17 JOSS-01 rerun was a focused test on a later commit with unrelated backlog edits in the working tree. Subsequent [Issue #35 synthesis](docs/research/issue35-results.md) records the bounded CODE-02/03 and Issues #31–34 observations, including one clean fixed-revision Issue #32 campaign and several dirty-tree runs. No tagged candidate release, independent candidate reproduction, or completed original Phase 2 question has been established. The [manuscript](joss-papers/paper.md) and detailed submission checks below must be checked again against the eventual candidate.
+- Some earlier JOSS records above were produced on working trees and committed in `0648976`; the 2026-11-17 JOSS-01 rerun was a focused test on a later commit with unrelated backlog edits in the working tree. Subsequent [Issue #35 synthesis](docs/research/issue35-results.md) records bounded CODE-02/03 and Issues #31–34 observations, including one clean fixed-revision Issue #32 campaign and several dirty-tree runs. JOSS-02 has now tested and audited the [committed candidate](docs/research/joss02-candidate-release.md) without rerunning those campaigns. No tagged/public candidate release, independent candidate reproduction, or completed original Phase 2 question has been established.
 
 ## JOSS-01 — Establish and document research significance (P0)
 
@@ -249,20 +249,25 @@ Current [JOSS submission criteria](https://joss.readthedocs.io/en/latest/submitt
 ## Submission decision gates
 
 - [ ] **Gate A — Research fit (P0):** Substantiate the question, audience, actual research use, and distinct need beyond existing KMS or envelope-encryption tools.
-- [ ] **Gate B — Supported release (P0):** Fix a candidate revision; verify the TLS-only workflow and every material paper claim. Resolve or explicitly scope app Issues #7, #8, and #36 under the chosen shared-trust model.
+- [x] **Gate B — Supported release (P0):** The fixed [JOSS-02 candidate](docs/research/joss02-candidate-release.md) passed [Windows validation and four smoke checks](docs/research/joss02-validation.md); the [final claim audit](docs/research/joss02-final-claim-audit.md) and [release boundary](docs/research/joss02-release-boundary-final.md) reconcile the manuscript and explicitly scope app Issues #7, #8, and #36. This is a local supported research candidate, not the separate independent-reproduction or public-archive gate.
 - [ ] **Gate C — Reproducibility (P0):** A non-author can install, test, run the separate-process example, and reproduce at least one meaningful evaluation.
 - [ ] **Gate D — Submission artifacts (P1):** Complete manuscript, references, author metadata, AI disclosure, and public candidate snapshot. Plan a permanent archive; JOSS requests the archive DOI after successful review.
 
 ## JOSS-02 — Freeze and verify the research release boundary (P0)
 
-- [ ] On the candidate revision, verify official-client TLS 1.3 mutual authentication, certificate and hostname validation, and no plaintext fallback.
-- [ ] Run the complete file workflow and negative TLS, credential, shared-access, and storage-tampering tests; retain sanitized outcomes and explain skips.
-- [ ] Resolve or explicitly scope app Issues #7, #8, and #36, including database recreation, stored-key validation, private-key exposure, and the documented shared-trust blast radius.
-- [ ] Repeat the [claim-evidence audit](docs/research/joss02-claim-evidence.md) against the fixed code and final paper; record commit, OS, JDK/Maven versions, tests, and known limitations.
+- [x] On the [candidate revision](docs/research/joss02-candidate-release.md), verify official-client TLS 1.3 mutual authentication, certificate and hostname validation, and no plaintext fallback. The [fixed suite](docs/research/joss02-validation.md#fixed-revision-build-and-tests) passed the client and server TLS cases.
+- [x] Run the complete file workflow and negative TLS, credential, shared-access, and storage-tampering tests; retain sanitized outcomes and explain skips. The [validation record](docs/research/joss02-validation.md) reports 159 tests, zero failures/errors, eight explained Windows skips, and four selected clean-revision smokes.
+- [x] Resolve or explicitly scope app Issues #7, #8, and #36, including database recreation, stored-key validation, private-key exposure, and the documented shared-trust blast radius. [CODE-01](docs/code01-integrity.md) and the [final boundary](docs/research/joss02-release-boundary-final.md#release-decision-and-impact) state the implemented checks and remaining filesystem, audit, and authorization limits.
+- [x] Repeat the claim-evidence audit against the fixed code and committed paper; record commit, OS, JDK/Maven versions, tests, and known limitations. See the [final claim audit](docs/research/joss02-final-claim-audit.md), [candidate](docs/research/joss02-candidate-release.md), and [validation](docs/research/joss02-validation.md).
 
-**Current review — manuscript and source reconciled; fixed-release gate open:** The [JOSS-02 audit](docs/research/joss02-audit.md) and [claim-to-release boundary](docs/research/joss02-release-boundary.md) map every material claim in the revised paper to repository source or bounded research evidence, including execution revisions and reproduction routes. The source snapshot inspected before these documentation edits was clean `5632a8fa563f01a1c03f5a1632cff80165c6c543`; no full JOSS-02 test run, tagged candidate, or independent reproduction is recorded for that snapshot or the revised paper. Earlier [JOSS-02 results](docs/research/joss02-results.md) predate the committed CODE-01 changes. The [CODE-01 record](docs/code01-integrity.md) contains local Windows verification before its implementation commit, while the shared-access blast radius, filesystem durability, and audit-integrity limits remain explicit release considerations. Keep all four candidate-revision tasks unchecked until an exact-revision report and release decision exist.
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| Fixed source and manuscript revision | Candidate `cd1ebeb32bbd0b6b2ebd42a29f72e3dac8b01694`, clean at selection and during smoke executions | Complete for JOSS-02 |
+| Exact-revision build, official workflow, and negative security cases | `mvn clean verify` passed; JOSS-01, CODE-02 normal, Issue #33 D, and Issue #34 E smokes passed; Windows skips explained in validation | Complete on tested Windows host |
+| App #7/#8/#36 release scope | CODE-01 fixed tests and final supported/not-supported boundary | Complete as an explicit research-candidate decision; broader product hardening remains |
+| Every material manuscript claim reconciled | Final five-column claim audit retains historical execution states and qualifications; no unsupported or obsolete material claim remains | Complete for the committed paper |
 
-**Acceptance:** Every material capability and limitation in the paper matches the tested release, with no known contradiction. A working-tree audit does not close this gate.
+**JOSS-02 status — complete for the fixed Windows research candidate.** The candidate source and manuscript were committed before validation. Its complete Maven run and four functional smokes passed; every material paper claim is reconciled with candidate source/tests or explicitly qualified retained study evidence. No full research campaign was rerun. Earlier [JOSS-02 audit](docs/research/joss02-audit.md) and [release-boundary draft](docs/research/joss02-release-boundary.md) remain historical pre-validation records. Independent non-author candidate reproduction, POSIX checks for this commit, public snapshot/tag, canonical paper build, original local controls, and availability-window study remain separate open gates; this decision does not assert their completion.
 
 ## JOSS-03 — Installation, examples, documentation, and CI (P0/P1)
 
@@ -308,7 +313,7 @@ Current [JOSS submission criteria](https://joss.readthedocs.io/en/latest/submitt
 
 +## Detailed submission checks
 
-The checked items below reflect prior working-tree evidence, not a verified candidate release.
+The checked items below have mixed provenance: older working-tree evidence remains historical, while the JOSS-02 items linked to the fixed [candidate validation](docs/research/joss02-validation.md) have exact-revision Windows evidence.
 These granular checks correspond to JOSS-02 through JOSS-07 above. All 18 open and 11
 completed checks from the former submission-readiness checklist are retained here.
 
@@ -326,7 +331,7 @@ completed checks from the former submission-readiness checklist are retained her
 
 ### Submission check 2 — Make the supported client/server transport coherent
 
-- [ ] Review the server's TLS 1.3 mutual-authentication requirements and the client's current TLS `SocketClient` implementation against a fixed candidate revision.
+- [x] Review the server's TLS 1.3 mutual-authentication requirements and the client's `SocketClient` implementation against the [fixed candidate and passing TLS tests](docs/research/joss02-validation.md#fixed-revision-build-and-tests).
 
 - [x] Implement client-side TLS 1.3 using externally supplied trust and identity material, with server certificate and hostname validation. Retain the project's no-plaintext-fallback requirement. Evidence: [`SocketClient.java`](client/src/main/java/io/canis/jpaw/client/SocketClient.java), [`TlsContextFactory.java`](client/src/main/java/io/canis/jpaw/config/TlsContextFactory.java), and the [JOSS-02 test results](docs/research/joss02-results.md).
 
