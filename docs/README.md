@@ -10,6 +10,7 @@ The documents here describe current behavior, operational setup, tests, and reco
 
 ## Security and operations
 
+- [GitHub Release setup](research/jreleaser-setup.md): source archive, checksums, release notes, workflow, and rollback.
 - [Threat model](threat-model.md): trust boundaries and current shared-access policy.
 - [Master key](master-key.md): external key provisioning and database recovery requirements.
 - [CODE-01 integrity evidence](code01-integrity.md): local acceptance mapping, test results, and release limits.
