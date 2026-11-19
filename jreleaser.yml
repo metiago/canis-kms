@@ -1,0 +1,31 @@
+project:
+  name: canis-kms
+  description: Research candidate for asynchronous encrypted file exchange
+  license: MIT
+  authors:
+    - Tiago Souza
+  links:
+    homepage: https://github.com/metiago/canis-kms
+
+release:
+  github:
+    owner: metiago
+    name: canis-kms
+    tagName: 'v{{projectVersion}}'
+    releaseName: 'CANIS-KMS {{projectVersion}} - JOSS research candidate'
+    skipTag: true
+    overwrite: false
+    draft: false
+    makeLatest: false
+    prerelease:
+      enabled: true
+    changelog:
+      external: docs/research/joss02-release-notes.md
+
+files:
+  artifacts:
+    - path: 'target/release/canis-kms-{{projectVersion}}-src.zip'
+
+checksum:
+  algorithms:
+    - SHA-256
