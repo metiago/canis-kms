@@ -1,6 +1,7 @@
 # Research evidence index
 
-The [unified backlog](../../joss-backlog.md) is the only active task checklist.
+The [JOSS publication backlog](../../joss-backlog.md) tracks submission work; the
+[product backlog](../../app-prod-grade-backlog.md) tracks later engineering work.
 Files here retain the methods, observed results, claim audits, and sanitized artifacts used
 to review the CANIS research and JOSS work. Working-tree observations are not fixed-release
 verification.
