@@ -20,6 +20,7 @@ verification.
 | JOSS-04 bibliography | [Method](joss04-method.md) | [Results](joss04-results.md) | [Matrix](joss04-claim-evidence.md) | Paper build commands in method |
 | JOSS-05 manuscript alignment | [Method](joss05-method.md) | [Results](joss05-results.md) | [Matrix](joss05-claim-evidence.md) | [Static check](check-joss05-paper.ps1), [Windows draft](build-joss05-windows.ps1) |
 | JOSS-06 metadata and disclosure | [Author-approved audit](joss06-audit.md) | [Committed manuscript](../../joss-papers/paper.md) | [Acceptance review](joss06-audit.md#acceptance-review) | Compare paper YAML/disclosures with the audit; actual submission date is deferred |
+| JOSS-07 submission snapshot | [Backlog criteria](../../joss-backlog.md#joss-07--independent-review-and-submission-snapshot-p1) | [Tagged-release snapshot](joss07-snapshot.md), [final pre-submission audit](joss-final-pre-submission-audit.md) | [Requirement matrix](joss07-snapshot.md#requirement-matrix) | Exact-tag Windows verification and adapted paper build passed; independent reproduction and canonical paper build remain open |
 
 The JOSS-02, JOSS-03, and JOSS-05 `*-suite-report.csv` and `*-test-cases.csv` files are
 sanitized snapshots tied to their results pages. The [JOSS-05 draft PDF](joss05-draft.pdf)

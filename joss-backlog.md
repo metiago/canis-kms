@@ -303,6 +303,15 @@ Current [JOSS submission criteria](https://joss.readthedocs.io/en/latest/submitt
 
 ## JOSS-07 — Independent review and submission snapshot (P1)
 
+The [2026-11-19 candidate snapshot](docs/research/joss07-snapshot.md) verifies the
+public `v0.1.0-rc.1` release, tagged source, release assets, author disclosures,
+four resolved references, an adapted manuscript PDF, and a passing 159-test
+Windows build of the exact tag. **Submission readiness: not ready; JOSS-07 open.**
+Canonical paper rendering, non-author reproduction, an archive reference in
+the paper, a stable private security-reporting route, and public-development
+history evidence remain open. The published tag must not be moved to include
+later paper edits.
+
 - [ ] Have a colleague who was not the primary developer install the candidate, run the example, and reproduce the documented evaluation.
 - [ ] Fix and tag a public candidate; prepare a permanent archive and citation plan. After successful JOSS review, archive the reviewed version and record its DOI.
 - [ ] Run all project tests and the canonical JOSS paper build on the exact candidate commit; retain sanitized reports, environment details, and artifact hashes.
