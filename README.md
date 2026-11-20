@@ -1,8 +1,8 @@
 ## CANIS - KMS
 
-See the [documentation index](docs/README.md) for guides and research evidence, the
-[JOSS publication backlog](joss-backlog.md) for submission work, and the
-[product backlog](app-prod-grade-backlog.md) for later engineering work.
+See the [documentation index](docs/README.md) for guides and research evidence.
+The [repository cleanup report](docs/research/repository-cleanup-report.md) records
+archived publication and product planning; future work belongs in GitHub Issues.
 
 **CANIS** is a custom-built Key Management System (KMS) designed to manage public and private keys
 for applications through the official Java client. The client and server communicate through an

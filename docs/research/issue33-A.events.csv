@@ -1,9 +1,0 @@
-event,identity,key_name,file_ordinal,time_utc,detail
-database_initialized,server,,,2026-11-18T14:55:58.322618100Z,new_fixture
-server_ready,server,,,2026-11-18T14:56:00.887550300Z,first_process
-keys_created,server,recipient-a,,2026-11-18T14:56:01.242005Z,
-all_published,producer-a,,,2026-11-18T14:56:02.903653400Z,2
-duplicate_publication_rejected,producer-a,recipient-a,0,2026-11-18T14:56:04.391890700Z,unchanged_hash
-incomplete_present,producer-a,recipient-a,,2026-11-18T14:56:04.428313800Z,encrypted_part_only
-consumer_started,recipient-a,recipient-a,,2026-11-18T14:57:02.774032500Z,
-duplicate_delivery_verified,recipient-a,recipient-a,0,2026-11-18T14:57:05.411324400Z,not_unique_file

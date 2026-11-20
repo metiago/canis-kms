@@ -4,7 +4,8 @@
 measurements. This document defines an experiment, not an observed performance or
 availability result. Record any amendment with its date, reason, and whether data
 had already been seen; do not silently change the workload after seeing results.
-The [unified backlog](../../joss-backlog.md) is the task checklist.
+The former unified backlog is [archived](repository-cleanup-report.md#archived-files);
+this protocol remains the research-method record.
 
 ## Research question and operational motivation
 
