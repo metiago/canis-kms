@@ -1,5 +1,10 @@
 # JOSS final paper validation — 2026-11-20
 
+**Subsequent freeze:** The audited paper and PDF were committed unchanged in
+`a01872258cb6d027512e15f71ed9821b136615c8`; see the
+[manuscript release record](joss-final-manuscript-release.md). Working-tree
+language below describes this audit before that commit.
+
 ## Scope and revision
 
 This audit covers the current working-tree `joss-papers/paper.md` and `paper.bib` after a software-focused copyedit, against HEAD `9cdfc0b179496590adc6a9590fe680f730ac9bce` and the fixed software release `v0.1.0-rc.1` (`e1d6998b5c5658750870b39e2a4d511de5bed7f3`). The paper revision is not in the release tag or a new committed submission revision. No software, CI, research method, experiment, or measurement changed. The applicable JOSS [submission](https://joss.readthedocs.io/en/latest/submitting.html), [paper](https://joss.readthedocs.io/en/latest/paper.html), [review criteria](https://joss.readthedocs.io/en/latest/review_criteria.html), and [checklist](https://joss.readthedocs.io/en/latest/review_checklist.html) were checked on this date.
@@ -58,10 +63,10 @@ The repository-supported [Windows fallback](build-joss05-windows.ps1), pinned to
 | Public source, MIT license, contribution/support routes | Satisfied for candidate per JOSS-07. | No. |
 | Reviewable build, tests, example | Exact-tag 159-test Windows verification and Ubuntu POSIX gate in [release record](release-candidate.md#validation); later [non-author review](joss03-results.md#independent-non-author-review-on-2026-11-19) passed 159 tests and the separate-process example on unchanged executable source. | No new software test is required by this paper-only edit. |
 | Stable private vulnerability-reporting route | The author-approved contact, private reporting process, and response targets are now documented in [SECURITY.md](../../SECURITY.md). This closes the project commitment; it is not a distinct JOSS rule. | No. |
-| Fixed revised submission revision | The tag remains fixed and the new manuscript/PDF are currently working-tree changes. | Yes when making the actual submission: commit and publish the paper revision without moving the tag. |
+| Fixed revised submission revision | The tag remains fixed and the manuscript/PDF are committed in `a01872258cb6d027512e15f71ed9821b136615c8`. | Publish the committed revision before submission without moving the tag. |
 | Reviewer response and final DOI archive | Future review and post-review stages. | No. |
 | Optional research controls, outage study, product hardening, canonical local build | Unperformed or unverified as documented; no current manuscript claim depends on their completion. | No. |
 
-**Can CANIS be submitted today? No.** The public-history hard gate is not established, and this paper revision has not yet been published as a fixed submission commit. The private-reporting commitment is now closed in [SECURITY.md](../../SECURITY.md). No new research, experiment, measurement, software change, or CI change is necessary for the manuscript itself. The paper is ready for review as a draft, with honest limits; submission readiness is not established by this render.
+**Can CANIS be submitted today? No.** The public-history hard gate is not established, and the frozen paper commit has not been published to the public repository. The private-reporting commitment is now closed in [SECURITY.md](../../SECURITY.md). No new research, experiment, measurement, software change, or CI change is necessary for the manuscript itself. The paper is ready for review as a draft, with honest limits; submission readiness is not established by this render.
 
 Architecture, security behavior, operations, and compatibility are unchanged. The manuscript makes the shared-access and audit-integrity limits explicit. Residual risks are JOSS screening of public development and bounded impact, the draft renderer's placeholder journal metadata, and the need to publish an identifiable revised paper. Later improvements may include genuine public issue/PR engagement, a reviewed final archive DOI, and optional wider studies if editors ask for them.
