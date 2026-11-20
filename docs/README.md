@@ -1,7 +1,7 @@
 # CANIS documentation
 
-Use the [JOSS publication backlog](../joss-backlog.md) for submission work and the
-[product backlog](../app-prod-grade-backlog.md) for later engineering work.
+Use the [repository cleanup report](research/repository-cleanup-report.md) to locate
+archived publication and product planning. Future work belongs in GitHub Issues.
 The documents here describe current behavior, operational setup, tests, and recorded evidence.
 
 ## Start here

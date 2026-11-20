@@ -1,6 +1,0 @@
-event,identity,key_name,file_ordinal,time_utc,detail
-database_initialized,server,,,2026-11-18T15:17:41.879465300Z,new_fixture
-server_ready,server,,,2026-11-18T15:17:43.400057600Z,first_process
-keys_created,server,recipient-a+recipient-b,,2026-11-18T15:17:43.745273900Z,
-all_published,producer-a,,,2026-11-18T15:17:45.430991800Z,4
-consumer_started,recipient-a,recipient-a,,2026-11-18T15:17:46.109758Z,

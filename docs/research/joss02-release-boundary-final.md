@@ -1,6 +1,6 @@
 # JOSS-02 final research-release boundary
 
-Candidate: `cd1ebeb32bbd0b6b2ebd42a29f72e3dac8b01694` on `master`, tested on Windows 11 on 2026-11-18. The [candidate record](joss02-candidate-release.md), [validation](joss02-validation.md), and [final manuscript claim audit](joss02-final-claim-audit.md) fix the scope. “Supported” means present in the candidate implementation and supported by the cited tests or bounded study evidence, under the stated conditions. It does not mean suitability for every deployment or a general security/performance guarantee.
+Candidate: `cd1ebeb32bbd0b6b2ebd42a29f72e3dac8b01694` on `master`, tested on Windows 11 on 2026-11-18. The [candidate record (archived)](repository-cleanup-report.md#archived-files), [validation](joss02-validation.md), and [final manuscript claim audit](joss02-final-claim-audit.md) fix the scope. “Supported” means present in the candidate implementation and supported by the cited tests or bounded study evidence, under the stated conditions. It does not mean suitability for every deployment or a general security/performance guarantee.
 
 | Capability | Supported | Evidence |
 | --- | --- | --- |
