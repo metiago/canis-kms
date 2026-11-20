@@ -10,7 +10,7 @@ security engineers, and researchers studying service integration, key-service de
 access-control trade-offs in file-based workflows.
 
 CANIS is the software artifact examined by this research. The broader empirical study specified in
-[Issues #31–35](../../joss-backlog.md) will use CANIS to investigate correctness, resource use,
+[Issues #31–35 (archived)](repository-cleanup-report.md#archived-files) will use CANIS to investigate correctness, resource use,
 availability, delayed processing, and failure behavior under shared trust. That study is planned,
 not yet an observed result. The executed boundary experiment below is narrower research use by the
 developers. No separate external adopter or unrelated academic project is a prerequisite for
@@ -128,7 +128,7 @@ focused run does not replace a full-suite verification of a fixed candidate rele
 | [Tink KMS Envelope AEAD](https://developers.google.com/tink/client-side-encryption) | The client generates a DEK, encrypts data locally, and uses a cloud KMS to protect the DEK. | Tink supplies an envelope-encryption primitive that calls an external KMS; this experiment did not evaluate any KMS access policy configured with Tink. CANIS includes its own service with authenticated shared access. No advantage over Tink was established. |
 | [Vault Transit envelope encryption](https://developer.hashicorp.com/vault/docs/secrets/transit/envelope-encryption) and [Transit overview](https://developer.hashicorp.com/vault/docs/secrets/transit) | Transit can supply wrapped DEKs for local file encryption and supports ACL restrictions on named-key operations and key rotation. | Vault can use named-key policies where narrower access is required. CANIS currently trusts admitted clients across stored keys. These are different access models; the observer result is expected under CANIS's documented model, while lack of per-key isolation remains a limitation for workflows that require it. No comparative security outcome was measured. |
 
-The manuscript's standards citations were checked against the primary [NIST SP 800-38D](https://csrc.nist.gov/pubs/sp/800/38/d/final) record (Morris Dworkin, 2007, DOI `10.6028/NIST.SP.800-38D`) and [RFC 8017](https://www.rfc-editor.org/info/rfc8017/) (Moriarty, Kaliski, Jonsson, and Rusch, November 2016). This verifies the source identities. [JOSS-04 results](joss04-results.md) document the later bibliography work; this JOSS-01 experiment did not build the paper.
+The manuscript's standards citations were checked against the primary [NIST SP 800-38D](https://csrc.nist.gov/pubs/sp/800/38/d/final) record (Morris Dworkin, 2007, DOI `10.6028/NIST.SP.800-38D`) and [RFC 8017](https://www.rfc-editor.org/info/rfc8017/) (Moriarty, Kaliski, Jonsson, and Rusch, November 2016). This verifies the source identities. [JOSS-04 results (archived)](repository-cleanup-report.md#archived-files) document the later bibliography work; this JOSS-01 experiment did not build the paper.
 
 ## JOSS-01 acceptance status and research-use decision gate
 

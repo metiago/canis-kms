@@ -9,10 +9,10 @@ $expectedInaraRevision = '88ee5d656f147d801448ce77ad8375619d383df6'
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $paperPath = Join-Path $repositoryRoot 'joss-papers\paper.md'
 $bibliographyPath = Join-Path $repositoryRoot 'joss-papers\paper.bib'
-$draftPdfPath = Join-Path $PSScriptRoot 'joss05-draft.pdf'
+$draftPdfPath = Join-Path $repositoryRoot 'target\joss05-draft.pdf'
 
 if (-not (Test-Path -LiteralPath (Join-Path $InaraPath 'Makefile'))) {
-    throw 'Inara v1.3.1 is not cloned at InaraPath; see joss05-method.md.'
+    throw 'Inara v1.3.1 is not cloned at InaraPath; see joss-final-paper-validation.md.'
 }
 if (-not (Test-Path -LiteralPath (Join-Path $PandocDir 'pandoc.exe'))) {
     throw 'Pandoc executable not found at PandocDir.'
@@ -74,6 +74,7 @@ try {
 
     $builtPdf = Join-Path $InaraPath 'publishing-artifacts\paper.pdf'
     if (-not (Test-Path -LiteralPath $builtPdf)) { throw 'Pandoc exited 0 without a PDF.' }
+    New-Item -ItemType Directory -Path (Split-Path -Parent $draftPdfPath) -Force | Out-Null
     Copy-Item -LiteralPath $builtPdf -Destination $draftPdfPath -Force
     $pdf = Get-Item -LiteralPath $draftPdfPath
     if ($pdf.Length -le 0) { throw 'Generated PDF is empty.' }

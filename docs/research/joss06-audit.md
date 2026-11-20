@@ -67,5 +67,5 @@ experiments, and submission.
 recorded in the manuscript and this audit. The exact historical Codex and Microsoft Copilot
 identifiers cannot be reliably determined from available records and are explicitly disclosed
 rather than guessed. The actual submission date is set only when submitting, as required by
-[`joss-backlog.md`](../../joss-backlog.md#joss-06--authors-funding-acknowledgements-and-ai-use-p1).
+[`joss-backlog.md` (archived)](repository-cleanup-report.md#archived-files).
 Other JOSS submission gates are outside this audit.

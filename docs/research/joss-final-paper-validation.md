@@ -36,11 +36,11 @@ All five `@...` citation keys in `paper.md` match exactly five entries in `paper
 | `vault-transit` | Resolved in PDF; [Vault Transit page](https://developer.hashicorp.com/vault/docs/secrets/transit/envelope-encryption) opens and describes envelope operations and ACL permissions. |
 | `canis-rc1` | Resolved in PDF with version `0.1.0-rc.1` and a clickable [published source ZIP](https://github.com/metiago/canis-kms/releases/download/v0.1.0-rc.1/canis-kms-0.1.0-rc.1-src.zip). The [release page](https://github.com/metiago/canis-kms/releases/tag/v0.1.0-rc.1) identifies `e1d6998`; the repository release record verifies the attachment's full commit and digest. |
 
-All six direct `blob/v0.1.0-rc.1/...` paper-link targets were checked with `git cat-file -e` and exist in the tag. The bibliography's release URL is an archive attachment, not a DOI. The DOI deposit belongs after successful JOSS review under the [current backlog](../../joss-backlog.md#required-for-joss-acceptance).
+All six direct `blob/v0.1.0-rc.1/...` paper-link targets were checked with `git cat-file -e` and exist in the tag. The bibliography's release URL is an archive attachment, not a DOI. The DOI deposit belongs after successful JOSS review under the [current backlog (archived)](repository-cleanup-report.md#archived-files).
 
 ## Rendering and inspection
 
-The repository-supported [Windows fallback](build-joss05-windows.ps1), pinned to Inara v1.3.1 at `88ee5d656f147d801448ce77ad8375619d383df6`, used Pandoc 3.14, Inara JOSS defaults, LuaLaTeX, and its documented Latin Modern Mono substitution. The first sandboxed attempt failed with MiKTeX log access denied (Pandoc exit 43); the same renderer succeeded after its normal user-cache access was allowed. The final successful output is [paper.pdf](../../joss-papers/paper.pdf); the [render log](joss-final-render.log) records its exit output. The renderer's historical `joss05-draft.pdf` was restored after copying the new output to `joss-papers/paper.pdf`.
+The repository-supported [Windows fallback](build-joss05-windows.ps1), pinned to Inara v1.3.1 at `88ee5d656f147d801448ce77ad8375619d383df6`, used Pandoc 3.14, Inara JOSS defaults, LuaLaTeX, and its documented Latin Modern Mono substitution. The first sandboxed attempt failed with MiKTeX log access denied (Pandoc exit 43); the same renderer succeeded after its normal user-cache access was allowed. The final successful output is [paper.pdf](../../joss-papers/paper.pdf); the [render log (archived)](repository-cleanup-report.md#archived-files) records its exit output. The renderer's historical `joss05-draft.pdf` was restored after copying the new output to `joss-papers/paper.pdf`.
 
 | Check | Result |
 | --- | --- |

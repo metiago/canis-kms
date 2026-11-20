@@ -1,9 +1,0 @@
-event,identity,key_name,file_ordinal,time_utc,detail
-database_initialized,server,,,2026-11-18T15:20:07.592922400Z,new_fixture
-server_ready,server,,,2026-11-18T15:20:09.417981900Z,first_process
-keys_created,server,recipient-a,,2026-11-18T15:20:09.717532700Z,
-all_published,producer-a,,,2026-11-18T15:20:11.005698400Z,1
-consumer_started,recipient-a,recipient-a,,2026-11-18T15:20:11.951019700Z,
-shared_trust_recovery,observer,recipient-a,0,2026-11-18T15:20:14.877540600Z,verified
-invalid_credentials_rejected,observer,recipient-a,0,2026-11-18T15:20:17.557419400Z,no_output
-untrusted_certificate_rejected,observer,recipient-a,0,2026-11-18T15:20:17.557419400Z,no_output

@@ -72,8 +72,8 @@ Surefire XML contained 27 suites, 158 tests, zero failures, zero errors, and eig
 The known skips include five disabled client integration cases and platform-dependent
 filesystem checks on Windows. `Code02Harness self-test` exited 0 and printed
 `CODE02_SELF_TEST=PASS`. The documented Windows wrapper built the packaged server and
-exited 0 with `verified=2/2`; its [run metadata](code02-wrapper-final.json) and sanitized
-[producer](code02-wrapper-final.producer.csv)/[consumer](code02-wrapper-final.consumer.csv) rows are retained.
+exited 0 with `verified=2/2`; its [run metadata (archived)](repository-cleanup-report.md#archived-files) and sanitized
+[producer (archived)](repository-cleanup-report.md#archived-files)/[consumer (archived)](repository-cleanup-report.md#archived-files) rows remain in the external archive.
 
 After the final harness changes, `javac` and the self-test again exited 0. The following
 commands each launched fresh server, producer, and consumer processes with a new synthetic
@@ -105,11 +105,11 @@ invalid certificate `87063AB747CE78E59DD20981E4E25689A6B5029845EB4C39DF220B23CC1
 ## Failed attempts retained
 
 The first strict invalid-certificate run exited 1 because the client reported a generic I/O
-category rather than a certificate-specific exception. The [first failed JSON](code02-invalid-certificate-verified.json)
-and [consumer row](code02-invalid-certificate-verified.consumer.csv) record that result.
+category rather than a certificate-specific exception. The [first failed JSON (archived)](repository-cleanup-report.md#archived-files)
+and [consumer row (archived)](repository-cleanup-report.md#archived-files) record that result.
 A first classifier adjustment also exited 1 for the same reason; its
-[failed JSON](code02-invalid-certificate-recheck.json) and
-[consumer row](code02-invalid-certificate-recheck.consumer.csv) remain. Both had zero verified
+[failed JSON (archived)](repository-cleanup-report.md#archived-files) and
+[consumer row (archived)](repository-cleanup-report.md#archived-files) remain. Both had zero verified
 files and no recovered output. Their private fixture/log directories were deliberately
 retained under the host's `%TEMP%` as `canis-code02-18309522917517251578` and
 `canis-code02-13512776243294652823`; they contain generated secret material and must not be

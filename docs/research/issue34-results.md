@@ -87,12 +87,12 @@ The first sandboxed A attempt stopped before fixture provisioning because restri
 ACL setup was denied; it produced no Issue #34 JSON. Its empty partial temporary root was
 inspected and removed. The first permitted A attempt completed baseline, live recovery, and
 missing-key restart refusal, then failed its recovery control because copying the synthetic key
-back did not preserve the required Windows ACL. Its [failed JSON](issue34-pilot/A-standard-r1.json)
-and [events](issue34-pilot/A-standard-r1.events.csv) remain in the separate pilot set; the private
+back did not preserve the required Windows ACL. Its [failed JSON (archived)](repository-cleanup-report.md#archived-files)
+and [events (archived)](repository-cleanup-report.md#archived-files) remain in the separate pilot set; the private
 fixture was inspected and removed. The research-only harness now reapplies the restrictive ACL
 after restoring the synthetic key. A subsequent seven-case first pilot series passed, then the
 final source added categorical live-server and recovery-startup event rows. The pilot set is
-[separately hashed](issue34-pilot-artifacts.sha256), was not pooled with the final 21 runs, and
+[separately hashed (archived)](repository-cleanup-report.md#archived-files), was not pooled with the final 21 runs, and
 has a different harness source hash. No production Java was changed.
 
 ## Reproducibility and acceptance review
