@@ -11,10 +11,10 @@ Criteria used: [JOSS submission requirements](https://joss.readthedocs.io/en/lat
 | Task | Blocking Submission? | Blocking Acceptance? | Status and smallest remaining action |
 | --- | --- | --- | --- |
 | Establish sufficient active public and iterative development history | Yes | Yes | Open. Verify when the repository became public and whether visible development spans more than six months. The [JOSS-07 snapshot](docs/research/joss07-snapshot.md#requirement-matrix) establishes creation date and current visibility, not the public period; commit activity is sparse and there are no public issues or pull requests. If the history is insufficient, it cannot be repaired by a retrospective statement. |
-| Show research use and a credible software contribution | Yes | Yes | Partially evidenced. [JOSS-01](docs/research/joss01-results.md) and [Issue #35 synthesis](docs/research/issue35-results.md) show bounded developer use and results. Present the actual use, audience, distinct design need, and limits convincingly in the paper. Editorial significance remains a JOSS judgment; a full new experiment is not prescribed. |
-| Finalize the software-focused paper and its references | Yes | Yes | Open. Revise [paper.md](joss-papers/paper.md) so the summary, statement of need, state of the field, software design, and research impact focus on the software rather than new experiment results. Keep only supportable claims and add a reference or direct link to the existing released source archive. Recheck word count, citations, bibliography, links, and the final paper's rendered metadata. |
+| Show research use and a credible software contribution | Yes | Yes | Bounded developer use in [JOSS-01](docs/research/joss01-results.md) and [Issue #35 synthesis](docs/research/issue35-results.md) is now presented with audience, distinct design need, and limits in the revised paper. Editorial significance remains a JOSS judgment; a full new experiment is not prescribed. |
+| Finalize the software-focused paper and its references | Yes | Yes | Prepared in the working tree. [Final paper validation](docs/research/joss-final-paper-validation.md) records a software-focused 900-token manuscript, five resolved citations including the source archive, valid tagged document targets, and a rendered PDF. Commit and publish this revision before submitting; do not move the release tag. |
 | Complete submission metadata | Yes, at submission | Yes | Author, affiliation, funding, conflict, acknowledgement, and AI disclosures are [approved and present](docs/research/joss06-audit.md). Set the actual submission date in JOSS format when submitting; do not invent an earlier date. |
-| Public source, license, issue/contribution/support routes | Yes | Yes | Satisfied for the current candidate: [MIT license](LICENSE.txt), public repository and Issues route, [CONTRIBUTING](CONTRIBUTING.md), [README](README.md), and stated support expectations in [SECURITY](SECURITY.md). A separate private security-reporting route is project-specific. |
+| Public source, license, issue/contribution/support routes | Yes | Yes | Satisfied for the current candidate: [MIT license](LICENSE.txt), public repository and Issues route, [CONTRIBUTING](CONTRIBUTING.md), [README](README.md), and [SECURITY](SECURITY.md). The author-approved private security contact and response targets are now documented; this route is a project commitment, not a separate JOSS rule. |
 | Reviewable installation, example, and tests | Yes | Yes | Satisfied for the current executable tree. The non-author [clean-checkout review](docs/research/joss03-results.md#independent-non-author-review-on-2026-11-19) passed 159 tests and the separate-process exchange; the [tagged snapshot](docs/research/joss07-snapshot.md#requirement-matrix) passed the exact-tag Windows suite and records Ubuntu POSIX coverage. Recheck only if submitted software changes. |
 | Public fixed source and release | No separate prerelease is mandated, but a stable review revision is needed | Yes | Satisfied for candidate v0.1.0-rc.1. The [release record](docs/research/release-candidate.md) verifies the public tag, source archive, checksum, and exact-tag tests. A later paper edit requires a new committed submission revision, not a tag move. |
 
@@ -28,7 +28,7 @@ Complete for the tested candidate. The [validation](docs/research/joss02-validat
 
 ## JOSS-03 — Installation, examples, documentation, and CI (P0/P1)
 
-Complete for the current executable tree. The [independent review](docs/research/joss03-results.md#independent-non-author-review-on-2026-11-19) confirms a clean Java 21/Maven build and the documented CODE-02 wrapper with generated TLS and master-key fixtures, database initialization, and a separate packaged server process. The [CI record](docs/research/joss03-results.md#independent-non-author-review-on-2026-11-19) reports matching successful Windows and Ubuntu jobs. An operator-provisioned long-running deployment is outside the stated reviewer workflow. Public-history screening is tracked above; a stable private security route is project-specific.
+Complete for the current executable tree. The [independent review](docs/research/joss03-results.md#independent-non-author-review-on-2026-11-19) confirms a clean Java 21/Maven build and the documented CODE-02 wrapper with generated TLS and master-key fixtures, database initialization, and a separate packaged server process. The [CI record](docs/research/joss03-results.md#independent-non-author-review-on-2026-11-19) reports matching successful Windows and Ubuntu jobs. An operator-provisioned long-running deployment is outside the stated reviewer workflow. Public-history screening is tracked above; the private security route is documented in [SECURITY.md](SECURITY.md).
 
 ## JOSS-06 — Authors, funding, acknowledgements, and AI use (P1)
 
@@ -38,22 +38,22 @@ Author-approved identity, affiliation, contribution, funding/conflict statements
 
 | Task | Blocking Submission? | Blocking Acceptance? | Status and smallest remaining action |
 | --- | --- | --- | --- |
-| Make the submitted paper render correctly and answer review checks | Yes for a valid, reviewable paper | Yes | Open for the final paper revision. Render with a compatible JOSS toolchain or the JOSS review workflow, inspect author/date/citations/references, and reconcile every retained material claim with the [claim audit](docs/research/joss02-final-claim-audit.md). The exact local GNU make/TeX Live command is a verification method, not a separate criterion. |
-| Keep the submitted code and paper revision identifiable and reproducible | Yes | Yes | The existing tag and software tests are verified. Record the commit used for the revised paper, confirm its links and the same executable source, and rerun relevant checks only for changed software or claims. |
+| Make the submitted paper render correctly and answer review checks | Yes for a valid, reviewable paper | Yes | The revised paper rendered in the repository-supported JOSS-compatible Windows fallback, with title, author, affiliation, five references, release link, and layout checked in [final validation](docs/research/joss-final-paper-validation.md). The local preview's 1970/DOI placeholders are JOSS article-info defaults; actual submission metadata must be supplied through the submission/review workflow. |
+| Keep the submitted code and paper revision identifiable and reproducible | Yes | Yes | The existing tag and software tests are verified. The revised paper/PDF need a new committed and published submission revision; the release tag stays fixed. The final validation records current hashes and confirms the same executable source. |
 | Respond to reviewer and editor issues | No | Yes | Future review work. Address substantiated findings in the public review and issue tracker; do not pre-create issues merely to populate history. |
 | Make the final reviewed release and archive deposit | No | Yes, after successful review | Follow JOSS's post-review step: tag the reviewed version, deposit it in an archive, and provide its DOI and version in the review thread. The archive DOI is not a pre-submission blocker. |
 
 ## JOSS-04 — Restore and verify bibliography (P1)
 
-Four cited entries were checked against primary sources, and the [adapted PDF build](docs/research/joss07-snapshot.md#requirement-matrix) rendered all four. The final paper still needs its released-source reference and a rendered citation check after edits.
+Four cited entries were checked against primary sources. The [final paper validation](docs/research/joss-final-paper-validation.md#bibliography-and-link-check) checks the added release-archive entry and all five rendered references.
 
 ## JOSS-05 — Align and finalize manuscript (P1)
 
-The [final claim audit](docs/research/joss02-final-claim-audit.md) found no unqualified contradiction in the tagged paper; the paper remains heavily weighted toward experiment results and has no source-archive reference. Revise framing and re-audit only changed claims. Missing original outage and local-control experiments remain stated limits, not new JOSS tasks.
+The [final claim audit](docs/research/joss02-final-claim-audit.md) found no unqualified contradiction in the tagged paper. The [revised paper and validation](docs/research/joss-final-paper-validation.md#final-manuscript-audit) now foreground the software and cite the source archive; changed prose adds no new empirical claim. Missing original outage and local-control experiments remain stated limits, not new JOSS tasks.
 
 ## JOSS-07 — Independent review and submission snapshot (P1)
 
-The [public prerelease snapshot](docs/research/joss07-snapshot.md) predates the later [non-author review](docs/research/joss03-results.md#independent-non-author-review-on-2026-11-19). Both support reviewability, but they do not prove six months of public development or finish the paper. Reproduce the final reviewed release and archive it at the JOSS post-review stage.
+The [public prerelease snapshot](docs/research/joss07-snapshot.md) predates the later [non-author review](docs/research/joss03-results.md#independent-non-author-review-on-2026-11-19). Both support reviewability, but they do not prove six months of public development. The [revised paper validation](docs/research/joss-final-paper-validation.md) closes the current manuscript checks; reproduce the final reviewed release and archive it at the JOSS post-review stage.
 
 # Optional Improvements
 
@@ -72,7 +72,7 @@ The unexecuted service-outage windows, key-deletion matrix, and broader fault ca
 Additional fixed-revision reruns and completion of the original correctness/resource/availability question are optional future research. Keep the already published bounded results and dirty-tree provenance accurate in the current paper.
 
 - Independent rerun of the exact v0.1.0-rc.1 tag, operator-managed long-running TLS/master-key setup, additional OS/ACL cases, static paper-checker repair, and JReleaser branch-detection repair are optional verification or maintenance work.
-- Confirming a stable private vulnerability-reporting channel is a separate project commitment in [SECURITY.md](SECURITY.md), which currently says to confirm it before JOSS submission. JOSS requires clear issue and support pathways, which are already documented, but does not prescribe a private channel or production support commitment. Changing that project commitment requires an owner decision.
+- The author-approved private vulnerability-reporting route and response targets are documented in [SECURITY.md](SECURITY.md). This closes the project's separate pre-submission confirmation commitment; JOSS does not prescribe a private channel or production support commitment.
 
 # Post-Publication Product Work
 

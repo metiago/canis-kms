@@ -1,5 +1,10 @@
 # JOSS-07 submission snapshot — 2026-11-19
 
+**Later security-route update (2026-11-20):** The author-approved private contact,
+disclosure process, and response targets are now in [SECURITY.md](../../SECURITY.md).
+Security-route findings below describe the 2026-11-19 snapshot, not current
+submission readiness. Current status is in [submission-readiness.md](../../joss-papers/submission-readiness.md).
+
 ## Decision and scope
 
 **Not ready for JOSS submission. JOSS-07 remains open.** This is a review of the
@@ -39,7 +44,7 @@ decision.
 | Repository age and public development | Public [repository](https://github.com/metiago/canis-kms) API: created 2024-12-10 19:11:06 UTC, currently public, default branch `master`. Local commit dates span Dec 2024, Apr–May 2026, and Nov 2026. Creation date and current visibility do not prove when it became public; the long gap and concentrated recent research activity warrant editorial review. | Calendar age verified; six months of public, active development not independently established |
 | Issue tracker and open workflows | GitHub API reports `has_issues=true`; the public repository shows an Issues tab, but `issues?state=all` returned zero. `/issues/31` through `/issues/35` returned 404: these are [backlog study labels](../../joss-backlog.md), not public GitHub issues. [CONTRIBUTING](../../CONTRIBUTING.md) describes issue/PR routes, but there is no public issue discussion in this repository. | Tracker available; public issue history absent |
 | License, archive, documentation | Tracked [`LICENSE.txt`](../../LICENSE.txt) contains MIT terms and GitHub identifies SPDX `MIT`. The tagged source ZIP is downloadable and cited in the [release record](release-candidate.md). [`README`](../../README.md), [docs index](../README.md), [reviewer guide](../reviewer-guide.md), and [contribution guide](../../CONTRIBUTING.md) cover build, use, tests, and research limits. | Verified for candidate |
-| Support and vulnerability reporting | [CONTRIBUTING](../../CONTRIBUTING.md) sends ordinary support to public issues. [`SECURITY.md`](../../SECURITY.md) instructs users to use private GitHub vulnerability reporting if available, otherwise ask publicly for a private channel, and explicitly says a stable private reporting route remains to be confirmed. | Ordinary support documented; stable private security path open |
+| Support and vulnerability reporting | At this snapshot, [CONTRIBUTING](../../CONTRIBUTING.md) sent ordinary support to public issues and the then-current [`SECURITY.md`](../../SECURITY.md) did not name a stable private contact. A later author-approved update added `metiago.work@gmail.com` and response targets. | Historical gap closed by the later policy update |
 | Independent reproduction and research use | [JOSS-01](joss01-results.md) documents a narrow developer shared-trust experiment; [Issues #31–35](issue35-results.md) document bounded synthetic studies. Only Issue #32 has a clean fixed-revision measured campaign; Issue #31, #33, and #34 final runs used dirty trees, and the planned service-outage/local-control work remains unexecuted. [JOSS-03](joss03-results.md) has no non-author install/example/evaluation record. | Independent JOSS-07 acceptance open; research impact case remains limited |
 
 ## Final blockers and next evidence
@@ -55,9 +60,11 @@ decision.
    actual submission date when submitting, and review the results-heavy paper
    against JOSS's software-paper guidance. A paper edit after this tag needs a
    new fixed candidate, not movement of `v0.1.0-rc.1`.
-4. Establish a stable private vulnerability-reporting route and demonstrate
-   open issue/feedback activity. Verify when the repository became public;
-   `created_at` alone cannot certify JOSS's public-history gate.
+4. At this snapshot, establish a stable private vulnerability-reporting route
+   and demonstrate open issue/feedback activity. The security contact was
+   subsequently documented in `SECURITY.md`; the public-history question
+   remains. Verify when the repository became public; `created_at` alone
+   cannot certify JOSS's public-history gate.
 5. Resolve the research-use/significance and Phase 2 limits honestly. The
    developer experiments are real but narrow; the original availability and
    local-control questions remain unmeasured, and several results lack
