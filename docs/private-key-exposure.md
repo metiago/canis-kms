@@ -1,53 +1,49 @@
-# Private-key exposure boundary (Issue #6)
+# Private-key exposure boundary
 
-## Architecture and security behavior
+`KeyValueStore` owns generated and loaded RSA private keys. Its public `get` and `list` methods
+return immutable `Entry` values containing only a service name and public key. The store
+performs RSA-OAEP decryption internally; `ClientHandler` does not receive a `PrivateKey` or
+PKCS#8 string. `Entry` is not Java-serializable.
 
-`KeyValueStore` owns generated and loaded RSA private-key material. Its public `get` and `list`
-methods return immutable `Entry` metadata containing only a service name and public key. The
-store performs RSA-OAEP decryption internally; `ClientHandler` never receives a `PrivateKey` or
-PKCS#8 string. The former public private-key conversion and file-loading helper was removed.
-`Entry` is not Java-serializable. CANISP `|get`, `|get-public`, and `|list` continue to return
-public metadata only, and `|decrypt` returns the decrypted payload over authenticated TLS.
+CANISP `|get`, `|get-public`, and `|list` return public metadata. `|decrypt` returns the
+decrypted payload over authenticated TLS, never the RSA private key. Key-processing failures use
+fixed CANISP responses. Operational logs record safe service identifiers and failure categories
+without private-key exception messages or stack traces; audit events record outcomes without key
+material. Malformed service-credential configuration also returns a fixed error without echoing
+the configured value.
 
-Key-processing errors use fixed CANISP responses. Operational logs record failure categories and
-safe service identifiers, without exception messages or stack traces from private-key processing.
-Audit events record operation outcomes without private-key material. These restrictions cover the
-supported Java API, CANISP output, logs, and exceptions; code with arbitrary execution inside the
-server JVM is outside this API boundary.
+## API and compatibility
 
-Malformed service-credential configuration also produces a fixed error without echoing the
-configured value, preventing a startup exception from printing a password.
+The public private-key conversion and file-loading helper was removed. Server-side callers of
+the former `Entry` private-key methods, `KeyValueStore.set` or `create(String, Entry)`, and
+`AsymmetricGenerator` must use the narrower store operations. The client artifact's unused
+`Entry` metadata type likewise contains only name and public key, is not Java-serializable, and
+no longer supports its former private-key component.
 
-## Operational and compatibility impact
+The encrypted `CANISDB1` record layout and `CANISGCM1` encryption have not changed. Valid
+databases load and rewrite without migration, and CANISP command names and response formats
+remain the same; the official client needs no update. Startup rejects malformed UTF-8, invalid
+service names, malformed RSA encodings, and public/private fields that do not match, without
+rewriting the rejected database. Restore a valid backup if this occurs. A database write failure
+is reported as an operation failure.
 
-The encrypted `CANISDB1` record layout and `CANISGCM1` encryption remain unchanged. Existing valid
-databases can be loaded and rewritten without migration. Startup rejects malformed UTF-8, invalid
-service names, malformed RSA encodings, and public/private fields that do not form a matching pair;
-it does not rewrite the rejected database. Operators must restore a valid database from backup.
-CANISP command names and response formats
-remain unchanged, so the official client needs no update. Server-side callers of the former
-`Entry` private-key methods, `KeyValueStore.set` or `create(String, Entry)`, and
-`AsymmetricGenerator` must migrate to the narrow store operations. A database write failure is
-reported as an operation failure instead of being acknowledged as success.
+## Remaining limits
 
-## Verification
+This boundary covers supported Java APIs, CANISP output, logs, and exceptions. Code with
+arbitrary execution inside the server JVM is outside it. Java key objects and immutable strings
+cannot be reliably erased from memory, and prior encrypted database copies may persist in
+backups or snapshots. Any authenticated client can request `|decrypt` under any stored service
+key; per-service authorization is not yet available.
 
-`KeyValueStoreTest` verifies the public metadata boundary, non-serializability, decryption,
-rejection of malformed keys, failure to save, database tampering, and loading and rewriting an
-independently encoded legacy database. `ClientHandlerTest` verifies CANISP responses and captures
-both operational and audit logs while an injected exception contains a generated private-key
-encoding. `ServerEndToEndTest` exercises the official client over mutual TLS, including restart
-and deletion. Existing TLS security suites cover invalid certificates and credentials.
+Database writes use two atomic moves with a recovery file, not a single atomic transaction.
+Crash durability still needs platform-specific validation. Structured audit schema, integrity
+verification, and key rotation remain separate work. Master-key and explicit database
+initialization rules are covered in [master key](master-key.md). Changes to serialization or
+logging need renewed private-key exposure checks.
 
-## Remaining risks and future improvements
-
-Java key objects and immutable strings cannot be reliably erased from memory. Earlier encrypted
-database copies may remain in backups or snapshots. Any authenticated CANIS client can currently
-request `|decrypt` with any stored service key; per-service authorization remains to be designed.
-The master-key and explicit database initialization rules are covered in Issues #7 and #8. Database
-writes use two atomic moves with a recovery file; the sequence is not one atomic transaction, and
-crash durability still needs platform-specific validation.
-Structured audit schema and integrity verification, and key rotation remain separate follow-up
-work. The client artifact's unused `Entry` metadata type now contains only the name and public key
-and is not Java-serializable; callers that used its removed private-key component must update.
-Changes to serialization or logging need renewed private-key exposure tests.
+`KeyValueStoreTest` checks public metadata, non-serializability, decryption, malformed-key and
+save failures, tampering, and loading and rewriting an independently encoded legacy database.
+`ClientHandlerTest` checks CANISP responses and operational and audit logs against an injected
+exception containing a generated private-key encoding. `ServerEndToEndTest` covers the official
+client over mutual TLS, restart, and deletion; TLS suites cover invalid certificates and
+credentials.

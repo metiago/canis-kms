@@ -3,7 +3,8 @@
 **Subsequent freeze:** The audited paper and PDF were committed unchanged in
 `a01872258cb6d027512e15f71ed9821b136615c8`; see the
 [manuscript release record](joss-final-manuscript-release.md). Working-tree
-language below describes this audit before that commit.
+language below describes this audit before that commit. A later Summary copyedit
+and regenerated PDF are recorded in the [manuscript release record](joss-final-manuscript-release.md).
 
 ## Scope and revision
 

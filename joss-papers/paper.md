@@ -16,7 +16,7 @@ bibliography: paper.bib
 
 # Summary
 
-CANIS is a Java key management service and client for asynchronous encrypted file exchange. A producer encrypts a file locally and publishes it to shared storage. A recipient can later recover the data key through a TLS-protected service and decrypt the file locally; file contents do not pass through the service. The released source [@canis-rc1] includes the client, server, protocol, file format, encrypted persistence, and methods for reproducing the exchange. CANIS gives admitted clients shared access to stored key names, making this trust boundary explicit and open to study.
+CANIS is a Java key-recovery service and client for asynchronous encrypted-file exchange. A producer encrypts a file locally and publishes it to shared storage. A recipient can later recover the data key through a TLS-protected service and decrypt the file locally; file contents do not pass through the service. The released source [@canis-rc1] includes the client, server, protocol, file format, encrypted persistence, and methods for reproducing the exchange. CANIS gives admitted clients shared access to stored key names, making this trust boundary explicit and open to study.
 
 # Statement of need
 
