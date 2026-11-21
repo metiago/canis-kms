@@ -23,8 +23,9 @@ verification.
 | JOSS-06 metadata and disclosure | [Author-approved audit](joss06-audit.md) | [Committed manuscript](../../joss-papers/paper.md) | [Acceptance review](joss06-audit.md#acceptance-review) | Compare paper YAML/disclosures with the audit; actual submission date is deferred |
 | JOSS-07 submission snapshot | [Backlog criteria (archived)](repository-cleanup-report.md#archived-files) | [Tagged-release snapshot](joss07-snapshot.md), [final pre-submission audit (archived)](repository-cleanup-report.md#archived-files) | [Requirement matrix](joss07-snapshot.md#requirement-matrix) | Exact-tag Windows verification and adapted paper build passed; independent reproduction and canonical paper build remain open |
 
-The JOSS-02 and JOSS-03 `*-suite-report.csv` and `*-test-cases.csv` files are
-sanitized snapshots tied to their results pages. The [JOSS-05 draft PDF (archived)](repository-cleanup-report.md#archived-files)
+The JOSS-03 `*-suite-report.csv` and `*-test-cases.csv` files are
+sanitized snapshots tied to its results page. The earlier JOSS-02 CSV summaries
+are [archived](repository-cleanup-phase2.md#archived-files). The [JOSS-05 draft PDF (archived)](repository-cleanup-report.md#archived-files)
 records an adapted local build. `joss03-posix-report-fixture.xml` and
 `VerifyPosixCoverage.java` support the POSIX report gate. The
 [JOSS-02 summary exporter](export-joss02-summary.ps1) regenerates its CSV summaries.

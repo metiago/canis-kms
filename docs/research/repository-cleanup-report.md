@@ -29,10 +29,10 @@ archive mapping.
 
 ## Deleted Files
 
-| File | Retained exact copy |
+| File | Exact copy at the time of this first cleanup |
 | --- | --- |
-| `docs/research/joss05-suite-report.csv` | `docs/research/joss02-suite-report.csv` |
-| `docs/research/joss05-test-cases.csv` | `docs/research/joss02-test-cases.csv` |
+| `docs/research/joss05-suite-report.csv` | `docs/research/joss02-suite-report.csv` (subsequently [archived in phase 2](repository-cleanup-phase2.md#archived-files)) |
+| `docs/research/joss05-test-cases.csv` | `docs/research/joss02-test-cases.csv` (subsequently [archived in phase 2](repository-cleanup-phase2.md#archived-files)) |
 
 The matching pairs had identical SHA-256 values. No retained documentation or
 script referenced the duplicate names when they were deleted.
