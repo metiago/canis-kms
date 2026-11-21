@@ -1,5 +1,25 @@
 # JOSS final manuscript revision
 
+## Later working-tree update — 2026-11-20
+
+The first Summary sentence in `paper.md` was copyedited after the frozen manuscript commit below.
+`paper.pdf` was regenerated from that working-tree source and the unchanged `paper.bib` with the
+documented Inara v1.3.1 Windows fallback. The static paper check passes: 1,002 body words, all
+eight required headings, five matched citations, and no author or affiliation placeholders. The
+rendered PDF has three A4 pages; extracted text contains the new Summary wording, AI disclosure,
+and all five references. All three pages were visually checked for clipping.
+
+| Current working-tree artifact | SHA-256 |
+| --- | --- |
+| `joss-papers/paper.md` | `F3B7AD03261BD278CD971654B52C0AE07FF49BD2F85A0FDCA5659645B69B939F` |
+| `joss-papers/paper.bib` | `9D9C5105848FEED28BA1F15D60D2D885BE066D259E5AACA2ADECECA2D4472B67` |
+| `joss-papers/paper.pdf` | `60C5F49CB54582CEF80C944CB7792C89B78AA8B9A4684C18829B2AC26832172C` |
+
+The hashes and PDF size in the frozen-source section below describe commit `a018722`, not this
+working tree. The regenerated PDF still uses Inara's preview journal metadata; JOSS supplies real
+submission and publication metadata during review. This paper revision needs to be committed and
+published before submission. JOSS's six-month public-development requirement remains unverified.
+
 ## Frozen source
 
 | Field | Value |

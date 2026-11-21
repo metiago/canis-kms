@@ -15,7 +15,8 @@ $requiredSections = @(
     'Acknowledgements',
     'References'
 )
-$headings = @([regex]::Matches($paper, '(?m)^# (.+)$') | ForEach-Object { $_.Groups[1].Value })
+$headings = @([regex]::Matches($paper, '(?m)^# ([^\r\n]+)\r?$') |
+    ForEach-Object { $_.Groups[1].Value })
 $missingSections = @($requiredSections | Where-Object { $_ -notin $headings })
 $body = [regex]::Replace($paper, '(?s)^---\s*.*?\s*---\s*', '')
 $body = [regex]::Replace($body, '(?m)^# .+$', '')
@@ -36,7 +37,7 @@ Write-Output "Missing keys: $($missingEntries.Count); uncited entries: $($uncite
 Write-Output "Author/affiliation placeholders present: $placeholders"
 Write-Output 'This static check does not compile the paper or establish research use or metadata approval.'
 
-if ($wordCount -lt 750 -or $wordCount -gt 1750 -or
+if ($wordCount -lt 750 -or $wordCount -gt 1750 -or $placeholders -or
     $missingSections.Count -gt 0 -or $missingEntries.Count -gt 0 -or $uncitedEntries.Count -gt 0) {
     exit 1
 }

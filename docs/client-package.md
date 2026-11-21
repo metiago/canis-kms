@@ -1,27 +1,18 @@
-# CANIS Java Client Package
+# CANIS Java client package
 
-The CANIS Java client is the supported application-facing API for Java applications that need to
-use CANIS KMS.
+## Overview
 
-Package page:
+The CANIS Java client is the supported application-facing API for Java applications that use the
+CANIS key-recovery service. Use `JpawClient` for CANISP commands, response parsing, socket
+limits, service-name validation, and file envelopes. CANISP is the internal client/server
+protocol, documented for maintainers, debugging, research, and PoCs rather than direct
+application integration.
 
-```text
-https://github.com/metiago/canis-client/packages/2344030
-```
+Package: <https://github.com/metiago/canis-client/packages/2344030>
 
-## Integration Contract
+## Dependency
 
-Application developers should use `JpawClient` instead of constructing raw CANISP socket messages.
-CANISP is an internal client/server protocol, similar to the wire protocol beneath a database
-driver. It is documented for maintainers, debugging, research, and PoCs, but it is not the supported
-application integration API.
-
-The client owns command construction, response parsing, socket limits, service-name validation, and
-file envelope helpers.
-
-## Maven Dependency
-
-Use the currently published client artifact coordinates:
+Use the published Maven artifact:
 
 ```xml
 <dependency>
@@ -33,9 +24,9 @@ Use the currently published client artifact coordinates:
 
 ## Configuration
 
-The default `JpawClient` constructor reads connection settings from environment variables:
+The default `JpawClient` constructor reads these environment variables:
 
-```bash
+```sh
 export CANIS_SERVER_HOST=localhost
 export CANIS_SERVER_PORT=3307
 export CANIS_USERNAME=admin
@@ -46,62 +37,23 @@ export CANIS_CLIENT_TLS_TRUSTSTORE=/secure/path/canis-servers.p12
 export CANIS_CLIENT_TLS_TRUSTSTORE_PASSWORD=provided-by-secret-manager
 ```
 
-`CANIS_SERVER_HOST` is optional and defaults to `localhost`.
-The client requires PKCS#12 identity and trust stores. The identity store must contain one valid
-client private key and certificate chain; the truststore must contain the trusted server
-certificate or issuing CA. The configured host is checked against the server certificate. TLS 1.3
-is mandatory and there is no plaintext fallback. Supply passwords through a protected environment
-or secret manager, protect store files with operating-system permissions, and never commit them.
+`CANIS_SERVER_HOST` defaults to `localhost`. The PKCS#12 identity store must contain one valid
+client private key and certificate chain. The truststore must contain the server certificate or
+its issuing CA. The client checks the configured host against the server certificate, requires
+TLS 1.3, and has no plaintext fallback.
 
-The client offers only `TLS_AES_128_GCM_SHA256`, `TLS_AES_256_GCM_SHA384`, and
-`TLS_CHACHA20_POLY1305_SHA256`, limited to suites already enabled by its Java TLS provider.
-Provider-disabled suites stay disabled. The client fails with a sanitized configuration error
-if none are enabled, or a handshake error if the server shares no enabled approved suite.
-Certificate-chain validation uses PKIX and hostname verification remains mandatory. There is no
-option to bypass validation or override the cipher-suite policy through environment variables.
+Service names must match `[A-Za-z0-9._-]{1,128}`. For example, `serviceA`, `service-a`,
+`service_a`, `service.a`, and `svc123` are valid; spaces, tabs, newlines, `|`, and `:` are not.
+Client methods throw `IllegalArgumentException` for an invalid name before sending a socket
+command.
 
-## Service Names
-
-Service names are identifiers, not arbitrary free-form text. Client methods that receive a service
-name validate it before sending any command to CANIS.
-
-Accepted format:
-
-```text
-[A-Za-z0-9._-]{1,128}
-```
-
-Valid examples:
-
-```text
-serviceA
-service-a
-service_a
-service.a
-svc123
-```
-
-Invalid examples:
-
-```text
-service A
-service\tA
-service\nA
-service|A
-service:A
-```
-
-The client rejects invalid service names with `IllegalArgumentException`. Invalid names are rejected
-before a socket command is sent.
-
-## Basic Usage
+## Example
 
 ```java
 import io.canis.jpaw.client.JpawClient;
 import java.io.File;
 
 public class Example {
-
   public static void main(String[] args) throws Exception {
     File inputFile = new File("payload.txt");
     File encryptedFile = new File("payload.canis");
@@ -116,5 +68,16 @@ public class Example {
 }
 ```
 
-Private keys stay on the CANIS server. The client fetches public keys for encryption and asks CANIS
-to perform private-key operations server-side.
+## Security notes
+
+The client fetches public keys to encrypt files locally and asks CANIS to perform private-key
+operations on the server. RSA private keys are not returned. Protect identity and trust stores
+with operating-system permissions, supply passwords through a protected environment or secret
+manager, and do not commit these secrets.
+
+The client offers only `TLS_AES_128_GCM_SHA256`, `TLS_AES_256_GCM_SHA384`, and
+`TLS_CHACHA20_POLY1305_SHA256`, limited to suites enabled by its Java TLS provider.
+Provider-disabled suites stay disabled. If no approved suite is enabled, configuration fails
+with a sanitized error; if the server shares none, the handshake fails. PKIX chain validation
+and hostname verification are mandatory. Environment variables cannot bypass validation or
+override the cipher-suite policy.
