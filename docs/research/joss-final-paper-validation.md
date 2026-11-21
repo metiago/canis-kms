@@ -1,5 +1,12 @@
 # JOSS final paper validation — 2026-11-20
 
+**Release traceability update (2026-11-21):** The published `v0.1.0-rc.1` source
+ZIP matches the recorded SHA-256 and embeds commit
+`e1d6998b5c5658750870b39e2a4d511de5bed7f3`. The current local and remote
+Git tag resolves to `5ea7e87d7f6c0aba0ed5ca32d809d615a88a9ec0`. Historical
+audit statements below that name `e1d6998` describe the release archive or the
+release-page target, not the current tag target.
+
 **Subsequent freeze:** The audited paper and PDF were committed unchanged in
 `a01872258cb6d027512e15f71ed9821b136615c8`; see the
 [manuscript release record](joss-final-manuscript-release.md). Working-tree
@@ -8,7 +15,7 @@ and regenerated PDF are recorded in the [manuscript release record](joss-final-m
 
 ## Scope and revision
 
-This audit covers the current working-tree `joss-papers/paper.md` and `paper.bib` after a software-focused copyedit, against HEAD `9cdfc0b179496590adc6a9590fe680f730ac9bce` and the fixed software release `v0.1.0-rc.1` (`e1d6998b5c5658750870b39e2a4d511de5bed7f3`). The paper revision is not in the release tag or a new committed submission revision. No software, CI, research method, experiment, or measurement changed. The applicable JOSS [submission](https://joss.readthedocs.io/en/latest/submitting.html), [paper](https://joss.readthedocs.io/en/latest/paper.html), [review criteria](https://joss.readthedocs.io/en/latest/review_criteria.html), and [checklist](https://joss.readthedocs.io/en/latest/review_checklist.html) were checked on this date.
+This audit covers the current working-tree `joss-papers/paper.md` and `paper.bib` after a software-focused copyedit, against HEAD `9cdfc0b179496590adc6a9590fe680f730ac9bce` and the published `v0.1.0-rc.1` source archive (embedded commit `e1d6998b5c5658750870b39e2a4d511de5bed7f3`). The paper revision is not in the release tag or a new committed submission revision. No software, CI, research method, experiment, or measurement changed. The applicable JOSS [submission](https://joss.readthedocs.io/en/latest/submitting.html), [paper](https://joss.readthedocs.io/en/latest/paper.html), [review criteria](https://joss.readthedocs.io/en/latest/review_criteria.html), and [checklist](https://joss.readthedocs.io/en/latest/review_checklist.html) were checked on this date. The current Git tag target is recorded in the traceability update above.
 
 ## Final manuscript audit
 
@@ -35,7 +42,7 @@ All five `@...` citation keys in `paper.md` match exactly five entries in `paper
 | `moriarty2016` | Resolved in PDF; [RFC DOI](https://doi.org/10.17487/RFC8017) opens and identifies RFC 8017, its authors, and November 2016. |
 | `tink-envelope` | Resolved in PDF; [Google Tink page](https://developers.google.com/tink/client-side-encryption) opens, describes client-side envelope encryption with a cloud KMS, and displays 2026-11-06 update. |
 | `vault-transit` | Resolved in PDF; [Vault Transit page](https://developer.hashicorp.com/vault/docs/secrets/transit/envelope-encryption) opens and describes envelope operations and ACL permissions. |
-| `canis-rc1` | Resolved in PDF with version `0.1.0-rc.1` and a clickable [published source ZIP](https://github.com/metiago/canis-kms/releases/download/v0.1.0-rc.1/canis-kms-0.1.0-rc.1-src.zip). The [release page](https://github.com/metiago/canis-kms/releases/tag/v0.1.0-rc.1) identifies `e1d6998`; the repository release record verifies the attachment's full commit and digest. |
+| `canis-rc1` | Resolved in PDF with version `0.1.0-rc.1` and a clickable [published source ZIP](https://github.com/metiago/canis-kms/releases/download/v0.1.0-rc.1/canis-kms-0.1.0-rc.1-src.zip). The [release page](https://github.com/metiago/canis-kms/releases/tag/v0.1.0-rc.1) displays `e1d6998` as its release target; a fresh download matches the recorded ZIP digest and its embedded commit is `e1d6998b5c5658750870b39e2a4d511de5bed7f3`. The current Git tag target differs, as noted above. |
 
 All six direct `blob/v0.1.0-rc.1/...` paper-link targets were checked with `git cat-file -e` and exist in the tag. The bibliography's release URL is an archive attachment, not a DOI. The DOI deposit belongs after successful JOSS review under the [current backlog (archived)](repository-cleanup-report.md#archived-files).
 
@@ -64,7 +71,7 @@ The repository-supported [Windows fallback](build-joss05-windows.ps1), pinned to
 | Public source, MIT license, contribution/support routes | Satisfied for candidate per JOSS-07. | No. |
 | Reviewable build, tests, example | Exact-tag 159-test Windows verification and Ubuntu POSIX gate in [release record](release-candidate.md#validation); later [non-author review](joss03-results.md#independent-non-author-review-on-2026-11-19) passed 159 tests and the separate-process example on unchanged executable source. | No new software test is required by this paper-only edit. |
 | Stable private vulnerability-reporting route | The author-approved contact, private reporting process, and response targets are now documented in [SECURITY.md](../../SECURITY.md). This closes the project commitment; it is not a distinct JOSS rule. | No. |
-| Fixed revised submission revision | The tag remains fixed and the manuscript/PDF are committed in `a01872258cb6d027512e15f71ed9821b136615c8`. | Publish the committed revision before submission without moving the tag. |
+| Fixed revised submission revision | The manuscript/PDF were committed in `a01872258cb6d027512e15f71ed9821b136615c8`; the current tag/archive revision difference is recorded in the traceability update above. | Publish the committed revision before submission; reconcile release identity separately. |
 | Reviewer response and final DOI archive | Future review and post-review stages. | No. |
 | Optional research controls, outage study, product hardening, canonical local build | Unperformed or unverified as documented; no current manuscript claim depends on their completion. | No. |
 

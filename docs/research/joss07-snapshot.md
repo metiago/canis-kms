@@ -1,5 +1,13 @@
 # JOSS-07 submission snapshot — 2026-11-19
 
+**Release traceability update (2026-11-21):** This snapshot recorded
+`e1d6998b5c5658750870b39e2a4d511de5bed7f3` as the candidate revision and
+then-reported tag target. The published source ZIP's embedded commit confirms that
+revision for the archive. The current local and remote `v0.1.0-rc.1` tag instead
+resolves to `5ea7e87d7f6c0aba0ed5ca32d809d615a88a9ec0`. The dated test and
+audit observations below remain historical; this record does not establish when
+the tag and archive revisions diverged.
+
 **Later security-route update (2026-11-20):** The author-approved private contact,
 disclosure process, and response targets are now in [SECURITY.md](../../SECURITY.md).
 Security-route findings below describe the 2026-11-19 snapshot, not current
@@ -10,7 +18,8 @@ records the remaining gate; the former readiness checklist is [archived](reposit
 
 **Not ready for JOSS submission. JOSS-07 remains open.** This is a review of the
 published `v0.1.0-rc.1` candidate, not a new release or a JOSS submission. The
-tag fixes source and manuscript commit `e1d6998b5c5658750870b39e2a4d511de5bed7f3`.
+snapshot identified source and manuscript commit `e1d6998b5c5658750870b39e2a4d511de5bed7f3`;
+the current tag target is recorded in the traceability update above.
 The audit started from clean HEAD `e302964d6ed9208be43849191da9c8f2f302c76b`;
 `git diff --name-only v0.1.0-rc.1 HEAD` listed only
 `docs/research/release-candidate.md`. The verification below used a local
@@ -31,8 +40,8 @@ decision.
 
 | Requirement | Evidence | Status |
 |-------------|----------|--------|
-| Fixed candidate and tag | Local annotated `v0.1.0-rc.1` resolves to `e1d6998b5c5658750870b39e2a4d511de5bed7f3`; root, client, and server POMs use `0.1.0-rc.1`. [Release record](release-candidate.md). | Verified |
-| Public GitHub Release | [Prerelease](https://github.com/metiago/canis-kms/releases/tag/v0.1.0-rc.1) API returned `draft=false`, `prerelease=true`, target commit above, published 2026-11-19 01:05:38 UTC. | Verified |
+| Fixed candidate and tag | This snapshot recorded local annotated `v0.1.0-rc.1` as resolving to `e1d6998b5c5658750870b39e2a4d511de5bed7f3`; the current tag resolves to `5ea7e87d7f6c0aba0ed5ca32d809d615a88a9ec0`. Root, client, and server POMs use `0.1.0-rc.1`. [Release record](release-candidate.md). | Historical candidate record; current tag target corrected above |
+| Public GitHub Release | [Prerelease](https://github.com/metiago/canis-kms/releases/tag/v0.1.0-rc.1) API returned `draft=false`, `prerelease=true`, release target `e1d6998b5c5658750870b39e2a4d511de5bed7f3`, published 2026-11-19 01:05:38 UTC. This release-page target is distinct from the current Git tag target. | Verified as historical release metadata |
 | Release artifacts and checksums | Public release API lists `canis-kms-0.1.0-rc.1-src.zip` (1,863,202 bytes, SHA-256 `81f132bf6b69b482649e6d4e300c7b40c5394954ac858c0ff2b2bf4a49621c8a`) and `checksums_sha256.txt` (95 bytes, SHA-256 `1000b1ebd86791c94e9d437689be40cd8827a2666d95c70e7ee7d5d28c40d86c`). The [release record](release-candidate.md#generated-artifacts-and-sha-256) records prior download and hash verification. GitHub-generated archives are separate from this attached ZIP. | Verified existence and published digests; no new download in this audit |
 | JReleaser outputs and release path | [Release record](release-candidate.md#validation) reports successful JReleaser config and dry run, archive/checksum generation, tagged Ubuntu build, and POSIX security gate. The final tagged JReleaser publication step failed on branch detection; the prerelease was then published through the GitHub Releases API. | Published candidate verified; workflow defect open |
 | Paper layout and metadata | Tagged [`paper.md`](../../joss-papers/paper.md) and [`paper.bib`](../../joss-papers/paper.bib) are colocated; YAML names Tiago Souza, `Independent Researcher, Brazil`, and `bibliography: paper.bib`. All eight expected headings are present. The submission date is absent, consistent with the backlog's instruction to set the actual date when submitting. [JOSS-06 audit](joss06-audit.md). | Candidate metadata verified; submission date deferred |
