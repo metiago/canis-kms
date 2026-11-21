@@ -1,11 +1,12 @@
 # Reviewer installation and executable example
 
 This guide describes the current development tree. Recheck its commands on the
-chosen release commit before citing a release. CANIS is a Java 21 Maven reactor
-with `client` and `server` modules. The supported application API is
-`JpawClient`; CANISP is an internal wire protocol. The server and official
-client use TLS 1.3 with mutual certificate authentication. The client validates
-the server certificate and hostname.
+chosen release commit before citing a release. CANIS is a Java 21 key-recovery
+service and client for studying asynchronous encrypted-file exchange under a
+shared-trust model. Its Maven reactor has `client` and `server` modules. The
+supported application API is `JpawClient`; CANISP is an internal wire protocol.
+The server and official client use TLS 1.3 with mutual certificate authentication.
+The client validates the server certificate and hostname.
 
 ## Clean checkout and tests
 

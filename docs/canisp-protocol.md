@@ -1,67 +1,47 @@
-# CANISP Protocol
+# CANISP/1 protocol reference
 
-CANISP is the internal wire protocol used between the CANIS server and the official Java
-`client` Maven artifact. Application code should use `JpawClient` instead of writing raw socket
-messages.
+## Overview
 
-CANISP is Redis-inspired in its interaction model: it uses a simple TCP request/response loop,
-compact text commands, and typed response payloads. It is not RESP-compatible and should not be
-used with Redis clients or Redis servers.
+CANISP is the internal wire protocol between CANIS and the official Java `client` Maven
+artifact. It uses a TCP request/response loop with line-oriented commands and typed payloads.
+Its interaction model is Redis-inspired, but it is not RESP-compatible. Redis clients and
+servers cannot use it.
 
-CANISP plays the same role for CANIS that a database wire protocol plays beneath a JDBC driver. It
-is part of the client/server implementation contract, not the application-facing API. The public
-integration surface for Java applications is the official client library.
+Applications should use `JpawClient` for command construction, response parsing, socket limits,
+and file envelopes. Raw CANISP is useful for maintenance, debugging, research, and PoCs;
+compatibility changes must keep the server and client aligned.
 
-The protocol is documented for maintainers, debugging, research, and PoCs. Compatibility work
-should keep the CANIS server and official client aligned.
+## Transport
 
-## Version
+1. The client opens a TLS 1.3 connection, validating the server certificate chain and configured
+   hostname. The server validates the client certificate against an external truststore. The
+   official client uses external PKCS#12 identity and trust stores and has no plaintext
+   fallback.
+2. After the handshake, the client sends one `|login` line. The server returns a length-prefixed
+   authentication response.
+3. On success, the connection accepts repeated newline-terminated command lines. Each response
+   starts with a 4-byte signed integer length followed by that many UTF-8 payload bytes.
 
-Current protocol version: `CANISP/1`
+TLS does not change CANISP/1 command or response framing.
 
-Clients can request the server protocol version after authentication:
+| Limit | Value |
+| --- | --- |
+| Server socket read timeout | 30 seconds |
+| Client connect and read timeout | 30 seconds |
+| Server command line | 1,048,576 characters |
+| Client command | 1,048,576 characters |
+| Client response payload before allocation | 1,048,576 bytes |
 
-```text
-|version
-```
+## Authentication
 
-Successful response:
+Send `|login username:password` after TLS succeeds, before normal commands. The length-prefixed
+response is one of `Authentication successful`, `Authentication failed`, or `Invalid input
+format`. An authenticated connection may then use the commands below.
 
-```text
-|s>CANISP/1
-```
+## Message format
 
-Protocol changes that alter command names, argument order, response types, or envelope formats
-should introduce a new protocol version and keep `JpawClient` aligned with server command parsing.
-
-## Connection Flow
-
-1. Client opens a TLS 1.3 connection and validates the server certificate and hostname.
-2. Server validates the client certificate against its external truststore.
-3. Client sends one login command line after the TLS handshake succeeds.
-4. Server returns a length-prefixed authentication response.
-5. If authentication succeeds, the same connection can send CANISP commands.
-6. Each command is a single newline-terminated text command.
-7. Each response is a 4-byte signed integer length followed by the UTF-8 response payload.
-
-TLS changes the transport, not CANISP/1 command or response framing. The official Java client
-performs TLS 1.3 mutual authentication, validates the server chain and configured hostname, and
-has no plaintext fallback. Client identity and server trust material are loaded from external
-PKCS#12 stores.
-
-## Limits
-
-CANISP/1 applies defensive socket limits on both sides:
-
-- Server sockets use a 30 second read timeout.
-- Client sockets use a 30 second connect/read timeout.
-- Server command lines are limited to 1,048,576 characters.
-- Client commands are limited to 1,048,576 characters.
-- Client response payloads are limited to 1,048,576 bytes before allocation.
-
-## Payload Types
-
-CANISP response payloads use typed prefixes:
+Command lines contain the leading `|` and end with a newline. Response payloads use these
+prefixes:
 
 ```text
 |s>value
@@ -70,181 +50,53 @@ CANISP response payloads use typed prefixes:
 |a>|ms>name:serviceA|ms>publicKey:base64|a>|ms>name:serviceB|ms>publicKey:base64
 ```
 
-The current Java client owns payload parsing through `Parser`.
-
-## Application Integration Contract
-
-Application developers should not construct CANISP command lines directly. They should use the
-official Java client so command construction, response parsing, socket limits, and envelope
-operations stay centralized in one implementation.
-
-Raw CANISP messages are useful for protocol tests, debugging, and research, but they are not the
-supported application API.
-
-## Service Names
-
-CANISP/1 treats service names as identifiers, not arbitrary free-form text. The intended service
-name format is:
-
-```text
-[A-Za-z0-9._-]{1,128}
-```
-
-This format keeps command construction unambiguous for the current line-oriented protocol. The
-official client and server should both validate service names before using them in commands or
-stored entries.
+The official client's `Parser` owns response parsing. Service names are identifiers matching
+`[A-Za-z0-9._-]{1,128}`; the client and server validate them to keep line-oriented commands
+unambiguous.
 
 ## Commands
 
-### Login
+All commands below require authentication. Examples show response payloads after the 4-byte
+length.
 
-```text
-|login username:password
-```
+- `|version` returns `|s>CANISP/1`.
+- `|health` returns `|s>OK`.
+- `|set serviceName` creates and persists a server-side RSA key pair; returns `|s>OK`.
+- `|get serviceName` returns public entry metadata:
+  `|ms>name:serviceName|ms>publicKey:base64`.
+- `|get-public serviceName` returns only the public key: `|s>base64`.
+- `|list` returns an array of public entry maps, for example:
+  `|a>|ms>name:serviceA|ms>publicKey:base64|a>|ms>name:serviceB|ms>publicKey:base64`.
+- `|decrypt serviceName base64EncryptedPayload` decrypts with the server-side private key and
+  returns `|s>base64DecryptedPayload`.
+- `|del serviceName` removes the active key; returns `|s>OK`.
 
-Returns one of:
+For a missing name, `|get` returns `|s>ERROR: Key not found`; `JpawClient.get` translates this
+to `null`. `|decrypt` may return `|s>ERROR: Invalid input format`, `|s>ERROR: Key not found`, or
+`|s>ERROR: Decryption failed`. `|set` rejects a duplicate with
+`|s>ERROR: Service already exists` and preserves the original key. The server does not return
+RSA private keys.
 
-```text
-Authentication successful
-Authentication failed
-Invalid input format
-```
+## File envelopes
 
-Login is handled before normal command processing.
+The official client generates an AES file key, encrypts the file locally with AES-GCM, and wraps
+the file key with the CANIS public key. The versioned `CANISHYB1` envelope contains the wrapped
+file key, AES-GCM nonce, ciphertext, and authentication tag.
 
-### Version
+To decrypt a shared file, the client sends only the wrapped file key through `|decrypt`. CANIS
+unwraps it with the server-side private key and returns the file key; file content stays outside
+the server. Key metadata is stored in an encrypted `CANISDB1` binary store, protected by AES-GCM
+under the key named by `CANIS_SECRET_KEY`. CANIS encrypted data uses the `CANISGCM1`,
+`CANISHYB1`, and `CANISDB1` formats.
 
-```text
-|version
-```
+## Compatibility notes
 
-Returns:
+Command names, argument order, response types, or envelope format changes require a new protocol
+version and corresponding `JpawClient` parsing changes. CANISP is a client/server implementation
+contract, not a supported direct application API.
 
-```text
-|s>CANISP/1
-```
-
-### Health
-
-```text
-|health
-```
-
-Returns:
-
-```text
-|s>OK
-```
-
-### Set
-
-```text
-|set serviceName
-```
-
-Creates a server-side RSA key pair for the service name and persists the entry.
-
-Returns:
-
-```text
-|s>OK
-```
-
-### Get
-
-```text
-|get serviceName
-```
-
-Returns entry metadata without private key material:
-
-```text
-|ms>name:serviceName|ms>publicKey:base64
-```
-
-If the service name does not exist, the server returns `|s>ERROR: Key not found`. The official
-Java client translates this response to `null` from `get`.
-
-### Get Public Key
-
-```text
-|get-public serviceName
-```
-
-Returns only the public key:
-
-```text
-|s>base64
-```
-
-### List
-
-```text
-|list
-```
-
-Returns an array of entry metadata maps:
-
-```text
-|a>|ms>name:serviceA|ms>publicKey:base64|a>|ms>name:serviceB|ms>publicKey:base64
-```
-
-### Decrypt
-
-```text
-|decrypt serviceName base64EncryptedPayload
-```
-
-CANIS decrypts the payload server-side using the stored private key for `serviceName`.
-Private keys are never returned to clients.
-
-Successful response:
-
-```text
-|s>base64DecryptedPayload
-```
-
-Error responses:
-
-```text
-|s>ERROR: Invalid input format
-|s>ERROR: Key not found
-|s>ERROR: Decryption failed
-```
-
-### Delete
-
-```text
-|del serviceName
-```
-
-Returns:
-
-```text
-|s>OK
-```
-
-## File Envelope Model
-
-The official Java client encrypts files using a generated AES file key. The file key is wrapped
-with a CANIS public key and stored in a versioned `CANISHYB1` envelope with the AES-GCM nonce,
-ciphertext, and authentication tag.
-
-To decrypt a shared file, the client reads the envelope and sends only the wrapped file key to
-CANIS through `|decrypt`. CANIS unwraps the file key with the server-side private key and returns
-the unwrapped file key. The private key stays on the server.
-
-## Persistence
-
-CANIS persists key metadata in an encrypted `CANISDB1` binary store. The store is encrypted with
-AES-GCM using the secret key configured by `CANIS_SECRET_KEY`.
-CANIS encrypted data must use the current `CANISGCM1`, `CANISHYB1`, and `CANISDB1` envelopes.
-
-## Audit Events
-
-CANIS emits key-value formatted log messages through the `io.canis.audit` logger for authentication,
-key creation, key access, key deletion, decrypt success/failure, and rejected commands. Messages
-include identities, key names, remote addresses, and failure reasons. They do not include raw
-credentials, private keys, encrypted payloads, or decrypted payloads. The messages do not have
-the event IDs, defined record schema, or integrity verification required by `AGENTS.md`, so they
-are not a tamper-evident audit trail.
+`io.canis.audit` emits key-value log messages for authentication, key creation, access and
+deletion, decrypt success or failure, and rejected commands. They can include identities, key
+names, remote addresses, and failure reasons, but not raw credentials, private keys, encrypted
+payloads, or decrypted payloads. The messages have no defined record schema, event IDs, or
+integrity verification required by `AGENTS.md`; they are not a tamper-evident audit trail.
