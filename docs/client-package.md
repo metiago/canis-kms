@@ -4,9 +4,7 @@
 
 The CANIS Java client is the supported application-facing API for Java applications that use the
 CANIS key-recovery service. Use `JpawClient` for CANISP commands, response parsing, socket
-limits, service-name validation, and file envelopes. CANISP is the internal client/server
-protocol, documented for maintainers, debugging, research, and PoCs rather than direct
-application integration.
+limits, service-name validation, and file envelopes.
 
 Package: <https://github.com/metiago/canis-client/packages/2344030>
 
