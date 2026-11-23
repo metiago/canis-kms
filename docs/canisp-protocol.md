@@ -8,8 +8,7 @@ Its interaction model is Redis-inspired, but it is not RESP-compatible. Redis cl
 servers cannot use it.
 
 Applications should use `JpawClient` for command construction, response parsing, socket limits,
-and file envelopes. Raw CANISP is useful for maintenance, debugging, research, and PoCs;
-compatibility changes must keep the server and client aligned.
+and file envelopes. Raw CANISP is useful for maintenance, debugging, research.
 
 ## Transport
 
