@@ -53,7 +53,7 @@ mvn --batch-mode --no-transfer-progress clean verify
 **Commands — POSIX**
 
 ```sh
-sh docs/research/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000
+sh tools/ci/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000
 ```
 
 **Commands — Windows PowerShell**

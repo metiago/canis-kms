@@ -18,7 +18,7 @@ revision limits rather than treating this scope note as new test evidence.
 | Work | Predefined method | Observed results | Claim audit | Reproduction |
 | --- | --- | --- | --- | --- |
 | CODE-01 integrity prerequisites | [Gap analysis and plan](../code01-integrity.md#gap-analysis-and-implemented-plan) | [Local candidate results](../code01-integrity.md#acceptance-evidence), [JOSS-02 fixed Windows suite](joss02-validation.md#fixed-revision-build-and-tests) | [Limits and compatibility](../code01-integrity.md#operational-and-compatibility-limits) | Fixed-revision Windows tests passed; POSIX permission/symlink and broader packaged-startup gate remain open |
-| CODE-02 asynchronous process harness | [Method and commands](code02-method.md) | [Local execution record](code02-results.md) | Security and platform limits in the method | [Windows](run-code02.ps1), [POSIX](run-code02.sh) |
+| CODE-02 asynchronous process harness | [Method and commands](code02-method.md) | [Local execution record](code02-results.md) | Security and platform limits in the method | [Windows](run-code02.ps1), [POSIX](../../tools/ci/run-code02.sh) |
 | CODE-03 whole-file memory preflight | [Prespecified method](code03-method.md) | [Windows result and boundary](code03-results.md), [run rows](code03-runs.csv), [file rows](code03-files.csv) | Size and platform limits in the result | [Windows runner](run-code03.ps1), [exporter](export-code03.ps1) |
 | Issue #31 representative workload and baselines | [Protocol](issue31-protocol.md), [CANIS baseline method](issue31-baseline-method.md) | [Absolute Windows baseline](issue31-baseline-results.md), [run rows](issue31-baseline-runs.csv), [file rows](issue31-baseline-files.csv) | Acceptance and limits in the baseline result | [Runner](run-issue31-baseline.ps1), [exporter](export-issue31-baseline.ps1), [analysis](analyze-issue31-baseline.py); fixed-revision full study pending |
 | Issue #33 delayed multi-service interoperability | [Functional method](issue33-method.md) | [Windows observations and acceptance](issue33-results.md), [final JSON/CSV hashes](issue33-artifacts.sha256), [candidate D smoke](joss02-validation.md#minimal-smoke-reproductions) | Shared-trust and study limits in result | [Windows](run-issue33.ps1), [POSIX](run-issue33.sh), [artifact verifier](verify-issue33.py); full fixed-revision/POSIX series pending |
@@ -35,10 +35,10 @@ revision limits rather than treating this scope note as new test evidence.
 The JOSS-03 `*-suite-report.csv` and `*-test-cases.csv` files are
 sanitized snapshots tied to its results page. The earlier JOSS-02 CSV summaries
 are [archived](repository-cleanup-phase2.md#archived-files). The [JOSS-05 draft PDF (archived)](repository-cleanup-report.md#archived-files)
-records an adapted local build. `joss03-posix-report-fixture.xml` and
-`VerifyPosixCoverage.java` support the historical POSIX report gate. The
-[Issue #1 POSIX gate](VerifyIssue1PosixCoverage.java) and
-[Windows gate](VerifyWindowsCoverage.java) additionally require master-key
+records an adapted local build. The [synthetic Surefire fixture](../../tests/fixtures/ci/joss03-posix-report-fixture.xml)
+and [historical POSIX gate](../../tools/ci/VerifyPosixCoverage.java) support the
+report check. The [Issue #1 POSIX gate](../../tools/ci/VerifyIssue1PosixCoverage.java)
+and [Windows gate](../../tools/ci/VerifyWindowsCoverage.java) additionally require master-key
 owner, permission, and ACL cases to execute on their respective CI platforms.
 The [JOSS-02 summary exporter](export-joss02-summary.ps1) regenerates its CSV summaries.
 Keep generated secrets and raw test logs out of this directory.

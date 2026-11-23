@@ -6,14 +6,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.canis.config.Environment;
 import io.canis.models.LoginCredentials;
 import io.canis.store.KeyValueStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 
 public class ServerTest {
     @TempDir
@@ -146,5 +151,63 @@ public class ServerTest {
         assertThrows(IllegalStateException.class, () -> new Server(base, loaded));
         assertThrows(IllegalStateException.class, () -> new Server(base, database));
         assertArrayEquals(original, Files.readAllBytes(database));
+    }
+
+    @Test
+    void startRevalidatesKeyBeforeBindingWithoutLeakingSecrets() throws Exception {
+        TlsTestSupport tls = new TlsTestSupport(tempDir);
+        Environment base = tls.environment();
+        Environment configured = new Environment(
+                "PASSWORD_SENTINEL",
+                base.username(),
+                base.port(),
+                Map.of(base.username(), "PASSWORD_SENTINEL"),
+                base.secretKeyPath(),
+                base.tls());
+        Path key = configured.secretKeyPath();
+        Path database = tempDir.resolve("configured.db");
+        Path otherKey = tempDir.resolve("other.key");
+        MasterKeyTestSupport.provision(key);
+        MasterKeyTestSupport.provision(otherKey);
+        byte[] originalKey = Files.readAllBytes(key);
+        KeyValueStore.initialize(database.toString(), key.toString());
+        byte[] originalDatabase = Files.readAllBytes(database);
+
+        Server malformed = new Server(configured, database);
+        Files.writeString(key, "KEY_CONTENT_SENTINEL_NOT_BASE64!");
+        Logger root = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        root.addAppender(appender);
+        IllegalStateException failure;
+        try {
+            failure = assertThrows(IllegalStateException.class, malformed::start);
+        } finally {
+            root.detachAppender(appender);
+            appender.stop();
+        }
+        assertTrue(failure.getMessage().contains("invalid_format"));
+        String emitted = failure.toString()
+                + appender.list.stream().map(ILoggingEvent::getFormattedMessage).reduce("", String::concat);
+        assertFalse(emitted.contains("KEY_CONTENT_SENTINEL"));
+        assertFalse(emitted.contains("PASSWORD_SENTINEL"));
+        assertFalse(emitted.contains(key.toString()));
+        assertFalse(emitted.contains("TLS server is listening"));
+        assertEquals(0, malformed.getPort());
+
+        Files.write(key, originalKey);
+        Server changed = new Server(configured, database);
+        Files.write(key, Files.readAllBytes(otherKey));
+        IllegalStateException mismatch = assertThrows(IllegalStateException.class, changed::start);
+        assertEquals("CANIS database key configuration mismatch", mismatch.getMessage());
+        assertEquals(0, changed.getPort());
+
+        Files.write(key, originalKey);
+        Server missing = new Server(configured, database);
+        Files.delete(key);
+        IllegalStateException absent = assertThrows(IllegalStateException.class, missing::start);
+        assertTrue(absent.getMessage().contains("missing_file"));
+        assertEquals(0, missing.getPort());
+        assertArrayEquals(originalDatabase, Files.readAllBytes(database));
     }
 }

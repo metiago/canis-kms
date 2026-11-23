@@ -28,6 +28,9 @@ java docs/research/VerifyPosixCoverage.java server/target/surefire-reports/TEST-
 java docs/research/VerifyPosixCoverage.java docs/research/joss03-posix-report-fixture.xml
 ```
 
+The two `VerifyPosixCoverage.java` commands preserve the paths used for this
+historical run. For current checks, use the paths in the [method](joss03-method.md).
+
 Spotless exited 0 and formatted the new Java test. The focused demo's first
 attempt in a restricted filesystem sandbox failed before server startup when
 Windows denied setting a restrictive ACL on the temporary master-key
@@ -57,7 +60,7 @@ present. That check does not compile the paper. Git Bash `bash -n` also exited
 The JDK-only POSIX report gate was checked against the actual Windows
 `MasterKeyLoaderTest` XML and exited 1 because the expected POSIX permission
 case was skipped. It exited 0 on the synthetic
-[`joss03-posix-report-fixture.xml`](joss03-posix-report-fixture.xml). These
+[`joss03-posix-report-fixture.xml`](../../tests/fixtures/ci/joss03-posix-report-fixture.xml). These
 gate checks validate the report parser; they are not POSIX application tests.
 
 ## Observations and limits

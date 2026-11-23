@@ -38,18 +38,30 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Prepare POSIX owner-mismatch fixtures
+        if: runner.os == 'Linux'
+        run: sh tools/ci/setup-posix-owner-fixtures.sh
+
       - name: Build and run tests
         run: mvn --batch-mode --no-transfer-progress clean verify
 
       - name: Require POSIX security cases to execute
         if: runner.os == 'Linux'
-        run: java docs/research/VerifyPosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
+        run: java tools/ci/VerifyPosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
+
+      - name: Require Issue 1 POSIX security cases to execute
+        if: runner.os == 'Linux'
+        run: java tools/ci/VerifyIssue1PosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
+
+      - name: Require Windows security cases to execute
+        if: runner.os == 'Windows'
+        run: java tools/ci/VerifyWindowsCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
 
       - name: Reproduce CODE-02 asynchronous exchange
         if: runner.os == 'Linux'
         run: |
           set +e
-          sh docs/research/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000 --output server/target/code02-ci.json > server/target/code02-ci.log 2>&1
+          sh tools/ci/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000 --output server/target/code02-ci.json > server/target/code02-ci.log 2>&1
           status=$?
           printf 'exit_status=%s\n' "$status" > server/target/code02-ci.exit-status.txt
           cat server/target/code02-ci.log

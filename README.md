@@ -33,6 +33,11 @@ Expect `BUILD SUCCESS` with no test failures. Follow the [Reviewer Guide](docs/r
 - [Java Client Package](docs/client-package.md)
 - [Research Evidence Index](docs/research/README.md)
 
+Repository layout: `docs/` contains product and reviewer documentation;
+`docs/research/` contains research reports, evidence, and reproduction scripts;
+`tools/ci/` contains CI checks and fixture setup; and `tests/fixtures/ci/`
+contains static input used to exercise a CI check.
+
 ## Release
 
 - Latest public release: [v0.1.0-rc.1](https://github.com/metiago/canis-kms/releases/tag/v0.1.0-rc.1) (research prerelease).
