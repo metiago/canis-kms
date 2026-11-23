@@ -9,6 +9,9 @@ servers cannot use it.
 
 Applications should use `JpawClient` for command construction, response parsing, socket limits,
 and file envelopes. Raw CANISP is useful for maintenance, debugging, research.
+CANISP operates inside the organization-managed deployment described in the
+[threat model](threat-model.md). TLS and login admit a client, but key names do not restrict
+that client's access to individual stored keys. The host and its administrators are trusted.
 
 ## Transport
 

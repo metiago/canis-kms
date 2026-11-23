@@ -6,6 +6,15 @@ Files here retain the methods, observed results, claim audits, and sanitized art
 to review the CANIS research and JOSS work. Working-tree observations are not fixed-release
 verification.
 
+Interpret historical security results within the current [CANIS threat model](../threat-model.md):
+CANIS assumes an organization-managed corporate host and trusted operating system,
+administrators, deployment automation, service account, and identity systems. Tests of key-file
+permissions, ACLs, transport, and fail-closed startup assess accidental exposure, unsafe
+configuration, and access by non-privileged identities. They do not demonstrate resistance to
+root or Administrator access, a compromised host, HSM-level extraction, or a public cloud KMS
+threat model. The dated results below remain unchanged; follow their stated platform and
+revision limits rather than treating this scope note as new test evidence.
+
 | Work | Predefined method | Observed results | Claim audit | Reproduction |
 | --- | --- | --- | --- | --- |
 | CODE-01 integrity prerequisites | [Gap analysis and plan](../code01-integrity.md#gap-analysis-and-implemented-plan) | [Local candidate results](../code01-integrity.md#acceptance-evidence), [JOSS-02 fixed Windows suite](joss02-validation.md#fixed-revision-build-and-tests) | [Limits and compatibility](../code01-integrity.md#operational-and-compatibility-limits) | Fixed-revision Windows tests passed; POSIX permission/symlink and broader packaged-startup gate remain open |
@@ -27,8 +36,11 @@ The JOSS-03 `*-suite-report.csv` and `*-test-cases.csv` files are
 sanitized snapshots tied to its results page. The earlier JOSS-02 CSV summaries
 are [archived](repository-cleanup-phase2.md#archived-files). The [JOSS-05 draft PDF (archived)](repository-cleanup-report.md#archived-files)
 records an adapted local build. `joss03-posix-report-fixture.xml` and
-`VerifyPosixCoverage.java` support the POSIX report gate. The
-[JOSS-02 summary exporter](export-joss02-summary.ps1) regenerates its CSV summaries.
+`VerifyPosixCoverage.java` support the historical POSIX report gate. The
+[Issue #1 POSIX gate](VerifyIssue1PosixCoverage.java) and
+[Windows gate](VerifyWindowsCoverage.java) additionally require master-key
+owner, permission, and ACL cases to execute on their respective CI platforms.
+The [JOSS-02 summary exporter](export-joss02-summary.ps1) regenerates its CSV summaries.
 Keep generated secrets and raw test logs out of this directory.
 The CODE-01 record describes a later local working tree. Archived JOSS-02 and JOSS-05
 results are dated snapshots and should not be read as findings about the CODE-01 candidate.

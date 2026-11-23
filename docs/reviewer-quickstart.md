@@ -2,6 +2,10 @@
 
 This review uses synthetic data and the repository's isolated CODE-02 runner. Steps 4–9 are one run: the command in step 4 creates temporary secrets, initializes and starts the packaged server, configures the official client, and completes the file exchange. Successful runs remove the private fixtures. This procedure does not verify an operator-provisioned long-running server. Do not use this run's fixtures for a deployment.
 
+CANIS targets organization-managed corporate environments. Read the
+[threat model](threat-model.md) and [master-key guide](master-key.md) for the trusted host,
+administrator, identity, and key-path assumptions before adapting this example.
+
 ## Prerequisites
 
 - Git; JDK 21 or newer (`java`, `javac`, `keytool`); Maven 3.9.x.

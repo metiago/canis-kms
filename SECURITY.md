@@ -14,6 +14,10 @@ follow up through the same private channel. These are communication targets,
 not a remediation deadline.
 
 The current development tree is a proof of concept; no production support or
-remediation-time commitment has been established. The supported behavior and
-known limitations are in `docs/reviewer-guide.md`, `docs/threat-model.md`, and
-the production backlog.
+remediation-time commitment has been established. CANIS targets organization-managed
+corporate environments. Its operating system, infrastructure administrators,
+deployment automation, service account, and corporate identity systems are trusted.
+Privileged-host compromise, HSM-level guarantees, multi-tenant isolation, and public
+cloud KMS threat models are outside the intended security boundary. The supported
+behavior and known limits are in [the reviewer guide](docs/reviewer-guide.md),
+[threat model](docs/threat-model.md), and [master-key guide](docs/master-key.md).

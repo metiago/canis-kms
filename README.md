@@ -4,6 +4,11 @@
 
 CANIS is a Java 21 key-recovery service and client for asynchronous encrypted-file exchange between Java services. A producer encrypts a file locally and publishes the encrypted file to shared storage.
 
+CANIS is intended for organization-managed corporate environments with trusted host
+administrators, deployment automation, service accounts, and identity systems. It is not a
+public cloud KMS, multi-tenant service, HSM, or Vault as a Service. See the
+[threat model](docs/threat-model.md) before deployment.
+
 A recipient can retrieve that file later and ask CANIS to recover its file key. File contents stay outside the key service, while private keys remain on the server. Admitted clients share access to stored key names; the trust boundary is described in the threat model.
 
 ## Quick Start
@@ -35,7 +40,12 @@ Expect `BUILD SUCCESS` with no test failures. Follow the [Reviewer Guide](docs/r
 
 ## Security
 
-Rotate certificates before expiry. Report suspected vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+Use a dedicated service account, protected master-key and database paths, corporate PKI, and
+restricted network access. Master-key file checks detect unsafe configuration and fail closed;
+they do not defend against a privileged host administrator or compromised operating system.
+Rotate certificates before expiry. See the [master-key guide](docs/master-key.md) for exact
+loader checks and deployment responsibilities. Report suspected vulnerabilities privately as
+described in [SECURITY.md](SECURITY.md).
 
 ## License
 

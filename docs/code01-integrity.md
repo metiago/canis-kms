@@ -1,5 +1,12 @@
 # CODE-01 integrity gate: local candidate evidence
 
+This dated test record reports observed implementation behavior; read its security claims within
+the current [Trusted Computing Base and deployment scope](threat-model.md#trust-assumptions-and-trusted-computing-base).
+It does not establish protection against privileged host administrators or fully compromised
+operating systems. The [master-key guide](master-key.md) distinguishes the current loader's
+ancestor-link checks and file/immediate-parent access checks from the deployment responsibility
+for higher ancestor access controls. The tests below describe the earlier CODE-01 revision.
+
 This records local CODE-01 verification before the changes were committed. The Git HEAD at
 verification was `0e9c889e49b2928c2c9cd84fadaf0368d7c41c91`, with related and unrelated
 work modified or untracked. The changes were subsequently committed as
@@ -57,8 +64,9 @@ created the database. Repeating `--init-db` exited 1; the database SHA-256 was u
   metadata durability and unsupported filesystems need deployment validation.
 - The master key is cached. Runtime loss of its file is not detected until a later configuration
   check or restart. Database loss while idle is detected at the next connection or operation.
-- The service identity must control all ancestor directories. Path-based checks cannot defend
-  against an actor who can replace those directories concurrently.
+- The service identity or trusted administrators must control all ancestor directories.
+  Path-based checks cannot defend against a non-privileged actor mistakenly given
+  replacement rights on those directories.
 - Each operation reads and hashes the encrypted database. Large-database performance has not been
   measured. The database limit is 256 MiB.
 - A compromised authenticated identity can decrypt under every stored key name. Per-key policy is

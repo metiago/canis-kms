@@ -72,6 +72,10 @@ The client fetches public keys to encrypt files locally and asks CANIS to perfor
 operations on the server. RSA private keys are not returned. Protect identity and trust stores
 with operating-system permissions, supply passwords through a protected environment or secret
 manager, and do not commit these secrets.
+Use the client only with a CANIS deployment administered within the organization's trusted
+environment. A valid admitted client can request recovery under any stored key name; the
+[threat model](threat-model.md) defines this shared-access boundary and the trusted host and
+identity systems.
 
 The client offers only `TLS_AES_128_GCM_SHA256`, `TLS_AES_256_GCM_SHA384`, and
 `TLS_CHACHA20_POLY1305_SHA256`, limited to suites enabled by its Java TLS provider.
