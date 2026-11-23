@@ -7,10 +7,11 @@ PKCS#8 string. `Entry` is not Java-serializable.
 
 CANISP `|get`, `|get-public`, and `|list` return public metadata. `|decrypt` returns the
 decrypted payload over authenticated TLS, never the RSA private key. Key-processing failures use
-fixed CANISP responses. Operational logs record safe service identifiers and failure categories
-without private-key exception messages or stack traces; audit events record outcomes without key
-material. Malformed service-credential configuration also returns a fixed error without echoing
-the configured value.
+fixed CANISP responses. Operational logs record validated service identifiers and failure
+categories without private-key exception messages or stack traces. Failed authentication logs use
+a generic identity instead of the client-supplied username; successful authentication and later
+operations record the authenticated identity. Audit events record outcomes without key material. Malformed
+service-credential configuration also returns a fixed error without echoing the configured value.
 
 ## API and compatibility
 
@@ -52,4 +53,5 @@ save failures, tampering, and loading and rewriting an independently encoded leg
 `ClientHandlerTest` checks CANISP responses and operational and audit logs against an injected
 exception containing a generated private-key encoding. `ServerEndToEndTest` covers the official
 client over mutual TLS, restart, and deletion; TLS suites cover invalid certificates and
-credentials.
+credentials. `ServerTlsSecurityTest` also checks that failed login input containing private-key-like
+text, long values, control characters, and log-injection text does not enter operational or audit logs.

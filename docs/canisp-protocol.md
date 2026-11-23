@@ -103,7 +103,9 @@ version and corresponding `JpawClient` parsing changes. CANISP is a client/serve
 contract, not a supported direct application API.
 
 `io.canis.audit` emits key-value log messages for authentication, key creation, access and
-deletion, decrypt success or failure, and rejected commands. They can include identities, key
-names, remote addresses, and failure reasons, but not raw credentials, private keys, encrypted
-payloads, or decrypted payloads. The messages have no defined record schema, event IDs, or
-integrity verification required by `AGENTS.md`; they are not a tamper-evident audit trail.
+deletion, decrypt success or failure, and rejected commands. Successful authentication and later
+operations include the authenticated identity; failed authentication uses a generic identity.
+Messages can also include client-supplied, validated key names, remote addresses, and fixed
+failure reasons. They exclude passwords, raw login lines, stored private keys, encrypted payloads,
+and decrypted payloads. The messages have no defined record schema, event IDs, or integrity
+verification required by `AGENTS.md`; they are not a tamper-evident audit trail.

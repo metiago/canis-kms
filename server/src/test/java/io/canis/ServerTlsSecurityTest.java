@@ -1,10 +1,14 @@
 package io.canis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.canis.config.TlsConfiguration;
 import io.canis.config.TlsContextFactory;
 import io.canis.store.KeyValueStore;
@@ -16,12 +20,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.net.ssl.SSLSocket;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 
 class ServerTlsSecurityTest {
     @TempDir
@@ -122,6 +128,62 @@ class ServerTlsSecurityTest {
     void rejectsInvalidCredentialsAndCommandsBeforeLogin() throws Exception {
         assertEquals("Authentication failed", login("|login admin:wrong"));
         assertEquals("Authentication failed", login("|health"));
+    }
+
+    @Test
+    void failedAuthenticationDoesNotLogClientSuppliedFields() throws Exception {
+        Logger serverLogger = (Logger) LoggerFactory.getLogger(Server.class);
+        Logger auditLogger = (Logger) LoggerFactory.getLogger("io.canis.audit");
+        ListAppender<ILoggingEvent> serverAppender = new ListAppender<>();
+        ListAppender<ILoggingEvent> auditAppender = new ListAppender<>();
+        serverAppender.start();
+        auditAppender.start();
+        serverLogger.addAppender(serverAppender);
+        auditLogger.addAppender(auditAppender);
+
+        List<String> usernames = List.of(
+                "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKgw" + "A".repeat(512) + "PRIVATE_KEY_MARKER",
+                "LONG_USERNAME_MARKER" + "X".repeat(8192),
+                "CONTROL_MARKER\u000b\u001b[31m\tTAIL",
+                "INJECTION_MARKER event=auth_success identity=admin reason=ok");
+        try {
+            for (String username : usernames) {
+                assertEquals("Authentication failed", login("|login " + username + ":PASSWORD_MARKER"));
+            }
+            assertEquals("Invalid input format", login("|login MALFORMED_MARKER"));
+            assertEquals("Authentication failed", login("|health UNKNOWN_COMMAND_MARKER"));
+
+            String logged = serverAppender.list.stream()
+                            .map(ILoggingEvent::getFormattedMessage)
+                            .reduce("", String::concat)
+                    + auditAppender.list.stream()
+                            .map(ILoggingEvent::getFormattedMessage)
+                            .reduce("", String::concat);
+            for (String marker : List.of(
+                    "PRIVATE_KEY_MARKER",
+                    "LONG_USERNAME_MARKER",
+                    "CONTROL_MARKER",
+                    "INJECTION_MARKER",
+                    "PASSWORD_MARKER",
+                    "MALFORMED_MARKER",
+                    "UNKNOWN_COMMAND_MARKER")) {
+                assertFalse(logged.contains(marker));
+            }
+            assertEquals(6, auditAppender.list.size());
+            assertTrue(auditAppender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .allMatch(message -> message.startsWith("event=auth_failure identity=unknown remote=")));
+
+            assertEquals("Authentication successful", login("|login admin:123"));
+            assertTrue(auditAppender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .anyMatch(message -> message.startsWith("event=auth_success identity=admin remote=")));
+        } finally {
+            serverLogger.detachAppender(serverAppender);
+            auditLogger.detachAppender(auditAppender);
+            serverAppender.stop();
+            auditAppender.stop();
+        }
     }
 
     @Test
