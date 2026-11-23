@@ -15,7 +15,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/research/run-code02
 ```
 
 ```sh
-sh docs/research/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000
+sh tools/ci/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000
 ```
 
 Each wrapper packages the server, compiles `Code02Harness.java` into ignored `server/target/`
@@ -44,7 +44,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/research/run-code02
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/research/run-code02.ps1 --scenario invalid-certificate
 ```
 
-On POSIX, substitute `sh docs/research/run-code02.sh`. The normal path accepts `--files`
+On POSIX, substitute `sh tools/ci/run-code02.sh`. The normal path accepts `--files`
 (1–100), `--size` (1–4194304 bytes), `--concurrency` (1–4), `--interval-ms` (0–60000),
 `--delay-ms` (0–60000), and `--repetition` (1–5). `--files 100 --size 0` selects the
 Issue #31 shuffled multiset (50 × 4 KiB, 35 × 256 KiB, 15 × 4 MiB); other positive sizes

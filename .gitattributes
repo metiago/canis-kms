@@ -1,6 +1,8 @@
 docs/research/issue34-artifacts/** text eol=lf
 docs/research/issue34-artifacts.sha256 text eol=lf
 docs/research/run-issue34.sh text eol=lf
+tools/ci/setup-posix-owner-fixtures.sh text eol=lf
+tools/ci/run-code02.sh text eol=lf
 docs/research/Issue32Harness.java text eol=lf
 docs/research/analyze-issue32.py text eol=lf
 docs/research/verify-issue32.py text eol=lf

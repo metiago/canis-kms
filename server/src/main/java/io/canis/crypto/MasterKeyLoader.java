@@ -53,6 +53,7 @@ final class MasterKeyLoader {
                 throw new KeyFileFailure("missing_path");
             }
             Path path = Path.of(location).toAbsolutePath().normalize();
+            checkAncestorDirectories(path);
             BasicFileAttributes attributes =
                     Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
             if (!attributes.isRegularFile()) {
@@ -91,6 +92,26 @@ final class MasterKeyLoader {
             return fail("invalid_path");
         } catch (IOException | SecurityException e) {
             return fail("unreadable_file");
+        }
+    }
+
+    private static void checkAncestorDirectories(Path path) throws IOException, KeyFileFailure {
+        Path directory = path.getRoot();
+        if (directory == null) {
+            throw new KeyFileFailure("invalid_path");
+        }
+        requireDirectory(directory);
+        for (int index = 0; index < path.getNameCount() - 1; index++) {
+            directory = directory.resolve(path.getName(index));
+            requireDirectory(directory);
+        }
+    }
+
+    private static void requireDirectory(Path path) throws IOException, KeyFileFailure {
+        BasicFileAttributes attributes =
+                Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        if (!attributes.isDirectory()) {
+            throw new KeyFileFailure("unsafe_path");
         }
     }
 
@@ -166,12 +187,17 @@ final class MasterKeyLoader {
         UserPrincipal current = currentUser(path);
         if (!Files.readAttributes(path.getParent(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
                         .isDirectory()
-                || !acl.getOwner().equals(current)
-                || !trustedPrincipal(parentAcl.getOwner(), current)
-                || unsafeAcl(acl, current, FILE_SENSITIVE_PERMISSIONS)
-                || unsafeAcl(parentAcl, current, DIRECTORY_SENSITIVE_PERMISSIONS)) {
+                || unsafeWindowsPermissions(acl, parentAcl, current)) {
             throw new KeyFileFailure("unsafe_permissions");
         }
+    }
+
+    static boolean unsafeWindowsPermissions(
+            AclFileAttributeView acl, AclFileAttributeView parentAcl, UserPrincipal current) throws IOException {
+        return !acl.getOwner().equals(current)
+                || !trustedPrincipal(parentAcl.getOwner(), current)
+                || unsafeAcl(acl, current, FILE_SENSITIVE_PERMISSIONS)
+                || unsafeAcl(parentAcl, current, DIRECTORY_SENSITIVE_PERMISSIONS);
     }
 
     private static UserPrincipal currentUser(Path path) throws IOException {

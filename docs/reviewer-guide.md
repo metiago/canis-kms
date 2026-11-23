@@ -35,10 +35,11 @@ reports under `client/target/surefire-reports/` and
 disabled because they require an externally started server. On a POSIX host,
 verify that `MasterKeyLoaderTest` permission and symbolic-link checks ran;
 record any skips rather than treating them as passes. The Ubuntu CI job runs
-`VerifyPosixCoverage.java` for the historical JOSS cases and
-`VerifyIssue1PosixCoverage.java` for owner, permission, unreadable-file, and
+[`VerifyPosixCoverage.java`](../tools/ci/VerifyPosixCoverage.java) for the historical JOSS cases and
+[`VerifyIssue1PosixCoverage.java`](../tools/ci/VerifyIssue1PosixCoverage.java) for owner, permission, unreadable-file, and
 ancestor-link cases; both fail if a required case is absent or skipped. The
-Windows job checks its owner-policy and ACL cases with `VerifyWindowsCoverage.java`.
+Windows job checks its owner-policy and ACL cases with
+[`VerifyWindowsCoverage.java`](../tools/ci/VerifyWindowsCoverage.java).
 The continuous integration workflow is configured for Ubuntu and Windows, but
 a green run on the chosen release commit still has to be retained.
 
@@ -84,7 +85,7 @@ For a producer, delayed consumer, and packaged CANIS server in three separate
 processes, use the [CODE-02 research harness](research/code02-method.md). Its
 temporary server database and shared directory are isolated from this focused
 JUnit example, and its result files contain only sanitized metadata. On POSIX,
-run `sh docs/research/run-code02.sh --scenario normal --files 1 --size 4096
+run `sh tools/ci/run-code02.sh --scenario normal --files 1 --size 4096
 --delay-ms 1000` from the repository root; the Ubuntu CI job uses this same
 wrapper and workload. A passing run prints `CODE02_RESULT=passed
 scenario=normal verified=1/1` and writes sanitized JSON and CSV records.

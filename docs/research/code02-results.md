@@ -167,6 +167,9 @@ wrapper's exit status and exits with that same status, so a successful step mean
 reported a passing normal exchange and zero exit status. The harness defines normal success
 as one authenticated byte match after delayed consumer startup and fixture cleanup.
 
+That command records the wrapper path used in the 2026-11-17 run. Its current
+path is [`tools/ci/run-code02.sh`](../../tools/ci/run-code02.sh).
+
 The Actions artifact listing shows `code02-evidence-ubuntu-latest` (artifact ID
 `14381849411`, 2368 bytes, seven-day retention). The workflow selects the wrapper console
 log, exit-status text, JSON result, and producer/consumer CSV records from `server/target/`.
