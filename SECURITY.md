@@ -8,6 +8,10 @@ reproduction when safe to share. Coordinate the timing of public disclosure
 with the maintainer so there is an opportunity to investigate and address the
 report.
 
+These email and GitHub vulnerability-reporting routes are private channels.
+The public GitHub issue tracker is for ordinary, non-sensitive bugs, questions,
+and support only; it is not a vulnerability-reporting channel.
+
 The maintainer aims to acknowledge and initially respond within **7 calendar
 days**. If no substantive follow-up arrives within **30 calendar days**, please
 follow up through the same private channel. These are communication targets,

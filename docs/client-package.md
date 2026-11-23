@@ -68,6 +68,15 @@ public class Example {
 
 ## Security notes
 
+### Client Admission and Shared Key Access
+
+CANIS operates within a shared trust domain. Any authenticated client may request operations
+involving any stored service key. Service names and key names identify keys; they do not create
+authorization boundaries. Different TLS certificates do not isolate clients, and different
+usernames do not imply authorization scopes. CANIS provides no per-key authorization or client
+isolation. If applications require independent authorization domains, separate CANIS deployments
+should be used. See the [threat model](threat-model.md).
+
 The client fetches public keys to encrypt files locally and asks CANIS to perform private-key
 operations on the server. RSA private keys are not returned. Protect identity and trust stores
 with operating-system permissions, supply passwords through a protected environment or secret

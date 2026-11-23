@@ -10,13 +10,19 @@ and [Issue #1](https://github.com/metiago/canis-kms/issues/1) remains open. The 
 deployment automation, service account, and corporate identity systems. The controls address
 unsafe configuration, accidental exposure, non-privileged access, and fail-closed startup.
 
-## Implemented controls
+**Historical staged-work note:** The ancestor-link checks and tests described below were not
+incorporated into the current loader. The current implementation rejects a symbolic link at the
+key-file path and checks ownership and access on that file and its immediate parent; it does not
+walk every higher ancestor. Use the current [master-key guide](../master-key.md) for deployment
+and validation scope.
+
+## Controls reported for the staged work
 
 | Requirement | Implementation and test |
 | --- | --- |
 | External key; missing, malformed, unreadable, and oversized files | Existing bounded `MasterKeyLoader` behavior remains. `MasterKeyLoaderTest` covers missing, malformed, empty, oversized, and POSIX unreadable files. |
 | File ownership and permissions | Existing POSIX owner/mode and Windows owner/ACL policy remains. New POSIX fixtures test a differently owned file and parent directory. Windows tests exercise owner mismatch through the same Java ACL policy used by the loader; an on-disk owner-change case runs when the test identity has the required right. |
-| Direct and ancestor symbolic links | The loader checks each directory component from the root to the immediate parent with `NOFOLLOW_LINKS` before checking and opening the key. Direct file and ancestor-link tests reject those paths. |
+| Direct and ancestor symbolic links (staged only) | The staged work reported a `NOFOLLOW_LINKS` check of each directory component and direct-file and ancestor-link rejection tests. This behavior is not present in the current loader. |
 | Pre-bind validation | `Server.start()` reloads and compares the configured key before creating or binding the TLS listener. A test changes, corrupts, or removes the key after construction and confirms startup rejection. |
 | Sanitized failures | The loader retains fixed categories and exceptions without a sensitive cause. Tests check that key contents, a configured password marker, and the key path do not appear in captured startup messages or exceptions. |
 | Existing database binding | Existing store tests cover matching-key restart and wrong-key rejection without replacing the database. The new startup test also checks that rejection leaves database bytes unchanged. No key-generation path was added. |
@@ -42,7 +48,7 @@ also requires the expanded POSIX gate.
 
 ## Deployment limits and future hardening
 
-The ancestor check is deliberately path-based. It is not a race-resistant traversal guarantee,
+The staged ancestor check was deliberately path-based. It was not a race-resistant traversal guarantee,
 and it does not analyze Windows reparse points beyond symbolic links reported by Java. The loader
 checks ownership and access settings on the key and immediate parent; deployment automation must
 keep higher ancestors under trusted administrative control. The loaded key is cached after

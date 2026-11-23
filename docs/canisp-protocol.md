@@ -39,6 +39,11 @@ TLS does not change CANISP/1 command or response framing.
 Send `|login username:password` after TLS succeeds, before normal commands. The length-prefixed
 response is one of `Authentication successful`, `Authentication failed`, or `Invalid input
 format`. An authenticated connection may then use the commands below.
+Authentication admits a client to the shared trust domain: any authenticated client can request
+operations involving any stored service key. Different certificates, usernames, service names,
+and key names do not establish separate authorization scopes. If applications require independent
+authorization domains, separate CANIS deployments should be used. See
+[Client Admission and Shared Key Access](threat-model.md#client-admission-and-shared-key-access).
 
 ## Message format
 

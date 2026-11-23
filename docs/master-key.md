@@ -16,10 +16,10 @@ are trusted; the file checks are not a barrier against those privileged actors. 
 
 Generate 16 cryptographically random bytes for compatibility with existing CANIS keys, or 24 or
 32 bytes for AES-192 or AES-256. Base64-encode the bytes in a regular file of at most 256 bytes.
-Line breaks and a final newline are accepted; other whitespace is not. Symbolic links are
-rejected when they are the key file or an ancestor directory in the configured path. The loader
-checks each path component with `NOFOLLOW_LINKS` before reading the key. This is a straightforward
-startup validation, not a guarantee against an actor who can replace path components during the
+Line breaks and a final newline are accepted; other whitespace is not. The loader rejects a
+symbolic link at the key-file path and reads the key with `NOFOLLOW_LINKS`. It does not walk and
+validate every ancestor directory; higher-level path components remain an operator responsibility.
+These checks do not guarantee safety against an actor who can replace path components during the
 check. Provision the path beneath directories controlled by the service account or trusted
 administrators, without untrusted writable ancestors.
 
@@ -37,6 +37,28 @@ additional ACL mechanisms, deployment automation must also verify the effective 
 non-privileged identities have to the key and path. Treat a path with untrusted writable
 ancestors as unsafe even if the loader accepts the key. Host administrators and the service
 account can access or change the key by design.
+
+## Control responsibility boundary
+
+The table describes what the master-key loader validates. Operators still provision the key
+and its path; "Operator responsibility" identifies controls outside CANIS validation.
+
+| Control | Enforced by CANIS | Operator responsibility |
+| --- | --- | --- |
+| Key file type and size validation | Yes | No |
+| Key format validation (Base64-encoded AES key of 16, 24, or 32 bytes) | Yes | No |
+| Immediate parent directory type, ownership, and access validation | Yes | No |
+| Key file ownership validation | Yes | No |
+| Key file permission or ACL validation | Yes | No |
+| Higher-level directory ownership, access, and path integrity | No | Yes |
+| Host and filesystem integrity | No | Yes |
+| Administrator trustworthiness | No | Yes |
+| Operating-system security | No | Yes |
+
+CANIS detects and rejects known unsafe conditions within this implemented validation scope.
+It does not establish trust in the entire operating system, protect against privileged
+administrators, or guarantee filesystem integrity. Deployment automation and operating
+procedures remain responsible for host security and the unvalidated path components.
 
 For a new POSIX installation, run as the CANIS service identity:
 
@@ -77,6 +99,8 @@ correct the key-file problem. CANIS does not print its contents. If database rec
 required, investigate the working directory and storage, then restore the original database and
 matching key from protected backups. Test the restored pair by decrypting a known envelope. Back
 up the database and key separately with restricted access.
+Use the [operational recovery runbook](operational-recovery.md) for the full sequence, including
+handling `db.dat.canis-recovery`.
 
 ## Database replacement and limits
 

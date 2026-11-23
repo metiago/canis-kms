@@ -156,12 +156,12 @@ Workflow Result:
 Observed Issues:
 ```
 
-For ordinary bugs, questions, and support, use the [public issue tracker](https://github.com/metiago/canis-kms/issues) with revision, OS, Java/Maven versions, steps, expected result, and sanitized actual result. Do not post secrets or exploit details. For a suspected vulnerability, use GitHub's private **Report a vulnerability** option if available; otherwise ask a maintainer in a public issue to establish a private channel **without sensitive details**. A stable private reporting route remains unconfirmed.
+For ordinary, non-sensitive bugs, questions, and support, use the [public issue tracker](https://github.com/metiago/canis-kms/issues) with revision, OS, Java/Maven versions, steps, expected result, and sanitized actual result. For suspected vulnerabilities, follow [SECURITY.md](../SECURITY.md); do not report security issues in public issues.
 
 ## Troubleshooting
 
 - `unsafe_permissions` or failure to create restrictive ACLs: use a filesystem and account that permit the required owner-only permissions. A restrictive sandbox failure is an environment failure; do not weaken the fixture permissions.
 - `missing_file`, `invalid_format`, or `unreadable_file` for `CANIS_SECRET_KEY`: check the protected file and its path. Never generate a replacement key for an existing database.
-- Recovery-required database error or `db.dat.canis-recovery`: stop and inspect the original database and its matching key; `--init-db` is only for a new database.
+- Recovery-required database error or `db.dat.canis-recovery`: follow the [operational recovery runbook](operational-recovery.md); `--init-db` is only for a new database.
 - TLS certificate or hostname rejection: confirm the server certificate identifies the configured `CANIS_SERVER_HOST` and the trust stores contain the intended certificates. Do not bypass validation.
 - POSIX permission or symbolic-link tests skipped on Windows: use the Ubuntu CI gate for that coverage; record the local skips. If a POSIX environment lacks Java, install JDK 21 or newer before running the POSIX wrapper.

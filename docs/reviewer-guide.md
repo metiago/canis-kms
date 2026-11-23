@@ -10,6 +10,8 @@ The client validates the server certificate and hostname.
 The intended deployment is an organization-managed corporate environment, with
 the host, administrators, deployment automation, service account, and corporate
 identity systems trusted as described in the [threat model](threat-model.md).
+For suspected vulnerabilities, follow [SECURITY.md](../SECURITY.md); the public
+issue tracker is only for ordinary, non-sensitive reports.
 
 ## Clean checkout and tests
 
@@ -110,7 +112,7 @@ uses `CANIS_SERVER_HOST`, `CANIS_SERVER_PORT`, `CANIS_USERNAME`,
 external configuration, never command arguments or committed files. The
 [README](../README.md) and [master-key guide](master-key.md) give the exact
 startup and restrictive file-permission requirements.
-The loader rejects symbolic links in the master-key file or its ancestor directories and
+The loader rejects a symbolic link at the master-key file path and
 checks ownership and access on the file and immediate parent. Higher ancestor access controls
 remain a deployment responsibility. Its fail-closed checks
 catch unsafe configuration and accidental exposure; they do not isolate key
@@ -121,7 +123,8 @@ Build with `mvn package`, then from a protected working directory run
 a new database**. Normal startup uses the same command without `--init-db`.
 The database path is `db.dat` relative to that working directory. If an
 existing database or matching master key is lost, restore the pair from
-protected backups; initialization is not a recovery operation.
+protected backups; initialization is not a recovery operation. Follow the
+[operational recovery runbook](operational-recovery.md) before returning to service.
 
 ## Architecture, failure behavior, and limits
 

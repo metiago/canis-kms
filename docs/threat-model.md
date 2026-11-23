@@ -58,6 +58,19 @@ Applications should use the official `client` Maven artifact. CANISP is the inte
 client/server protocol, documented for maintenance, debugging, research, and PoCs rather than as
 an application API.
 
+## Client Admission and Shared Key Access
+
+CANIS operates within a shared trust domain. TLS client certificates and CANIS credentials
+admit clients to the service, but they do not assign key-specific permissions. Any authenticated
+CANIS client may request operations involving any stored service key, including retrieval of its
+public key, decryption with its private key, and deletion. Service names are identifiers, not
+authorization boundaries; key names do not create security boundaries. Different TLS
+certificates do not imply isolation between clients, and different usernames do not imply
+authorization scopes. CANIS provides neither per-key authorization nor client isolation.
+
+Admit only applications that are trusted to use this shared key namespace. If applications
+require independent authorization domains, separate CANIS deployments should be used.
+
 ## What clients can do
 
 `|set serviceName` creates a 2048-bit RSA key pair only if the name is unused. A duplicate
@@ -81,9 +94,9 @@ Changing the file after startup does not rotate the loaded key.
 
 These checks catch operational mistakes and unsafe file configuration and prevent access by
 non-privileged identities under the host's access controls. They do not prevent a TCB member from
-reading or replacing the key. The loader checks the key file and every ancestor for symbolic
-links, while ownership and access checks cover the file and immediate parent. Higher ancestors
-must be controlled by the deployment. See the exact checks and limits
+reading or replacing the key. The loader rejects a symbolic link at the key-file path and checks
+ownership and access on the file and immediate parent. It does not validate every higher
+ancestor. Those paths must be controlled by the deployment. See the exact checks and limits
 in the [master-key guide](master-key.md).
 
 Normal startup rejects a missing database. A new database requires explicit initialization; a
@@ -91,6 +104,7 @@ valid key cannot be matched to a database that is absent. Database authenticatio
 finish before the listener binds. If the database disappears or changes during operation, CANIS
 enters a recovery-required state instead of creating an empty store. Restore the original
 database with its matching master key from protected backups. See the
+[operational recovery runbook](operational-recovery.md) and
 [master-key requirements](master-key.md).
 
 Backups should contain the encrypted database and matching key file under separate access
