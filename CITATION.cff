@@ -1,11 +1,21 @@
-
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
+title: "CANIS: Shared-Trust Key Recovery for Asynchronous Enterprise File Exchange"
+version: 0.1.0
+date-released: 2026-11-24
 authors:
   - family-names: "Souza"
     given-names: "Tiago"
-title: "CANIS: Key Management for Asynchronous Encrypted File Exchange Between Java Services"
-version: 0.1.0-rc.1
-date-released: 2026-11-24
-url: "https://github.com/metiago/canis-kms"
 license: MIT
+url: "https://github.com/metiago/canis-kms"
+repository-code: "https://github.com/metiago/canis-kms"
+keywords:
+  - key management
+  - key recovery
+  - enterprise security
+  - secure communications
+  - encrypted file exchange
+
+abstract: >
+  CANIS is a shared-trust key recovery service designed for
+  asynchronous encrypted file exchange in enterprise environments.
