@@ -62,6 +62,9 @@ jobs:
           git archive --format=zip --prefix="canis-kms-${RELEASE_VERSION}/" --output="target/release/canis-kms-${RELEASE_VERSION}-src.zip" HEAD
           unzip -t "target/release/canis-kms-${RELEASE_VERSION}-src.zip" > /dev/null
 
+      - name: Ensure local master branch exists
+        run: git branch -f master HEAD
+
       - name: Verify JReleaser configuration
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

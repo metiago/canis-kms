@@ -11,6 +11,7 @@ release:
   github:
     owner: metiago
     name: canis-kms
+    branch: master
     tagName: 'v{{projectVersion}}'
     releaseName: 'CANIS-KMS {{projectVersion}} - JOSS research candidate'
     skipTag: true
