@@ -1,0 +1,11 @@
+
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Souza"
+    given-names: "Tiago"
+title: "CANIS: Key Management for Asynchronous Encrypted File Exchange Between Java Services"
+version: 0.1.0-rc.1
+date-released: 2026-11-24
+url: "https://github.com/metiago/canis-kms"
+license: MIT
