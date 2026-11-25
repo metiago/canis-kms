@@ -16,5 +16,5 @@ documentation and reproducibility artifacts when behavior changes. Keep
 storage compatibility and TLS 1.3 validation requirements intact.
 
 Use the public issue tracker to seek support for non-sensitive problems.
-For a suspected vulnerability, follow `SECURITY.md` and do not disclose
+For a suspected vulnerability, follow [SECURITY.md](SECURITY.md) and do not disclose
 exploit details in a public issue.

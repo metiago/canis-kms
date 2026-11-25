@@ -35,6 +35,12 @@ cannot be reliably erased from memory, and prior encrypted database copies may p
 backups or snapshots. Any authenticated client can request `|decrypt` under any stored service
 key; per-service authorization is not yet available.
 
+The deployment [Trusted Computing Base](threat-model.md#trust-assumptions-and-trusted-computing-base)
+includes the operating system, host administrators, deployment automation, service account, and
+corporate identity systems. This API boundary protects against accidental exposure and access
+by non-privileged users or applications; it does not prevent a TCB member from inspecting the
+JVM, key files, or backups.
+
 Database writes use two atomic moves with a recovery file, not a single atomic transaction.
 Crash durability still needs platform-specific validation. Structured audit schema, integrity
 verification, and key rotation remain separate work. Master-key and explicit database

@@ -2,6 +2,11 @@
 
 **Evidence cut:** repository records dated 2026-11-16 to 2026-11-18. **Type:** retrospective synthesis; no Issue #35 experiment or new measurement. [Synthesis method](issue35-method.md). The source studies used different revisions and hosts or source states. Their counts are presented separately and are never pooled into a reliability estimate.
 
+Interpret the historical findings within the current [organization-managed deployment and
+Trusted Computing Base](../threat-model.md#trust-assumptions-and-trusted-computing-base). The tests
+do not establish protection against privileged host administrators, a compromised operating
+system, or public cloud KMS threat models; this scope note adds no experimental evidence.
+
 The later [JOSS-02 audit (archived)](repository-cleanup-report.md#archived-files) and [release-boundary matrix (archived)](repository-cleanup-report.md#archived-files) review the subsequently revised manuscript. This Issue #35 synthesis and its original claim matrix retain their historical evidence cut.
 
 ## 1. Executive summary

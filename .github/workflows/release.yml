@@ -28,6 +28,9 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Prepare POSIX owner-mismatch fixtures
+        run: sh tools/ci/setup-posix-owner-fixtures.sh
+
       - name: Require matching release tag and clean checkout
         shell: bash
         run: |
@@ -46,7 +49,10 @@ jobs:
         run: mvn --batch-mode --no-transfer-progress clean verify
 
       - name: Require POSIX security cases to execute
-        run: java docs/research/VerifyPosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
+        run: java tools/ci/VerifyPosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
+
+      - name: Require Issue 1 POSIX security cases to execute
+        run: java tools/ci/VerifyIssue1PosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
 
       - name: Generate tracked source archive
         shell: bash
@@ -55,6 +61,9 @@ jobs:
           mkdir -p target/release
           git archive --format=zip --prefix="canis-kms-${RELEASE_VERSION}/" --output="target/release/canis-kms-${RELEASE_VERSION}-src.zip" HEAD
           unzip -t "target/release/canis-kms-${RELEASE_VERSION}-src.zip" > /dev/null
+
+      - name: Ensure local master branch exists
+        run: git branch -f master HEAD
 
       - name: Verify JReleaser configuration
         env:

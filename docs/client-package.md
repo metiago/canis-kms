@@ -4,9 +4,7 @@
 
 The CANIS Java client is the supported application-facing API for Java applications that use the
 CANIS key-recovery service. Use `JpawClient` for CANISP commands, response parsing, socket
-limits, service-name validation, and file envelopes. CANISP is the internal client/server
-protocol, documented for maintainers, debugging, research, and PoCs rather than direct
-application integration.
+limits, service-name validation, and file envelopes.
 
 Package: <https://github.com/metiago/canis-client/packages/2344030>
 
@@ -70,10 +68,23 @@ public class Example {
 
 ## Security notes
 
+### Client Admission and Shared Key Access
+
+CANIS operates within a shared trust domain. Any authenticated client may request operations
+involving any stored service key. Service names and key names identify keys; they do not create
+authorization boundaries. Different TLS certificates do not isolate clients, and different
+usernames do not imply authorization scopes. CANIS provides no per-key authorization or client
+isolation. If applications require independent authorization domains, separate CANIS deployments
+should be used. See the [threat model](threat-model.md).
+
 The client fetches public keys to encrypt files locally and asks CANIS to perform private-key
 operations on the server. RSA private keys are not returned. Protect identity and trust stores
 with operating-system permissions, supply passwords through a protected environment or secret
 manager, and do not commit these secrets.
+Use the client only with a CANIS deployment administered within the organization's trusted
+environment. A valid admitted client can request recovery under any stored key name; the
+[threat model](threat-model.md) defines this shared-access boundary and the trusted host and
+identity systems.
 
 The client offers only `TLS_AES_128_GCM_SHA256`, `TLS_AES_256_GCM_SHA384`, and
 `TLS_CHACHA20_POLY1305_SHA256`, limited to suites enabled by its Java TLS provider.

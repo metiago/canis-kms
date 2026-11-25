@@ -75,11 +75,11 @@ All test credential identities use one temporary client certificate, so this
 experiment does not test certificate-bound separation. A stopped server
 rejecting a new connection is not an outage-duration or reliability measure.
 
-On a POSIX CI runner, `java docs/research/VerifyPosixCoverage.java
+On a POSIX CI runner, `java tools/ci/VerifyPosixCoverage.java
 server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml`
 must print `JOSS03_POSIX_COVERAGE=PASS` after the Maven suite. The check
 requires both the unsafe-permissions and symbolic-link cases to pass. A
-synthetic positive report fixture is `joss03-posix-report-fixture.xml`;
-`java docs/research/VerifyPosixCoverage.java
-docs/research/joss03-posix-report-fixture.xml` exercises the check itself
+synthetic positive report fixture is `tests/fixtures/ci/joss03-posix-report-fixture.xml`;
+`java tools/ci/VerifyPosixCoverage.java
+tests/fixtures/ci/joss03-posix-report-fixture.xml` exercises the check itself
 without claiming a POSIX application result.

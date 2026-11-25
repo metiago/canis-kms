@@ -4,6 +4,8 @@ The client and server tests verify that TLS failures stop CANISP before login or
 processing. The official client uses JSSE TLS 1.3, PKIX certificate validation, and HTTPS
 hostname verification. The server uses JSSE TLS 1.3 and requires client certificates. Production
 uses these paths without an alternate transport or trust policy.
+These tests address connection authentication within the [CANIS deployment trust model](threat-model.md);
+they do not test resistance to a compromised host, privileged administrator, or corporate PKI.
 
 ## Coverage
 

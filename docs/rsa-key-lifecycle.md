@@ -31,6 +31,10 @@ requires explicit `--init-db` for a new installation. See the
 Recovery needs the encrypted database and its matching key file. Back them up separately with
 restricted access. If either disappears unexpectedly, investigate and restore the matching pair;
 do not initialize a replacement database. Verify a known encrypted file after restoration.
+The host, service account, infrastructure administrators, deployment automation, and corporate
+identity systems are trusted in this model. The [master-key guide](master-key.md) defines the
+file checks and the deployment controls required for higher path components; encrypted storage
+does not protect against an administrator who can also obtain the key.
 
 ## Use
 

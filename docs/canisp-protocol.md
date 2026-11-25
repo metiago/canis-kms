@@ -8,8 +8,10 @@ Its interaction model is Redis-inspired, but it is not RESP-compatible. Redis cl
 servers cannot use it.
 
 Applications should use `JpawClient` for command construction, response parsing, socket limits,
-and file envelopes. Raw CANISP is useful for maintenance, debugging, research, and PoCs;
-compatibility changes must keep the server and client aligned.
+and file envelopes. Raw CANISP is useful for maintenance, debugging, research.
+CANISP operates inside the organization-managed deployment described in the
+[threat model](threat-model.md). TLS and login admit a client, but key names do not restrict
+that client's access to individual stored keys. The host and its administrators are trusted.
 
 ## Transport
 
@@ -37,6 +39,11 @@ TLS does not change CANISP/1 command or response framing.
 Send `|login username:password` after TLS succeeds, before normal commands. The length-prefixed
 response is one of `Authentication successful`, `Authentication failed`, or `Invalid input
 format`. An authenticated connection may then use the commands below.
+Authentication admits a client to the shared trust domain: any authenticated client can request
+operations involving any stored service key. Different certificates, usernames, service names,
+and key names do not establish separate authorization scopes. If applications require independent
+authorization domains, separate CANIS deployments should be used. See
+[Client Admission and Shared Key Access](threat-model.md#client-admission-and-shared-key-access).
 
 ## Message format
 

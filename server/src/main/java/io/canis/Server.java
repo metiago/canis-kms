@@ -45,6 +45,7 @@ public class Server {
     private final int port;
     private final Map<String, String> serviceCredentials;
     private final KeyValueStore store;
+    private final Path secretKeyPath;
     private final SSLContext tlsContext;
     private volatile boolean running;
     private volatile ServerSocket serverSocket;
@@ -62,6 +63,7 @@ public class Server {
             throw new IllegalStateException("CANIS server configuration incomplete");
         }
         store.verifyConfiguration(env.secretKeyPath());
+        this.secretKeyPath = env.secretKeyPath();
         this.port = env.port();
         this.serviceCredentials = env.serviceCredentials();
         this.store = store;
@@ -70,7 +72,13 @@ public class Server {
     }
 
     public void start() {
-        store.ensureHealthy();
+        try {
+            store.verifyConfiguration(secretKeyPath);
+            store.ensureHealthy();
+        } catch (RuntimeException e) {
+            shutdownExecutor();
+            throw e;
+        }
         running = true;
         try (SSLServerSocket boundServerSocket =
                 (SSLServerSocket) tlsContext.getServerSocketFactory().createServerSocket()) {

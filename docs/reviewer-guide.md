@@ -7,6 +7,11 @@ shared-trust model. Its Maven reactor has `client` and `server` modules. The
 supported application API is `JpawClient`; CANISP is an internal wire protocol.
 The server and official client use TLS 1.3 with mutual certificate authentication.
 The client validates the server certificate and hostname.
+The intended deployment is an organization-managed corporate environment, with
+the host, administrators, deployment automation, service account, and corporate
+identity systems trusted as described in the [threat model](threat-model.md).
+For suspected vulnerabilities, follow [SECURITY.md](../SECURITY.md); the public
+issue tracker is only for ordinary, non-sensitive reports.
 
 ## Clean checkout and tests
 
@@ -30,10 +35,13 @@ reports under `client/target/surefire-reports/` and
 disabled because they require an externally started server. On a POSIX host,
 verify that `MasterKeyLoaderTest` permission and symbolic-link checks ran;
 record any skips rather than treating them as passes. The Ubuntu CI job runs
-`VerifyPosixCoverage.java` against its Surefire XML and fails if either case
-is absent or skipped. The continuous integration workflow is configured for
-Ubuntu and Windows, but a green run on the chosen release commit still has
-to be retained.
+[`VerifyPosixCoverage.java`](../tools/ci/VerifyPosixCoverage.java) for the historical JOSS cases and
+[`VerifyIssue1PosixCoverage.java`](../tools/ci/VerifyIssue1PosixCoverage.java) for owner, permission, unreadable-file, and
+ancestor-link cases; both fail if a required case is absent or skipped. The
+Windows job checks its owner-policy and ACL cases with
+[`VerifyWindowsCoverage.java`](../tools/ci/VerifyWindowsCoverage.java).
+The continuous integration workflow is configured for Ubuntu and Windows, but
+a green run on the chosen release commit still has to be retained.
 
 ## Producer to recipient demonstration
 
@@ -77,7 +85,7 @@ For a producer, delayed consumer, and packaged CANIS server in three separate
 processes, use the [CODE-02 research harness](research/code02-method.md). Its
 temporary server database and shared directory are isolated from this focused
 JUnit example, and its result files contain only sanitized metadata. On POSIX,
-run `sh docs/research/run-code02.sh --scenario normal --files 1 --size 4096
+run `sh tools/ci/run-code02.sh --scenario normal --files 1 --size 4096
 --delay-ms 1000` from the repository root; the Ubuntu CI job uses this same
 wrapper and workload. A passing run prints `CODE02_RESULT=passed
 scenario=normal verified=1/1` and writes sanitized JSON and CSV records.
@@ -86,6 +94,10 @@ scenario=normal verified=1/1` and writes sanitized JSON and CSV records.
 
 The demo's self-signed TLS identities are short-lived test fixtures. For a
 deployment, obtain identities and trust anchors through the operator's PKI.
+Use a dedicated CANIS service account on a managed host and restrict network
+reachability to admitted corporate applications. Infrastructure administrators
+and the deployment system are part of the Trusted Computing Base; plan host,
+identity, backup, and recovery controls accordingly.
 Keep the server identity and trust stores separate from the client stores, and
 give the server certificate a subject alternative name matching
 `CANIS_SERVER_HOST`. Do not copy fixture keys into source control or images.
@@ -101,13 +113,19 @@ uses `CANIS_SERVER_HOST`, `CANIS_SERVER_PORT`, `CANIS_USERNAME`,
 external configuration, never command arguments or committed files. The
 [README](../README.md) and [master-key guide](master-key.md) give the exact
 startup and restrictive file-permission requirements.
+The loader rejects a symbolic link at the master-key file path and
+checks ownership and access on the file and immediate parent. Higher ancestor access controls
+remain a deployment responsibility. Its fail-closed checks
+catch unsafe configuration and accidental exposure; they do not isolate key
+material from a privileged host administrator or compromised operating system.
 
 Build with `mvn package`, then from a protected working directory run
 `java -jar server/target/canis-jar-with-dependencies.jar --init-db` **only for
 a new database**. Normal startup uses the same command without `--init-db`.
 The database path is `db.dat` relative to that working directory. If an
 existing database or matching master key is lost, restore the pair from
-protected backups; initialization is not a recovery operation.
+protected backups; initialization is not a recovery operation. Follow the
+[operational recovery runbook](operational-recovery.md) before returning to service.
 
 ## Architecture, failure behavior, and limits
 
@@ -140,3 +158,5 @@ authorization, automated key rotation or expiry, producer authentication by
 the envelope, verifiable audit history, reliable erasure, crash durability,
 large-file streaming, and production-grade recovery guarantees. These are
 implementation boundaries, not claims about the strength of the primitives.
+CANIS is not intended to provide public cloud KMS, multi-tenant, zero-trust, or
+HSM-level guarantees.

@@ -5,19 +5,19 @@
   <parent>
     <groupId>io.canis</groupId>
     <artifactId>canis</artifactId>
-    <version>0.1.0-rc.1</version>
+    <version>0.1.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>server</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0-rc.1</version>
+  <version>0.1.1-SNAPSHOT</version>
 
   <dependencies>
     <dependency>
       <groupId>io.canis</groupId>
       <artifactId>client</artifactId>
-      <version>0.1.0-rc.1</version>
+      <version>0.1.1-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
