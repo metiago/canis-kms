@@ -4,8 +4,6 @@
 
 CANISP is the internal wire protocol between CANIS and the official Java `client` Maven
 artifact. It uses a TCP request/response loop with line-oriented commands and typed payloads.
-Its interaction model is Redis-inspired, but it is not RESP-compatible. Redis clients and
-servers cannot use it.
 
 Applications should use `JpawClient` for command construction, response parsing, socket limits,
 and file envelopes. Raw CANISP is useful for maintenance, debugging, research.
@@ -38,7 +36,14 @@ TLS does not change CANISP/1 command or response framing.
 
 Send `|login username:password` after TLS succeeds, before normal commands. The length-prefixed
 response is one of `Authentication successful`, `Authentication failed`, or `Invalid input
-format`. An authenticated connection may then use the commands below.
+format`. An overlong login line returns `Request too large`. An authenticated connection may
+then use the commands below.
+
+For rejected login commands or credentials, operational and audit logs omit the submitted
+username and password. The audit event uses `identity=unknown` and a fixed failure reason.
+Successful login records the authenticated credential identity. Neither log includes the raw
+login line.
+
 Authentication admits a client to the shared trust domain: any authenticated client can request
 operations involving any stored service key. Different certificates, usernames, service names,
 and key names do not establish separate authorization scopes. If applications require independent
@@ -103,9 +108,8 @@ version and corresponding `JpawClient` parsing changes. CANISP is a client/serve
 contract, not a supported direct application API.
 
 `io.canis.audit` emits key-value log messages for authentication, key creation, access and
-deletion, decrypt success or failure, and rejected commands. Successful authentication and later
-operations include the authenticated identity; failed authentication uses a generic identity.
-Messages can also include client-supplied, validated key names, remote addresses, and fixed
-failure reasons. They exclude passwords, raw login lines, stored private keys, encrypted payloads,
-and decrypted payloads. The messages have no defined record schema, event IDs, or integrity
-verification required by `AGENTS.md`; they are not a tamper-evident audit trail.
+deletion, decrypt success or failure, and rejected commands. Later operations include the
+authenticated identity. Messages can also include client-supplied, validated key names, remote
+addresses, and fixed failure reasons. They exclude passwords, raw login lines, stored private
+keys, encrypted payloads, and decrypted payloads. The messages have no defined record schema,
+event IDs, or built-in integrity verification; they are not a tamper-evident audit trail.

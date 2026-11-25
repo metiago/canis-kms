@@ -31,8 +31,8 @@ Maven resolves the two modules and test dependencies. The automated tests
 generate temporary TLS stores, credentials, and database master keys; no
 production credential is required for `mvn clean verify`. Check both module
 reports under `client/target/surefire-reports/` and
-`server/target/surefire-reports/`. Five legacy `JpawIntegrationTest` cases are
-disabled because they require an externally started server. On a POSIX host,
+`server/target/surefire-reports/`. `JpawIntegrationTest` is a manual client console
+that requires an externally started server; Maven does not run it as a test. On a POSIX host,
 verify that `MasterKeyLoaderTest` permission and symbolic-link checks ran;
 record any skips rather than treating them as passes. The Ubuntu CI job runs
 [`VerifyPosixCoverage.java`](../tools/ci/VerifyPosixCoverage.java) for the historical JOSS cases and
@@ -113,6 +113,9 @@ uses `CANIS_SERVER_HOST`, `CANIS_SERVER_PORT`, `CANIS_USERNAME`,
 external configuration, never command arguments or committed files. The
 [README](../README.md) and [master-key guide](master-key.md) give the exact
 startup and restrictive file-permission requirements.
+After starting the server, run `client/src/test/java/io/canis/jpaw/JpawIntegrationTest.java`
+as a Java main with the client variables above. Type `help` for console commands;
+`set` and `delete` change the server database.
 The loader rejects a symbolic link at the master-key file path and
 checks ownership and access on the file and immediate parent. Higher ancestor access controls
 remain a deployment responsibility. Its fail-closed checks
