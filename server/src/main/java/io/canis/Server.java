@@ -201,7 +201,6 @@ public class Server {
         String username = credentials.get().username();
         String password = credentials.get().password();
 
-        logger.info("Authenticating username: {}", username);
         if (isCredentialValid(username, password)) {
             logger.info("Authentication successful for username: {}", username);
             AuditLogger.authenticationSucceeded(username, socket.getRemoteSocketAddress());
@@ -209,8 +208,8 @@ public class Server {
             return Optional.of(username);
         }
 
-        logger.info("Authentication failed for username: {}", username);
-        AuditLogger.authenticationFailed(username, socket.getRemoteSocketAddress(), "invalid_credentials");
+        logger.info("Authentication failed: invalid credentials");
+        AuditLogger.authenticationFailed("unknown", socket.getRemoteSocketAddress(), "invalid_credentials");
         sendResponse(out, "Authentication failed");
         return Optional.empty();
     }
