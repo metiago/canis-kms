@@ -1,6 +1,6 @@
 project:
   name: canis-kms
-  description: Research candidate for asynchronous encrypted file exchange
+  description: Key recovery for asynchronous encrypted file exchange
   license: MIT
   authors:
     - Tiago Souza
@@ -13,16 +13,13 @@ release:
     name: canis-kms
     branch: master
     tagName: 'v{{projectVersion}}'
-    releaseName: 'CANIS-KMS {{projectVersion}} - JOSS research candidate'
+    releaseName: 'CANIS-KMS {{projectVersion}}'
     skipTag: true
     overwrite: false
     draft: false
     makeLatest: false
     prerelease:
       enabled: true
-    changelog:
-      external: docs/research/joss02-release-notes.md
-
 files:
   artifacts:
     - path: 'target/release/canis-kms-{{projectVersion}}-src.zip'

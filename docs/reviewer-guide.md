@@ -1,8 +1,7 @@
-# Reviewer installation and executable example
+# Setup and file-exchange tests
 
-This guide describes the current development tree. Recheck its commands on the
-chosen release commit before citing a release. CANIS is a Java 21 key-recovery
-service and client for studying asynchronous encrypted-file exchange under a
+This guide describes the current development tree. CANIS is a Java 21 key-recovery
+service and client for asynchronous encrypted-file exchange under a
 shared-trust model. Its Maven reactor has `client` and `server` modules. The
 supported application API is `JpawClient`; CANISP is an internal wire protocol.
 The server and official client use TLS 1.3 with mutual certificate authentication.
@@ -31,68 +30,27 @@ Maven resolves the two modules and test dependencies. The automated tests
 generate temporary TLS stores, credentials, and database master keys; no
 production credential is required for `mvn clean verify`. Check both module
 reports under `client/target/surefire-reports/` and
-`server/target/surefire-reports/`. `JpawIntegrationTest` is a manual client console
+`server/target/surefire-reports/`. `JpawConsole` is a manual client console
 that requires an externally started server; Maven does not run it as a test. On a POSIX host,
 verify that `MasterKeyLoaderTest` permission and symbolic-link checks ran;
 record any skips rather than treating them as passes. The Ubuntu CI job runs
-[`VerifyPosixCoverage.java`](../tools/ci/VerifyPosixCoverage.java) for the historical JOSS cases and
-[`VerifyIssue1PosixCoverage.java`](../tools/ci/VerifyIssue1PosixCoverage.java) for owner, permission, unreadable-file, and
-ancestor-link cases; both fail if a required case is absent or skipped. The
+[`VerifyIssue1PosixCoverage.java`](../tools/ci/VerifyIssue1PosixCoverage.java) for master-key owner, permission, unreadable-file, and
+ancestor-link cases and [`VerifyIssue2PosixCoverage.java`](../tools/ci/VerifyIssue2PosixCoverage.java) for database failure cases. Both fail if a required case is absent or skipped. The
 Windows job checks its owner-policy and ACL cases with
 [`VerifyWindowsCoverage.java`](../tools/ci/VerifyWindowsCoverage.java).
 The continuous integration workflow is configured for Ubuntu and Windows, but
 a green run on the chosen release commit still has to be retained.
 
-## Producer to recipient demonstration
+## File-exchange coverage
 
-From the repository root, run one of:
-
-```sh
-sh docs/research/run-joss03.sh
-```
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/research/run-joss03.ps1
-```
-
-The focused `ReviewerWorkflowTest` creates a temporary master key, initialized
-database, server/client PKCS#12 identities and trust stores, and random
-credential passwords. It starts a TLS server in a test thread. The `recipient`
-creates a key, the `producer` writes an encrypted envelope into a temporary
-`shared/` directory, and the `recipient` recovers the original synthetic bytes
-through the official TLS client. It then stops the service and checks that a
-new recipient connection is refused. All material is synthetic and local; the
-test neither publishes nor persists any real secret.
-
-Expected outcome: command exit code 0, one test with zero failures/errors/skips
-in `server/target/surefire-reports/`, and these markers in console output or
-the Surefire XML `system-out` element:
-
-```text
-JOSS03_REVIEWER_DEMO=PASS producer->shared-envelope->recipient byte-match
-JOSS03_OUTAGE_CHECK=PASS new recipient connection rejected after server stop
-```
-
-The test uses one temporary TLS client certificate for both credential
-identities; it verifies the file workflow and credential roles, not separate
-certificate identities. It does not measure outage duration, performance, or
-reliability. `@TempDir` removes normal-run fixtures. Inspect any leftover test
-directory after an interrupted run before deleting it; `mvn clean` removes
-generated Maven outputs. See [the method](research/joss03-method.md) and
-[the recorded result](research/joss03-results.md).
-
-For a producer, delayed consumer, and packaged CANIS server in three separate
-processes, use the [CODE-02 research harness](research/code02-method.md). Its
-temporary server database and shared directory are isolated from this focused
-JUnit example, and its result files contain only sanitized metadata. On POSIX,
-run `sh tools/ci/run-code02.sh --scenario normal --files 1 --size 4096
---delay-ms 1000` from the repository root; the Ubuntu CI job uses this same
-wrapper and workload. A passing run prints `CODE02_RESULT=passed
-scenario=normal verified=1/1` and writes sanitized JSON and CSV records.
+`mvn clean verify` runs `ServerEndToEndTest`, which encrypts and decrypts a file
+through the official TLS client, and `ServerTlsSecurityTest`, which checks
+client admission. Both use temporary synthetic credentials and files. Check
+their Surefire reports for failures or skips.
 
 ## External configuration for a long-running server
 
-The demo's self-signed TLS identities are short-lived test fixtures. For a
+The tests' self-signed TLS identities are short-lived fixtures. For a
 deployment, obtain identities and trust anchors through the operator's PKI.
 Use a dedicated CANIS service account on a managed host and restrict network
 reachability to admitted corporate applications. Infrastructure administrators
@@ -113,7 +71,7 @@ uses `CANIS_SERVER_HOST`, `CANIS_SERVER_PORT`, `CANIS_USERNAME`,
 external configuration, never command arguments or committed files. The
 [README](../README.md) and [master-key guide](master-key.md) give the exact
 startup and restrictive file-permission requirements.
-After starting the server, run `client/src/test/java/io/canis/jpaw/JpawIntegrationTest.java`
+After starting the server, run `client/src/test/java/io/canis/jpaw/JpawConsole.java`
 as a Java main with the client variables above. Type `help` for console commands;
 `set` and `delete` change the server database.
 The loader rejects a symbolic link at the master-key file path and
@@ -142,14 +100,11 @@ stored key name; key names are not per-service authorization controls.
 
 When the key service is unavailable, a client cannot fetch a public key or
 unwrap a file data key through the official workflow. A file already encrypted
-remains on disk; the example verifies only that a new connection fails after
-server shutdown. The client reads whole plaintext/envelope files into memory
-and constructs additional byte arrays during processing. There is no general
-safe maximum file size, throughput, or availability target. The
-[CODE-03 Windows preflight](research/code03-results.md) verified the planned
-synthetic study's 4 MiB maximum file size with four consumer workers and a
-512 MiB heap per process; it does not establish support for larger files or
-different hosts. Avoid larger files until the actual workload has been assessed.
+remains on disk, but decrypting it through CANIS requires service recovery.
+The client reads whole plaintext/envelope files into memory and constructs
+additional byte arrays during processing. There is no general safe maximum
+file size, throughput, or availability target. Assess the actual workload
+before using large files.
 The encrypted database loader imposes a 256 MiB input cap; that is not a supported file-size
 limit for client envelopes.
 
