@@ -52,7 +52,8 @@ not one transaction and CANIS does not force directory metadata. A successful CI
 normal filesystem behavior; it does not prove that a power loss preserves directory entries.
 
 Before using a new filesystem or deployment layout, run a recovery drill on a disposable copy
-of that layout:
+of that layout. The [manual VM crash test](../server/src/test/java/io/canis/store/CRASH-DURABILITY.md)
+pauses the real database write at its critical points. Record the result for each layout:
 
 1. Record the OS, filesystem type, mount or volume options, container bind mounts, and paths used
    for the database and key. Create an encrypted test envelope and a protected copy of the
