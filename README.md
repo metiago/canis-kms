@@ -12,8 +12,6 @@ cd canis-kms
 mvn clean verify
 ```
 
-Expect `BUILD SUCCESS` with no test failures. The [setup guide](docs/reviewer-guide.md) describes the file-exchange tests and platform checks.
-
 ## Documentation
 
 - [Threat Model](docs/threat-model.md)
