@@ -6,12 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.canis.MasterKeyTestSupport;
+import io.canis.crypto.Cryptographer;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.security.KeyFactory;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,11 +42,17 @@ class DatabaseReplacementTest {
     }
 
     @Test
-    void interruptedReplacementRequiresRecoveryWithoutOverwritingBackup() throws Exception {
+    void interruptedReplacementRestoresOriginalDatabaseAndDecryptsExistingEnvelope() throws Exception {
         Path database = tempDir.resolve("canis.db");
         Path secret = tempDir.resolve("master.key");
         MasterKeyTestSupport.provision(secret);
         KeyValueStore.initialize(database.toString(), secret.toString());
+        KeyValueStore store = new KeyValueStore(database.toString(), secret.toString());
+        assertTrue(store.create("serviceA"));
+        byte[] publicKeyBytes = Base64.getDecoder().decode(store.get("serviceA").publicKey());
+        var publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKeyBytes));
+        byte[] plaintext = "key encrypted before interrupted replacement".getBytes(StandardCharsets.UTF_8);
+        byte[] envelope = Cryptographer.encrypt(plaintext, publicKey);
         byte[] original = Files.readAllBytes(database);
         Path recovery = tempDir.resolve("canis.db.canis-recovery");
         Files.createFile(recovery);
@@ -54,6 +65,12 @@ class DatabaseReplacementTest {
                 IllegalStateException.class, () -> KeyValueStore.initialize(database.toString(), secret.toString()));
         assertTrue(Files.exists(recovery));
         assertFalse(Files.exists(database));
+
+        Files.move(recovery, database);
+        assertArrayEquals(original, Files.readAllBytes(database));
+        assertFalse(Files.exists(recovery));
+        KeyValueStore restored = new KeyValueStore(database.toString(), secret.toString());
+        assertArrayEquals(plaintext, restored.decrypt("serviceA", envelope));
     }
 
     @Test
