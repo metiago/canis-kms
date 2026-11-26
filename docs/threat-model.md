@@ -114,6 +114,8 @@ database and decrypting a known test envelope.
 ## Logs
 
 `io.canis.audit` records authentication, key creation, access and deletion, decrypt success or
-failure, and rejected commands. Events may include credential identities, key names, remote
-addresses, and failure reasons. They must not contain raw credentials, private keys, encrypted
-payloads, or decrypted payloads.
+failure, and rejected commands. Successful authentication and later operations record the
+authenticated credential identity; failed authentication records a generic identity rather than
+the client-supplied username. Events may also include client-supplied, validated key names,
+remote addresses, and fixed failure reasons. They do not record passwords, raw login lines,
+stored private keys, encrypted payloads, or decrypted payloads.
