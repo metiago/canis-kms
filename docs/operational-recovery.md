@@ -43,6 +43,33 @@ candidate for the previous committed state, not proof that it is current or vali
 establish its matching key, and follow the database recovery sequence above. If no valid pair is
 available, existing encrypted envelopes cannot be recovered through CANIS.
 
+## Filesystem requirements and crash drill
+
+Keep `db.dat`, its temporary files, and `db.dat.canis-recovery` in one directory on one
+filesystem. That filesystem must support same-directory atomic moves and restrictive POSIX
+permissions or Windows ACLs. CANIS forces staged file contents to storage, but the two moves are
+not one transaction and CANIS does not force directory metadata. A successful CI run checks
+normal filesystem behavior; it does not prove that a power loss preserves directory entries.
+
+Before using a new filesystem or deployment layout, run a recovery drill on a disposable copy
+of that layout:
+
+1. Record the OS, filesystem type, mount or volume options, container bind mounts, and paths used
+   for the database and key. Create an encrypted test envelope and a protected copy of the
+   matching database and master key.
+2. With the service stopped, reproduce the state between moves by atomically moving `db.dat` to
+   `db.dat.canis-recovery` in the same directory. Restart and confirm that normal
+   startup and `--init-db` both refuse the unresolved recovery file without creating `db.dat`.
+3. Restore the verified database and matching key using the recovery sequence above. Restart and
+   decrypt the envelope created before the interruption. Repeat with both `db.dat` and a
+   recovery file present; startup must still refuse service.
+4. On a disposable host, repeat the drill with a real interruption or power-loss test. Check
+   which directory entries survive, whether the recovery file remains decryptable, and whether
+   the original database can be restored. Record the result for each filesystem and layout.
+
+Treat a layout as unvalidated until the real interruption test passes. Preserve protected
+backups of both the database and matching key even after validation.
+
 ## Master-key problems
 
 | Symptom | Operator action |

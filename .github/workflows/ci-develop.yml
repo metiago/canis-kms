@@ -53,6 +53,10 @@ jobs:
         if: runner.os == 'Linux'
         run: java tools/ci/VerifyIssue1PosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
 
+      - name: Require Issue 2 POSIX database cases to execute
+        if: runner.os == 'Linux'
+        run: java tools/ci/VerifyIssue2PosixCoverage.java server/target/surefire-reports/TEST-io.canis.store.DatabaseReplacementTest.xml
+
       - name: Require Windows security cases to execute
         if: runner.os == 'Windows'
         run: java tools/ci/VerifyWindowsCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml

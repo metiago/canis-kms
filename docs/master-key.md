@@ -111,6 +111,8 @@ file and no `db.dat`; startup refuses to run while the recovery file exists. Ins
 before restoring the verified old database. Both moves require atomic-move support, but together
 they are not one atomic transaction. Directory metadata durability depends on the filesystem;
 validate crash recovery and POSIX permission behavior on the deployment filesystem.
+The [recovery runbook](operational-recovery.md#filesystem-requirements-and-crash-drill) gives a
+per-filesystem validation drill.
 
 The encrypted database is limited to 256 MiB to bound startup reads. Each store operation also
 reads and hashes it to detect unexpected changes, which can add substantial latency for large

@@ -54,6 +54,9 @@ jobs:
       - name: Require Issue 1 POSIX security cases to execute
         run: java tools/ci/VerifyIssue1PosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
 
+      - name: Require Issue 2 POSIX database cases to execute
+        run: java tools/ci/VerifyIssue2PosixCoverage.java server/target/surefire-reports/TEST-io.canis.store.DatabaseReplacementTest.xml
+
       - name: Generate tracked source archive
         shell: bash
         run: |
