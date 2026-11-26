@@ -17,3 +17,4 @@ replay_pid*
 *.iml
 *.ipr
 out/
+.run
