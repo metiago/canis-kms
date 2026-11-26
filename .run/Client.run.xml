@@ -1,0 +1,22 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Client" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../jdk-25.0.5+8" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <envs>
+      <env name="CANIS_SERVER_HOST" value="localhost" />
+      <env name="CANIS_SERVER_PORT" value="3307" />
+      <env name="CANIS_USERNAME" value="admin" />
+      <env name="CANIS_PASSWORD" value="D538E48ABF9D2BF41571BD580231B76C85A4" />
+      <env name="CANIS_CLIENT_TLS_KEYSTORE" value="client-console.p12" />
+      <env name="CANIS_CLIENT_TLS_KEYSTORE_PASSWORD" value="9BC66CCC91ED93D6455D157D568C0AC1E04E" />
+      <env name="CANIS_CLIENT_TLS_TRUSTSTORE" value="client-trust.p12" />
+      <env name="CANIS_CLIENT_TLS_TRUSTSTORE_PASSWORD" value="36999EF0B4FDBC463E18E314F8E9C6C99F2B" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="io.canis.jpaw.JpawConsole" />
+    <module name="client" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.run" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
