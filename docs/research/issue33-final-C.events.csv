@@ -1,8 +1,0 @@
-event,identity,key_name,file_ordinal,time_utc,detail
-database_initialized,server,,,2026-11-18T15:25:51.872715500Z,new_fixture
-server_ready,server,,,2026-11-18T15:25:53.958642600Z,first_process
-keys_created,server,recipient-a,,2026-11-18T15:25:54.230345900Z,
-all_published,producer-a,,,2026-11-18T15:25:55.869660700Z,2
-server_stopped,server,,,2026-11-18T15:25:55.890899800Z,clean_exit
-server_restarted,server,,,2026-11-18T15:25:57.527411Z,same_database
-consumer_started,recipient-a,recipient-a,,2026-11-18T15:26:55.758101900Z,
