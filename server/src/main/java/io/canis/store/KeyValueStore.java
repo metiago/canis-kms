@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +56,7 @@ public final class KeyValueStore {
     private final Path recoveryPath;
     private final Path keyPath;
     private final SymmetricGenerator symmetricGenerator;
+    private final Consumer<ReplacementPoint> replacementPoint;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private byte[] expectedDigest;
     private Object expectedFileKey;
@@ -65,7 +67,12 @@ public final class KeyValueStore {
     }
 
     public KeyValueStore(String filePath, String secretKeyPath) {
+        this(filePath, secretKeyPath, ignored -> {});
+    }
+
+    KeyValueStore(String filePath, String secretKeyPath, Consumer<ReplacementPoint> replacementPoint) {
         this.symmetricGenerator = new SymmetricGenerator(secretKeyPath);
+        this.replacementPoint = replacementPoint;
         if (filePath == null || filePath.isBlank()) {
             throw new IllegalStateException("CANIS database path is not configured");
         }
@@ -166,7 +173,9 @@ public final class KeyValueStore {
             recoveryReserved = true;
             moveExistingDatabase(filePath, recoveryPath);
             oldDatabaseMoved = true;
+            replacementPoint.accept(ReplacementPoint.OLD_MOVED);
             Files.move(temporary, filePath, StandardCopyOption.ATOMIC_MOVE);
+            replacementPoint.accept(ReplacementPoint.NEW_INSTALLED);
             remember(encryptedData);
             Files.delete(recoveryPath);
         } catch (Exception e) {
@@ -191,6 +200,11 @@ public final class KeyValueStore {
 
     static void moveExistingDatabase(Path database, Path recovery) throws IOException {
         Files.move(database, recovery, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    enum ReplacementPoint {
+        OLD_MOVED,
+        NEW_INSTALLED
     }
 
     public void ensureHealthy() {

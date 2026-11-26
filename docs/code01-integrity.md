@@ -44,7 +44,7 @@ clean checkout or POSIX CI, so this is not a fixed-revision research-release res
 | Malformed authenticated records and private-key exposure fail closed | `KeyValueStoreTest` covers malformed UTF-8, invalid and mismatched RSA fields, private encoding in the public field, non-rewrite, and sanitized startup logs; `ClientHandlerTest` and client `EntryTest` cover responses, audit fields, and serialization | Passed |
 | Missing database cannot be silently recreated by a write | `DatabaseReplacementTest` covers deletion after verification, unsupported atomic move, and interrupted replacement; `KeyValueStoreTest` covers failed write without replacement | Passed for tested filesystem behavior |
 | Valid existing storage and envelopes remain usable | `KeyValueStoreTest` loads and rewrites an independently encoded valid `CANISDB1` record; `ServerEndToEndTest` verifies the official client's TLS file workflow and decrypt after restart | Passed |
-| Invalid certificates and credentials are rejected before decrypt | `ServerTlsSecurityTest`, `ServerTlsCertificateTest`, and `SharedTrustDomainResearchTest` exercise the TLS and credential gates; `ClientHandlerTest` checks requester and selected key in a secret-free decrypt audit event | Passed |
+| Invalid certificates and credentials are rejected before decrypt | `ServerTlsSecurityTest` and `ServerTlsCertificateTest` exercise the TLS and credential gates; `ClientHandlerTest` checks requester and selected key in a secret-free decrypt audit event | Passed |
 
 Verification commands: `mvn -q -pl server,client spotless:apply`, `mvn -q test`, and
 `mvn -q -pl server package -DskipTests`. The final Surefire reports contained 27 suites and
