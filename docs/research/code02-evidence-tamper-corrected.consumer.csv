@@ -1,2 +1,0 @@
-ordinal,size,claimed_utc,finished_utc,decrypt_ns,outcome,failure_category
-0,4096,2026-11-17T22:11:32.628678200Z,2026-11-17T22:11:32.650200500Z,21893900,failed,authentication_tag_rejected

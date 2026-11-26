@@ -1,2 +1,0 @@
-identity,key_name,file_ordinal,size_bytes,started_utc,finished_utc,outcome,failure_category,input_sha256,envelope_sha256
-baseline-encrypt,recipient-a,0,4096,2026-11-18T17:14:27.761734300Z,2026-11-18T17:14:27.908831900Z,published,none,d5b00e2ca0bcd5a8a39986dff98d52d3dec07d06e1e9b47037c9696f8aac6499,438222869b88b135641675f84cc362825fed1a7b7fe2564c7b8ca8d2c55d6521
