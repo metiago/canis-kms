@@ -23,5 +23,5 @@ corporate environments. Its operating system, infrastructure administrators,
 deployment automation, service account, and corporate identity systems are trusted.
 Privileged-host compromise, HSM-level guarantees, multi-tenant isolation, and public
 cloud KMS threat models are outside the intended security boundary. The supported
-behavior and known limits are in [the reviewer guide](docs/reviewer-guide.md),
-[threat model](docs/threat-model.md), and [master-key guide](docs/master-key.md).
+behavior and known limits are in the [threat model](docs/threat-model.md),
+[master-key guide](docs/master-key.md), and [operational recovery guide](docs/operational-recovery.md).

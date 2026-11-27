@@ -1,9 +1,0 @@
-phase,time_utc,operation,process_exit,outcome,failure_category,output_present,log_marker
-setup,2026-11-18T17:25:34.036880800Z,init-db,0,initialized,none,false,none
-baseline,2026-11-18T17:25:36.946648100Z,startup,-1,ready,none,false,tls_listener_started
-baseline,2026-11-18T17:25:39.053853200Z,encrypt,0,published,none,false,none
-baseline,2026-11-18T17:25:40.733816300Z,decrypt,0,verified,none,true,none
-fault,2026-11-18T17:25:40.788310200Z,audit-deleted,-1,changed,none,false,external_hash_mismatch
-faulted_restart,2026-11-18T17:25:42.654742200Z,startup,-1,ready,none,false,tls_listener_started
-postfault,2026-11-18T17:25:44.479498400Z,encrypt,0,published,none,false,none
-postfault,2026-11-18T17:25:46.264657200Z,decrypt,0,verified,none,true,none

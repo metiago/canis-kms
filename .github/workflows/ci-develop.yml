@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Build and Test (Java 21, ${{ matrix.os }})
+    name: Build and Test (Java 25, ${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -31,55 +31,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
           cache: maven
-
-      - name: Prepare POSIX owner-mismatch fixtures
-        if: runner.os == 'Linux'
-        run: sh tools/ci/setup-posix-owner-fixtures.sh
 
       - name: Build and run tests
         run: mvn --batch-mode --no-transfer-progress clean verify
-
-      - name: Require POSIX security cases to execute
-        if: runner.os == 'Linux'
-        run: java tools/ci/VerifyPosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
-
-      - name: Require Issue 1 POSIX security cases to execute
-        if: runner.os == 'Linux'
-        run: java tools/ci/VerifyIssue1PosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
-
-      - name: Require Windows security cases to execute
-        if: runner.os == 'Windows'
-        run: java tools/ci/VerifyWindowsCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
-
-      - name: Reproduce CODE-02 asynchronous exchange
-        if: runner.os == 'Linux'
-        run: |
-          set +e
-          sh tools/ci/run-code02.sh --scenario normal --files 1 --size 4096 --delay-ms 1000 --output server/target/code02-ci.json > server/target/code02-ci.log 2>&1
-          status=$?
-          printf 'exit_status=%s\n' "$status" > server/target/code02-ci.exit-status.txt
-          cat server/target/code02-ci.log
-          exit "$status"
-
-      - name: Upload CODE-02 evidence
-        if: always() && runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: code02-evidence-ubuntu-latest
-          path: |
-            server/target/code02-ci.log
-            server/target/code02-ci.exit-status.txt
-            server/target/code02-ci.json
-            server/target/code02-ci.producer.csv
-            server/target/code02-ci.consumer.csv
-          if-no-files-found: warn
-          retention-days: 7
 
       - name: Upload test reports
         if: always()

@@ -1,111 +1,79 @@
-# CANISP/1 protocol reference
+# CANISP/1 Protocol Reference
 
 ## Overview
+CANISP/1 is the internal TCP request/response wire protocol between CANIS and the official Java `client` library (`JpawClient`). It uses line-oriented commands and typed payloads. While Redis-inspired, it is **not** RESP-compatible.
 
-CANISP is the internal wire protocol between CANIS and the official Java `client` Maven
-artifact. It uses a TCP request/response loop with line-oriented commands and typed payloads.
-Its interaction model is Redis-inspired, but it is not RESP-compatible. Redis clients and
-servers cannot use it.
+* **Recommended usage:** Use `JpawClient` in applications to handle commands, parsing, socket limits, and file envelopes. Use raw CANISP only for debugging or maintenance.
+* **Security model:** Operates inside an organization-managed environment where hosts and administrators are trusted. Authentication grants access to a shared trust domain with no per-key authorization boundaries. For isolated access scopes, deploy separate CANIS instances.
 
-Applications should use `JpawClient` for command construction, response parsing, socket limits,
-and file envelopes. Raw CANISP is useful for maintenance, debugging, research.
-CANISP operates inside the organization-managed deployment described in the
-[threat model](threat-model.md). TLS and login admit a client, but key names do not restrict
-that client's access to individual stored keys. The host and its administrators are trusted.
+---
 
-## Transport
+## Transport & Limits
+1. **TLS 1.3:** Client validates the server certificate chain and hostname; server validates the client certificate via an external truststore (PKCS#12 identity/trust stores, no plaintext fallback).
+2. **Authentication:** Client sends a `|login` line and receives a length-prefixed response.
+3. **Command Loop:** Client sends newline-terminated (`\n`) commands. Responses begin with a 4-byte signed integer length followed by UTF-8 payload bytes.
 
-1. The client opens a TLS 1.3 connection, validating the server certificate chain and configured
-   hostname. The server validates the client certificate against an external truststore. The
-   official client uses external PKCS#12 identity and trust stores and has no plaintext
-   fallback.
-2. After the handshake, the client sends one `|login` line. The server returns a length-prefixed
-   authentication response.
-3. On success, the connection accepts repeated newline-terminated command lines. Each response
-   starts with a 4-byte signed integer length followed by that many UTF-8 payload bytes.
-
-TLS does not change CANISP/1 command or response framing.
-
-| Limit | Value |
-| --- | --- |
+| Parameter | Limit |
+| :--- | :--- |
 | Server socket read timeout | 30 seconds |
-| Client connect and read timeout | 30 seconds |
-| Server command line | 1,048,576 characters |
-| Client command | 1,048,576 characters |
-| Client response payload before allocation | 1,048,576 bytes |
+| Client connect & read timeout | 30 seconds |
+| Max server command line | 1,048,576 characters |
+| Max client command | 1,048,576 characters |
+| Max client response allocation | 1,048,576 bytes |
+
+---
 
 ## Authentication
+Send `|login username:password` immediately after the TLS handshake.
 
-Send `|login username:password` after TLS succeeds, before normal commands. The length-prefixed
-response is one of `Authentication successful`, `Authentication failed`, or `Invalid input
-format`. An authenticated connection may then use the commands below.
-Authentication admits a client to the shared trust domain: any authenticated client can request
-operations involving any stored service key. Different certificates, usernames, service names,
-and key names do not establish separate authorization scopes. If applications require independent
-authorization domains, separate CANIS deployments should be used. See
-[Client Admission and Shared Key Access](threat-model.md#client-admission-and-shared-key-access).
+**Possible responses:**
+* `Authentication successful`
+* `Authentication failed`
+* `Invalid input format`
 
-## Message format
+---
 
-Command lines contain the leading `|` and end with a newline. Response payloads use these
-prefixes:
+## Message Format
+* **Commands:** Start with `|` and end with `\n`.
+* **Service Names:** Must match `[A-Za-z0-9._-]{1,128}`.
+* **Response Prefixes:**
+  * `|s>` — String (e.g., `|s>value`)
+  * `|i>` — Integer (e.g., `|i>100`)
+  * `|ms>` — Map entry (e.g., `|ms>name:serviceA|ms>publicKey:base64`)
+  * `|a>` — Array element (e.g., `|a>|ms>name:serviceA|ms>publicKey:base64|a>|ms>name:serviceB|ms>publicKey:base64`)
 
-```text
-|s>value
-|i>100
-|ms>name:serviceA|ms>publicKey:base64
-|a>|ms>name:serviceA|ms>publicKey:base64|a>|ms>name:serviceB|ms>publicKey:base64
-```
-
-The official client's `Parser` owns response parsing. Service names are identifiers matching
-`[A-Za-z0-9._-]{1,128}`; the client and server validate them to keep line-oriented commands
-unambiguous.
+---
 
 ## Commands
+All commands require an authenticated session. Payloads shown below follow the 4-byte length prefix.
 
-All commands below require authentication. Examples show response payloads after the 4-byte
-length.
+| Command | Description | Success Response |
+| :--- | :--- | :--- |
+| `|version` | Returns protocol version. | `|s>CANISP/1` |
+| `|health` | Checks server health. | `|s>OK` |
+| `|set <serviceName>` | Generates and stores an RSA key pair. | `|s>OK` |
+| `|get <serviceName>` | Returns entry name and public key. | `|ms>name:<name>|ms>publicKey:<base64>` |
+| `|get-public <serviceName>` | Returns only the public key. | `|s><base64>` |
+| `|list` | Lists all stored service entries. | `|a>|ms>name:...|ms>publicKey:...` |
+| `|decrypt <serviceName> <b64Payload>` | Decrypts payload with server private key. | `|s><base64DecryptedPayload>` |
+| `|del <serviceName>` | Deletes the active key. | `|s>OK` |
 
-- `|version` returns `|s>CANISP/1`.
-- `|health` returns `|s>OK`.
-- `|set serviceName` creates and persists a server-side RSA key pair; returns `|s>OK`.
-- `|get serviceName` returns public entry metadata:
-  `|ms>name:serviceName|ms>publicKey:base64`.
-- `|get-public serviceName` returns only the public key: `|s>base64`.
-- `|list` returns an array of public entry maps, for example:
-  `|a>|ms>name:serviceA|ms>publicKey:base64|a>|ms>name:serviceB|ms>publicKey:base64`.
-- `|decrypt serviceName base64EncryptedPayload` decrypts with the server-side private key and
-  returns `|s>base64DecryptedPayload`.
-- `|del serviceName` removes the active key; returns `|s>OK`.
+### Error Responses & Behavior
+* **Private keys:** Never returned by the server.
+* **Missing key (`|get`, `|decrypt`):** Returns `|s>ERROR: Key not found` (`JpawClient.get` maps this to `null`).
+* **Duplicate service (`|set`):** Returns `|s>ERROR: Service already exists` and keeps the original key.
+* **Decryption errors (`|decrypt`):** Returns `|s>ERROR: Invalid input format` or `|s>ERROR: Decryption failed`.
 
-For a missing name, `|get` returns `|s>ERROR: Key not found`; `JpawClient.get` translates this
-to `null`. `|decrypt` may return `|s>ERROR: Invalid input format`, `|s>ERROR: Key not found`, or
-`|s>ERROR: Decryption failed`. `|set` rejects a duplicate with
-`|s>ERROR: Service already exists` and preserves the original key. The server does not return
-RSA private keys.
+---
 
-## File envelopes
+## File Envelopes & Storage
+* **Client-side file encryption (`CANISHYB1`):** `JpawClient` generates an AES key, encrypts the file locally using AES-GCM, and wraps the AES key with the CANIS public key. The `CANISHYB1` envelope stores the wrapped key, nonce, ciphertext, and auth tag.
+* **Decryption:** Only the wrapped AES key is sent to CANIS via `|decrypt`. File contents never leave the client.
+* **Server storage (`CANISDB1`):** Key metadata is persisted in a `CANISDB1` binary store encrypted with AES-GCM under `CANIS_SECRET_KEY`. Internal encrypted payloads use `CANISGCM1`, `CANISHYB1`, and `CANISDB1`.
 
-The official client generates an AES file key, encrypts the file locally with AES-GCM, and wraps
-the file key with the CANIS public key. The versioned `CANISHYB1` envelope contains the wrapped
-file key, AES-GCM nonce, ciphertext, and authentication tag.
+---
 
-To decrypt a shared file, the client sends only the wrapped file key through `|decrypt`. CANIS
-unwraps it with the server-side private key and returns the file key; file content stays outside
-the server. Key metadata is stored in an encrypted `CANISDB1` binary store, protected by AES-GCM
-under the key named by `CANIS_SECRET_KEY`. CANIS encrypted data uses the `CANISGCM1`,
-`CANISHYB1`, and `CANISDB1` formats.
-
-## Compatibility notes
-
-Command names, argument order, response types, or envelope format changes require a new protocol
-version and corresponding `JpawClient` parsing changes. CANISP is a client/server implementation
-contract, not a supported direct application API.
-
-`io.canis.audit` emits key-value log messages for authentication, key creation, access and
-deletion, decrypt success or failure, and rejected commands. Successful authentication and later
-operations include the authenticated identity; failed authentication uses a generic identity.
-Messages can also include client-supplied, validated key names, remote addresses, and fixed
-failure reasons. They exclude passwords, raw login lines, stored private keys, encrypted payloads,
-and decrypted payloads. The messages have no defined record schema, event IDs, or integrity
-verification required by `AGENTS.md`; they are not a tamper-evident audit trail.
+## Compatibility & Auditing
+* **Versioning:** Changes to command names, arguments, response types, or envelope formats require a new protocol version and `JpawClient` update. CANISP is an internal contract, not a public API.
+* **Audit Logs (`io.canis.audit`):** Logs key-value events for authentication, key operations, decryption outcomes, and rejected commands. Logs include authenticated identity (or a generic identity on failed login), validated key names, remote addresses, and failure reasons.
+* **Log Exclusions & Limits:** Passwords, raw login lines, private keys, and payloads are never logged. Logs lack a formal schema, event IDs, or tamper-evident integrity checks.

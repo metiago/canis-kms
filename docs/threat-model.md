@@ -1,121 +1,68 @@
-# CANIS threat model
+# CANIS Threat Model
 
-CANIS is a key-recovery service for locally encrypted files. The official Java client fetches
-public keys, encrypts files outside CANIS, and asks the server to unwrap file keys. CANIS stores
-RSA private keys and key metadata; shared file storage does not need access to plaintext.
+CANIS is an internal key-recovery service for locally encrypted files. The official Java client fetches public keys, encrypts files locally, and sends file keys to the server for decryption. CANIS stores RSA private keys and metadata; shared file storage never accesses plaintext.
 
-## Security objectives and deployment scope
+## Scope & Security Objectives
 
-CANIS is intended for services inside a corporate environment operated by the organization.
-It is not a public cloud KMS, a multi-tenant key service, an HSM, or Vault as a Service. Its
-controls aim to prevent accidental disclosure of cryptographic material, catch unsafe deployment
-and configuration mistakes, deny non-privileged users and applications unauthorized access, and
-fail closed when required key material cannot be trusted. These goals apply within the trusted
-host and organizational infrastructure described below; they do not imply isolation between
-admitted CANIS clients.
+CANIS is built for single-organization corporate environments. It is **not** a public cloud KMS, multi-tenant service, HSM, or Vault as a Service.
 
-## Trust assumptions and Trusted Computing Base
+Its controls are designed to:
+- Prevent accidental leaks of cryptographic material.
+- Catch unsafe deployment or configuration errors.
+- Block unauthorized access from non-privileged users and apps.
+- Fail closed if required key material cannot be trusted.
 
-The Trusted Computing Base (TCB) comprises the operating system, infrastructure administrators,
-deployment automation, the CANIS service account, and corporate identity and access management
-systems. CANIS assumes these components are administered by the deploying organization and act
-according to its security policy. The host filesystem, process isolation, file ownership, ACLs,
-certificate issuance, and credential provisioning depend on that TCB. An administrator who can
-read process memory, replace files, change ACLs, or alter the service account is trusted by this
-model.
+*Note: These goals do not provide isolation between admitted CANIS clients.*
 
-Deploy CANIS on a managed host and private corporate network. Use a dedicated service account,
-trusted PKI and identity management, protected deployment automation, access-controlled key and
-database storage, restricted backups, and host network controls. Keep every ancestor of the
-master-key and database paths under trusted administrative control. Admit only applications whose
-operators may use the shared key namespace; CANIS does not enforce per-service key isolation.
+## Trusted Computing Base (TCB)
 
-## Out-of-scope threats
+CANIS trusts the host OS, infrastructure administrators, deployment automation, the CANIS service account, and corporate IAM/PKI systems to act according to company policy.
 
-CANIS does not defend against a privileged host administrator, an attacker with root or
-Administrator access, or a fully compromised operating system or deployment pipeline. It does
-not provide HSM-level protection against extraction from process memory or a zero-trust boundary
-around the deployment environment. Public cloud KMS and multi-tenant threat models are outside
-this scope. A stolen valid client identity or credential can exercise the access available to
-that admitted client; see the shared-access boundary below.
+**Deployment requirements:**
+- Run on a managed host within a private corporate network.
+- Use a dedicated service account and restricted access controls for keys, the database, and backups.
+- Keep all parent directories of the master key and database under trusted administrative control.
+- Admit only applications trusted to share the same key namespace.
 
-## Trust boundaries
+## Out-of-Scope Threats
 
-- **Server and storage:** The CANIS process and host are inside the TCB. An attacker who obtains
-  both the encrypted `CANISDB1` database and the master-key file can recover stored private keys.
-  Protect the files and their backups with separate access controls.
-- **Network:** The server requires TLS 1.3 and a trusted client certificate before processing
-  CANISP. The client validates the server certificate and hostname. The deployment must use
-  corporate network controls to restrict who can reach the service.
-- **Applications:** Clients authenticate with CANIS credentials after the TLS handshake. Every
-  authenticated client can request decryption under every stored service key. A compromised
-  client can therefore recover file keys across services. Decrypt audit events record the
-  credential identity and key name, without key material.
-- **Shared filesystems:** Encrypted files may be stored on untrusted shared storage; plaintext
-  confidentiality depends on keeping their file envelopes encrypted at rest.
+CANIS does not protect against:
+- Compromised OS, deployment pipelines, or root/Administrator access.
+- Memory extraction attacks (no HSM-level isolation).
+- Multi-tenant or zero-trust environments.
+- Compromised clients using valid credentials to access keys in the shared namespace.
 
-Applications should use the official `client` Maven artifact. CANISP is the internal
-client/server protocol, documented for maintenance, debugging, research, and PoCs rather than as
-an application API.
+## Trust Boundaries
 
-## Client Admission and Shared Key Access
+- **Server & Storage:** Located inside the TCB. Anyone who obtains both the `CANISDB1` database and the master-key file can recover all stored private keys. Store and back them up under separate access controls.
+- **Network:** Requires TLS 1.3 with mutual certificate validation (client and server) before processing the internal CANISP protocol. Restrict network access via corporate firewall/network rules.
+- **Applications:** Clients authenticate after the TLS handshake. All authenticated clients share access to all stored keys. Use the official `client` Maven artifact rather than calling CANISP directly.
+- **Shared Filesystems:** Safe on untrusted storage as long as file envelopes remain encrypted at rest.
 
-CANIS operates within a shared trust domain. TLS client certificates and CANIS credentials
-admit clients to the service, but they do not assign key-specific permissions. Any authenticated
-CANIS client may request operations involving any stored service key, including retrieval of its
-public key, decryption with its private key, and deletion. Service names are identifiers, not
-authorization boundaries; key names do not create security boundaries. Different TLS
-certificates do not imply isolation between clients, and different usernames do not imply
-authorization scopes. CANIS provides neither per-key authorization nor client isolation.
+## Client Admission & Access Control
 
-Admit only applications that are trusted to use this shared key namespace. If applications
-require independent authorization domains, separate CANIS deployments should be used.
+CANIS uses a **shared trust domain**. Valid TLS certificates and credentials grant access to the service, not to specific keys.
+- Service names are identifiers, not security boundaries.
+- Any admitted client can read public keys, decrypt payloads, or delete **any** stored key.
+- If applications require isolated key permissions, deploy separate CANIS instances.
 
-## What clients can do
+## Client Commands
 
-`|set serviceName` creates a 2048-bit RSA key pair only if the name is unused. A duplicate
-returns `ERROR: Service already exists` and preserves the existing pair. The
-`|get-public serviceName` command exposes the public key for encrypting file keys.
-`|decrypt serviceName payload` uses the private key on the server and returns the decrypted
-payload, such as a file key; it never returns the RSA private key. `|del serviceName` removes
-the active key.
+- `|set serviceName`: Creates a 2048-bit RSA key pair if the name is unused (fails if it already exists).
+- `|get-public serviceName`: Returns the public key for encrypting file keys.
+- `|decrypt serviceName payload`: Decrypts a payload (e.g., a file key) using the server-side private key. Never exposes the private key.
+- `|del serviceName`: Deletes the active key.
 
-Service names are identifiers validated by both the client and server. To rotate a key, create a
-new service name and re-encrypt envelopes that must remain readable before deleting the old key.
-Deletion cannot erase key material from JVM memory, backups, snapshots, or storage history. See
-[RSA key lifecycle](rsa-key-lifecycle.md).
+**Key Rotation & Deletion:** To rotate a key, create a new service name, re-encrypt active envelopes, and delete the old key. Deleting a key does not purge it from JVM memory, backups, snapshots, or disk history.
 
-## Master key and recovery
+## Master Key & Recovery
 
-`CANIS_SECRET_KEY` names the AES key file used to encrypt the database. CANIS validates and
-loads it before opening the TLS listener; a missing, malformed, or insecurely accessible file
-stops startup, even if the database is absent. The server does not generate a replacement key.
-Changing the file after startup does not rotate the loaded key.
+- **Master Key (`CANIS_SECRET_KEY`):** Points to the AES key file that encrypts the database. CANIS validates and loads it before opening the TLS listener. Startup aborts if the file is missing, malformed, a symlink, or has insecure permissions on the file or its immediate parent directory.
+- **Database Startup & Failure:** CANIS requires an existing, explicitly initialized database on startup. If the database goes missing or changes at runtime, CANIS enters a recovery-required state instead of creating a blank store.
+- **Backups:** Back up the encrypted database and master key under separate access controls. Never back up plaintext keys. Verify backups by loading them and decrypting a test envelope.
 
-These checks catch operational mistakes and unsafe file configuration and prevent access by
-non-privileged identities under the host's access controls. They do not prevent a TCB member from
-reading or replacing the key. The loader rejects a symbolic link at the key-file path and checks
-ownership and access on the file and immediate parent. It does not validate every higher
-ancestor. Those paths must be controlled by the deployment. See the exact checks and limits
-in the [master-key guide](master-key.md).
+## Audit Logs
 
-Normal startup rejects a missing database. A new database requires explicit initialization; a
-valid key cannot be matched to a database that is absent. Database authentication and parsing
-finish before the listener binds. If the database disappears or changes during operation, CANIS
-enters a recovery-required state instead of creating an empty store. Restore the original
-database with its matching master key from protected backups. See the
-[operational recovery runbook](operational-recovery.md) and
-[master-key requirements](master-key.md).
-
-Backups should contain the encrypted database and matching key file under separate access
-controls, never plaintext private keys or decrypted file keys. Test restores by loading the
-database and decrypting a known test envelope.
-
-## Logs
-
-`io.canis.audit` records authentication, key creation, access and deletion, decrypt success or
-failure, and rejected commands. Successful authentication and later operations record the
-authenticated credential identity; failed authentication records a generic identity rather than
-the client-supplied username. Events may also include client-supplied, validated key names,
-remote addresses, and fixed failure reasons. They do not record passwords, raw login lines,
-stored private keys, encrypted payloads, or decrypted payloads.
+The `io.canis.audit` logger records authentication attempts, key operations, decrypt outcomes, and rejected commands.
+- **Logged:** Authenticated credential identity (generic label on failed logins), validated key names, remote IP addresses, and fixed failure reasons.
+- **Never Logged:** Passwords, raw login commands, private keys, or encrypted/decrypted payloads.

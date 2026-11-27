@@ -2,7 +2,7 @@
 
 ## What CANIS Is
 
-CANIS is a Java 21 key-recovery service and client for asynchronous encrypted-file exchange between Java services. A producer encrypts a file locally and publishes the encrypted file to shared storage.
+CANIS is a Java 25 key-recovery service and client for asynchronous encrypted-file exchange between Java services. A producer encrypts a file locally and publishes the encrypted file to shared storage.
 
 CANIS is intended for organization-managed corporate environments with trusted host
 administrators, deployment automation, service accounts, and identity systems. It is not a
@@ -19,30 +19,23 @@ cd canis-kms
 mvn clean verify
 ```
 
-Expect `BUILD SUCCESS` with no test failures. Follow the [Reviewer Guide](docs/reviewer-guide.md) for the runnable file-exchange example and platform-specific checks.
+Expect `BUILD SUCCESS` with no test failures. See the [Java Client Package](docs/client-package.md) and [deployment guide](docs/client-package-deploy.md) for client setup.
 
 ## Documentation
 
-- [Reviewer Guide](docs/reviewer-guide.md)
-- [Reviewer Quickstart](docs/reviewer-quickstart.md)
 - [Threat Model](docs/threat-model.md)
 - [CANISP Protocol](docs/canisp-protocol.md)
 - [Master Key Guide](docs/master-key.md)
 - [Operational Recovery Runbook](docs/operational-recovery.md)
-- [RSA Key Lifecycle](docs/rsa-key-lifecycle.md)
 - [Java Client Package](docs/client-package.md)
-- [Research Evidence Index](docs/research/README.md)
+- [Client Deployment Guide](docs/client-package-deploy.md)
 
-Repository layout: `docs/` contains product and reviewer documentation;
-`docs/research/` contains research reports, evidence, and reproduction scripts;
-`tools/ci/` contains CI checks and fixture setup; and `tests/fixtures/ci/`
-contains static input used to exercise a CI check.
+Repository layout: `docs/` contains product and operations documentation;
+`client/` contains the Java client; and `server/` contains the key service.
 
 ## Release
 
-- Latest public release: [v0.1.0-rc.1](https://github.com/metiago/canis-kms/releases/tag/v0.1.0-rc.1) (research prerelease).
-- Paper: [joss-papers/paper.md](joss-papers/paper.md).
-- Citation: Souza, T. (2026), *CANIS: Key Management for Asynchronous Encrypted File Exchange Between Java Services*, version 0.1.0-rc.1. The `canis-rc1` entry in [paper.bib](joss-papers/paper.bib) cites the released source archive.
+See [GitHub Releases](https://github.com/metiago/canis-kms/releases) for release candidates and source archives.
 
 ## Security
 

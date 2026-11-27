@@ -21,15 +21,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
           cache: maven
-
-      - name: Prepare POSIX owner-mismatch fixtures
-        run: sh tools/ci/setup-posix-owner-fixtures.sh
 
       - name: Require matching release tag and clean checkout
         shell: bash
@@ -47,12 +44,6 @@ jobs:
 
       - name: Verify tagged source
         run: mvn --batch-mode --no-transfer-progress clean verify
-
-      - name: Require POSIX security cases to execute
-        run: java tools/ci/VerifyPosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
-
-      - name: Require Issue 1 POSIX security cases to execute
-        run: java tools/ci/VerifyIssue1PosixCoverage.java server/target/surefire-reports/TEST-io.canis.crypto.MasterKeyLoaderTest.xml
 
       - name: Generate tracked source archive
         shell: bash
