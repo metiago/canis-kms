@@ -86,6 +86,11 @@ request_client() {
   fi
 }
 
+# /proc/uptime is monotonic; the CI host's wall clock can be adjusted during a run.
+monotonic_ms() {
+  awk '{printf "%.0f\n", $1 * 1000}' /proc/uptime
+}
+
 run_server() {
   local mode="$1" iteration="$2" label
   if [[ "$mode" == train ]]; then
@@ -105,7 +110,7 @@ run_server() {
   esac
 
   local start_ms ready_ms ready=false
-  start_ms="$(date +%s%3N)"
+  start_ms="$(monotonic_ms)"
   (cd "$run_dir" && exec java "${vm_args[@]}" -jar "$jar") > "$server_log" 2>&1 &
   java_pid=$!
   for _ in {1..1500}; do
@@ -127,7 +132,7 @@ run_server() {
     return 1
   fi
 
-  ready_ms="$(($(date +%s%3N) - start_ms))"
+  ready_ms="$(($(monotonic_ms) - start_ms))"
   cp "$raw_log" "$class_log"
   local total shared
   total="$(grep -c '\[class,load\].*source:' "$class_log" || true)"
