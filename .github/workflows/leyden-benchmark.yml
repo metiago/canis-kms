@@ -24,8 +24,8 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: Build server JAR
-        run: mvn --batch-mode --no-transfer-progress -pl server -am -DskipTests package
+      - name: Build server JAR and client classes
+        run: mvn --batch-mode --no-transfer-progress -DskipTests package
 
       - name: Compare baseline and AOT class loading
         run: bash .github/scripts/leyden-benchmark.sh
