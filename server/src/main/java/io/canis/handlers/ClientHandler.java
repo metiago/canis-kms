@@ -1,22 +1,9 @@
 package io.canis.handlers;
 
-import static io.canis.protocol.Commands.ADD;
-import static io.canis.protocol.Commands.CANISP_VERSION;
-import static io.canis.protocol.Commands.DECRYPT;
-import static io.canis.protocol.Commands.DELETE;
-import static io.canis.protocol.Commands.GET;
-import static io.canis.protocol.Commands.GET_PUBLIC;
-import static io.canis.protocol.Commands.HEALTH;
-import static io.canis.protocol.Commands.INVALID_COMMAND;
-import static io.canis.protocol.Commands.LIST;
-import static io.canis.protocol.Commands.OK_COMMAND;
-import static io.canis.protocol.Commands.VERSION;
-import static io.canis.protocol.ProtocolError.DECRYPTION_FAILED;
-import static io.canis.protocol.ProtocolError.INVALID_INPUT_FORMAT;
-import static io.canis.protocol.ProtocolError.INVALID_SERVICE_NAME;
-import static io.canis.protocol.ProtocolError.KEY_NOT_FOUND;
-import static io.canis.protocol.ProtocolError.REQUEST_TOO_LARGE;
-import static io.canis.protocol.ProtocolError.SERVICE_ALREADY_EXISTS;
+import static io.canis.handlers.Command.CANISP_VERSION;
+import static io.canis.handlers.Command.INVALID_COMMAND;
+import static io.canis.handlers.Command.OK_COMMAND;
+import static io.canis.protocol.ProtocolError.*;
 
 import io.canis.audit.AuditLogger;
 import io.canis.net.BoundedLineReader;
@@ -29,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -97,83 +85,48 @@ public class ClientHandler implements Runnable {
 
     private void executeCommand(String input, DataOutputStream out) throws IOException, NoSuchAlgorithmException {
 
-        if (input.equals(VERSION)) {
-            logger.info("Returning CANISP version for IP {}", this.socket.getRemoteSocketAddress());
-            sendResponse(out, CANISP_VERSION);
+        var remoteAddress = this.socket.getRemoteSocketAddress();
 
-        } else if (input.equals(HEALTH)) {
-            logger.info("Performing health check for IP {}", this.socket.getRemoteSocketAddress());
-            sendResponse(out, OK_COMMAND);
-
-        } else if (input.startsWith(ADD)) {
-            logger.info("Adding key for IP {}", this.socket.getRemoteSocketAddress());
-            String serviceName = input.substring(ADD.length()).trim();
-            if (!validateServiceName(serviceName, out)) {
-                return;
-            }
-            if (!add(serviceName)) {
-                AuditLogger.commandRejected(
-                        serviceIdentity, this.socket.getRemoteSocketAddress(), "service_already_exists");
-                sendResponse(out, SERVICE_ALREADY_EXISTS.wireMessage());
-                return;
-            }
-            AuditLogger.keyCreated(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
-            sendResponse(out, OK_COMMAND);
-
-        } else if (input.startsWith(GET_PUBLIC)) {
-            logger.info("Getting public key for IP {}", this.socket.getRemoteSocketAddress());
-            String serviceName = input.substring(GET_PUBLIC.length()).trim();
-            if (!validateServiceName(serviceName, out)) {
-                return;
-            }
-            AuditLogger.keyAccessed(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
-            sendResponse(out, getPublicKey(serviceName));
-
-        } else if (input.startsWith(GET)) {
-            logger.info("Getting key for IP {}", this.socket.getRemoteSocketAddress());
-            String serviceName = input.substring(GET.length()).trim();
-            if (!validateServiceName(serviceName, out)) {
-                return;
-            }
-            Entry entry = store.get(serviceName);
-            if (entry == null) {
-                sendResponse(out, KEY_NOT_FOUND.wireMessage());
-                return;
-            }
-            AuditLogger.keyAccessed(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
-            var bytes = Converter.toMap(entry).getBytes(StandardCharsets.UTF_8);
-            out.writeInt(bytes.length);
-            out.write(bytes);
-
-        } else if (input.startsWith(DECRYPT)) {
-            logger.info("Decrypting payload for IP {}", this.socket.getRemoteSocketAddress());
-            decrypt(input.substring(DECRYPT.length()).trim(), out);
-
-        } else if (input.equals(LIST)) {
-            logger.info("Listing keys for IP {}", this.socket.getRemoteSocketAddress());
-            List<Entry> entries = list();
-            AuditLogger.keyListed(serviceIdentity, this.socket.getRemoteSocketAddress());
-            var bytes = Converter.toArrayOfMaps(entries).getBytes(StandardCharsets.UTF_8);
-            out.writeInt(bytes.length);
-            out.write(bytes);
-
-        } else if (input.startsWith(DELETE)) {
-            logger.info("Deleting key for IP {}", this.socket.getRemoteSocketAddress());
-            String serviceName = input.substring(DELETE.length()).trim();
-            if (!validateServiceName(serviceName, out)) {
-                return;
-            }
-            delete(serviceName);
-            AuditLogger.keyDeleted(serviceIdentity, serviceName, this.socket.getRemoteSocketAddress());
-            sendResponse(out, OK_COMMAND);
-
-        } else {
-            logger.warn("Invalid command received from IP {}", this.socket.getRemoteSocketAddress());
-            AuditLogger.commandRejected(serviceIdentity, this.socket.getRemoteSocketAddress(), "unknown_command");
-            var resp = INVALID_COMMAND.getBytes(StandardCharsets.UTF_8);
-            out.writeInt(resp.length);
-            out.write(resp);
+        switch (Command.parse(input)) {
+            case Command.Version() -> getProtocolVersion(out, remoteAddress);
+            case Command.Health() -> healthCheck(out, remoteAddress);
+            case Command.ListKeys() -> listKeys(out, remoteAddress);
+            case Command.Add(var serviceName) -> handleAdd(serviceName, out, remoteAddress);
+            case Command.GetPublic(var serviceName) -> handleGetPublic(serviceName, out, remoteAddress);
+            case Command.Get(var serviceName) -> handleGet(serviceName, out, remoteAddress);
+            case Command.Decrypt(var payload) -> decrypt(payload, out, remoteAddress);
+            case Command.Delete(var serviceName) -> handleDelete(serviceName, out, remoteAddress);
+            case Command.Unknown() -> invalidCommand(out, remoteAddress);
         }
+    }
+
+    private void getProtocolVersion(DataOutputStream out, SocketAddress remoteAddress) throws IOException {
+        logger.info("Returning protocol version for IP {}", remoteAddress);
+        sendResponse(out, CANISP_VERSION);
+    }
+
+    private void healthCheck(DataOutputStream out, SocketAddress remoteAddress) throws IOException {
+        logger.info("Performing health check for IP {}", remoteAddress);
+        sendResponse(out, OK_COMMAND);
+    }
+
+    private void invalidCommand(DataOutputStream out, SocketAddress remoteAddress) throws IOException {
+        logger.warn("Invalid command received from IP {}", remoteAddress);
+        AuditLogger.commandRejected(serviceIdentity, remoteAddress, "unknown_command");
+        writeBytes(out, INVALID_COMMAND);
+    }
+
+    private void listKeys(DataOutputStream out, SocketAddress remoteAddress) throws IOException {
+        logger.info("Listing keys for IP {}", remoteAddress);
+        List<Entry> entries = list();
+        AuditLogger.keyListed(serviceIdentity, remoteAddress);
+        writeBytes(out, Converter.toArrayOfMaps(entries));
+    }
+
+    private void writeBytes(DataOutputStream out, String payload) throws IOException {
+        var bytes = payload.getBytes(StandardCharsets.UTF_8);
+        out.writeInt(bytes.length);
+        out.write(bytes);
     }
 
     private void sendResponse(DataOutputStream out, String command) throws IOException {
@@ -197,12 +150,58 @@ public class ClientHandler implements Runnable {
         return store.list();
     }
 
-    private boolean add(String args) throws NoSuchAlgorithmException {
-        logger.info("Adding new key with args: {}", args);
-        if (store.get(args) != null) {
+    private void handleAdd(String serviceName, DataOutputStream out, SocketAddress remoteAddress)
+            throws IOException, NoSuchAlgorithmException {
+        logger.info("Adding key for IP {}", remoteAddress);
+
+        if (!validateServiceName(serviceName, out)) {
+            return;
+        }
+        if (!add(serviceName)) {
+            AuditLogger.commandRejected(serviceIdentity, remoteAddress, "service_already_exists");
+            sendResponse(out, SERVICE_ALREADY_EXISTS.wireMessage());
+            return;
+        }
+
+        AuditLogger.keyCreated(serviceIdentity, serviceName, remoteAddress);
+        sendResponse(out, OK_COMMAND);
+    }
+
+    private boolean add(String serviceName) throws NoSuchAlgorithmException {
+        logger.info("Adding new key with args: {}", serviceName);
+        if (store.get(serviceName) != null) {
             return false;
         }
-        return store.create(args);
+        return store.create(serviceName);
+    }
+
+    private void handleGet(String serviceName, DataOutputStream out, SocketAddress remoteAddress) throws IOException {
+        logger.info("Getting key for IP {}", remoteAddress);
+
+        if (!validateServiceName(serviceName, out)) {
+            return;
+        }
+
+        Entry entry = store.get(serviceName);
+        if (entry == null) {
+            sendResponse(out, KEY_NOT_FOUND.wireMessage());
+            return;
+        }
+
+        AuditLogger.keyAccessed(serviceIdentity, serviceName, remoteAddress);
+        writeBytes(out, Converter.toMap(entry));
+    }
+
+    private void handleGetPublic(String serviceName, DataOutputStream out, SocketAddress remoteAddress)
+            throws IOException {
+        logger.info("Getting public key for IP {}", remoteAddress);
+
+        if (!validateServiceName(serviceName, out)) {
+            return;
+        }
+
+        AuditLogger.keyAccessed(serviceIdentity, serviceName, remoteAddress);
+        sendResponse(out, getPublicKey(serviceName));
     }
 
     private String getPublicKey(String key) {
@@ -219,7 +218,19 @@ public class ClientHandler implements Runnable {
         store.delete(key);
     }
 
-    private void decrypt(String args, DataOutputStream out) throws IOException {
+    private void handleDelete(String serviceName, DataOutputStream out, SocketAddress remoteAddress)
+            throws IOException {
+        logger.info("Deleting key for IP {}", remoteAddress);
+        if (!validateServiceName(serviceName, out)) {
+            return;
+        }
+        delete(serviceName);
+        AuditLogger.keyDeleted(serviceIdentity, serviceName, remoteAddress);
+        sendResponse(out, OK_COMMAND);
+    }
+
+    private void decrypt(String args, DataOutputStream out, SocketAddress remoteAddress) throws IOException {
+        logger.info("Decrypting payload for IP {}", remoteAddress);
         String[] parts = args.split("\\s+");
         if (parts.length != 2) {
             AuditLogger.decryptFailed(
