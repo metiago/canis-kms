@@ -1,8 +1,5 @@
 package io.canis;
 
-import static io.canis.config.EnvironmentLoader.loadEnvironment;
-import static io.canis.protocol.Commands.LOGIN;
-
 import io.canis.audit.AuditLogger;
 import io.canis.config.Environment;
 import io.canis.config.TlsCipherPolicy;
@@ -12,6 +9,13 @@ import io.canis.models.LoginCredentials;
 import io.canis.net.BoundedLineReader;
 import io.canis.net.BoundedLineReader.LineTooLongException;
 import io.canis.store.KeyValueStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -27,12 +31,9 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static io.canis.config.EnvironmentLoader.loadEnvironment;
+import static io.canis.handlers.Command.LOGIN;
 
 public class Server {
 

@@ -229,6 +229,26 @@ public class ClientHandlerTest {
         verify(store).create("serviceA");
     }
 
+    @Test
+    void testDeleteReturnsOkAndRecordsAuditEvent() throws Exception {
+        KeyValueStore store = mock(KeyValueStore.class);
+        Logger auditLogger = (Logger) LoggerFactory.getLogger("io.canis.audit");
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        auditLogger.addAppender(appender);
+
+        try {
+            assertEquals("|s>OK", runCommand("|del serviceA", store));
+            verify(store).delete("serviceA");
+            assertTrue(appender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .anyMatch(message -> message.contains("event=key_deleted") && message.contains("key=serviceA")));
+        } finally {
+            auditLogger.detachAppender(appender);
+            appender.stop();
+        }
+    }
+
     private void verifyNoInteractionsAfterGet(KeyValueStore store) throws Exception {
         org.mockito.Mockito.verify(store, org.mockito.Mockito.never()).create(org.mockito.ArgumentMatchers.anyString());
     }
