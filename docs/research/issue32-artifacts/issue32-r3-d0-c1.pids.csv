@@ -1,7 +1,0 @@
-run_id,role,pid
-issue32-r3-d0-c1-B,server,28600
-issue32-r3-d0-c1-B,producer,28872
-issue32-r3-d0-c1-B,consumer,6404
-issue32-r3-d0-c1-A,server,22336
-issue32-r3-d0-c1-A,producer,15100
-issue32-r3-d0-c1-A,consumer,22376
