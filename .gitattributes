@@ -11,3 +11,5 @@ docs/research/issue32-results.md text eol=lf
 docs/research/run-issue32.ps1 text eol=lf
 docs/research/issue32-artifacts/** text eol=lf
 docs/research/issue32-artifacts.sha256 text eol=lf
+start.sh text eol=lf
+.github/scripts/leyden-benchmark.sh text eol=lf

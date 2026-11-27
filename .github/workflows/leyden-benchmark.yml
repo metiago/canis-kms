@@ -1,0 +1,43 @@
+name: CANIS Leyden benchmark
+
+on:
+  push:
+    branches:
+      - feature/leyden-ci-benchmark
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Temurin 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build server JAR
+        run: mvn --batch-mode --no-transfer-progress -pl server -am -DskipTests package
+
+      - name: Compare baseline and AOT class loading
+        run: bash .github/scripts/leyden-benchmark.sh
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leyden-linux-jdk25
+          path: |
+            Leyden/*.log
+            Leyden/*.csv
+            Leyden/*.txt
+          if-no-files-found: warn
+          retention-days: 14
